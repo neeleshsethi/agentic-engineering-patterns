@@ -49,3 +49,17 @@ Current articles:
 ## Goal
 
 Help engineers build production-ready agentic systems by documenting the kinds of failures that traditional tutorials rarely discuss.
+
+## Learning Path For Python Interns
+
+If you are new to Deep Agents, start with `articles/01-silent-failures-overview.md`.
+
+Then read the focused articles before the long case study:
+
+1. `articles/02-context-injection.md`
+2. `articles/03-langgraph-state.md`
+3. `articles/04-sse-cancellation.md`
+4. `articles/05-distributed-locks.md`
+5. `articles/06-nine-silent-failures-langgraph-research-agent.md`
+
+The `examples/` folders contain small before/after snippets for the same concepts. Read them when a production code sample in the long article feels too compressed.
