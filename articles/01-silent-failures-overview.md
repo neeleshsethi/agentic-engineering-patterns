@@ -34,4 +34,24 @@ Silent failures are expensive because they are hard to detect and hard to debug:
 
 ## Intended Audience
 
-This repository is written for engineers already building agents in production or close to it. It assumes familiarity with Python, async programming, and graph-based orchestration.
+This repository is written for Python engineers who know ordinary web APIs and want to understand production agent systems.
+
+You do not need to be a LangGraph expert before reading it. You do need to track four ideas:
+
+- A graph run can pause and resume later from a checkpoint.
+- Agent state is durable data, not just local Python variables.
+- Streaming HTTP can end before all server-side work is safely persisted.
+- Distributed coordination must survive multiple API replicas and retries.
+
+## Intern Reading Path
+
+Read the series in this order:
+
+1. Start here to learn the failure shape.
+2. Read `02-context-injection.md` to understand prompt assembly boundaries.
+3. Read `03-langgraph-state.md` before reading any checkpoint examples.
+4. Read `04-sse-cancellation.md` before changing streaming code.
+5. Read `05-distributed-locks.md` before touching DynamoDB claims.
+6. Read `06-nine-silent-failures-langgraph-research-agent.md` last.
+
+The long article assumes you understand the vocabulary from the focused articles. If a code snippet looks small, ask what persisted before and after it runs. That question catches most silent failures.

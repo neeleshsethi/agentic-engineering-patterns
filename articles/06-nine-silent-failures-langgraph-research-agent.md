@@ -8,6 +8,35 @@ Code review before a recent release surfaced nine bugs. None crashed the system.
 
 Here is each one, but first the architecture that makes the bugs interesting: a single user interaction spans multiple HTTP requests, and DynamoDB is doing double duty as both the checkpoint store and the distributed lock.
 
+## Vocabulary for a new engineer
+
+Read this section before the failure list if you are new to LangGraph or Deep Agents.
+
+`thread_id` is the durable conversation/run identity LangGraph uses to find the right checkpoint. If two requests use the same `thread_id`, they resume the same logical graph thread.
+
+`state` is the logical dictionary the graph reads and writes. It contains channels such as `messages`, `plan`, `raw_question`, and `user_context`.
+
+`checkpoint` is the persisted copy of that state plus LangGraph bookkeeping. In this system it lives in DynamoDB, so another HTTP request on another API replica can resume the same graph.
+
+`interrupt()` pauses the graph and stores a pending resume point in the checkpoint. The HTTP request can end while the graph waits for a human decision.
+
+`Command(resume=...)` is the input used by a later HTTP request to continue from that pending interrupt.
+
+`plan_id` is an application-level identifier inside the proposed plan. LangGraph does not invent it. We store it inside the plan object that is included in the interrupt payload and checkpointed state.
+
+`claim_token` is a random ownership token for the distributed resume lock. It proves that the caller releasing a lock is the same caller that acquired it.
+
+```text
+User turn
+  thread_id: "t-123"
+  checkpoint:
+    state.plan.plan_id = "p-456"
+    pending interrupt payload.plan.plan_id = "p-456"
+  claim:
+    PK = "CLAIM#t-123"
+    claim_token = "random-uuid"
+```
+
 ## The architecture: one user turn, three HTTP requests
 
 Most backend systems map one user action to one request. Deep mode does not. A single research turn spans at minimum three separate HTTP requests over potentially 30 or more minutes:
@@ -47,6 +76,13 @@ decision, feedback = _decision_of(
 # Everything below runs only after the human decision arrives.
 ```
 
+The plan is therefore stored twice for practical purposes:
+
+- As graph state in the `plan` channel, so later graph nodes can read it.
+- As part of the pending interrupt payload, so the HTTP approval endpoint can validate the exact plan before resuming.
+
+That is why `read_pending_gate(thread_id)` can see `gate["plan"]["plan_id"]` before the graph resumes. It is reading the pending interrupt metadata from the checkpoint, not recomputing the plan.
+
 On the refine or approve request, `read_pending_gate(thread_id)` reads the interrupt payload directly from the checkpointer, with no graph compile required, to validate preconditions. Then the endpoint calls `graph.astream_events(Command(resume=decision), config)` on the same `thread_id`. LangGraph reads the checkpoint, finds the pending interrupt, delivers the `Command` as the resume value, and the graph continues from exactly where it stopped.
 
 ```python
@@ -63,6 +99,16 @@ async for chunk in stream_deep_typed(
     ...,
 ):
     yield chunk
+```
+
+The `plan_id` check prevents a stale browser tab from approving an older plan after the user has refined it.
+
+```text
+Tab A sees plan_id p1
+Tab B refines plan to p2
+Tab A clicks approve with p1
+API reads pending gate p2
+API returns 409 plan_id_mismatch
 ```
 
 ### Why the checkpoint and the resume claim live in the same DynamoDB table
@@ -93,6 +139,10 @@ _dynamodb_client().put_item(
 )
 ```
 
+`attribute_not_exists(PK)` is DynamoDB's "only if no current item exists" condition. For this claim item, it means "acquire the resume lock only if another request has not already created one."
+
+`OR expires_at < :now` lets the system recover if a worker crashes while holding the claim. A new request can acquire the claim after the lease expires.
+
 Release is token-guarded: the caller holds a UUID token from acquire, and the delete only succeeds if the stored token still matches. A stream that outlives its 30-minute lease can be re-claimed by a new request. When the original stream eventually finishes and tries to release, it gets `ConditionalCheckFailedException`, logs it at info, and leaves the new holder's lease intact.
 
 ### One Langfuse trace across all three requests
@@ -106,6 +156,26 @@ handler.last_trace_id = trace_id
 ```
 
 Same `thread_id` means the same seed, which means the same trace ID on every request. All three phases land in one Langfuse trace, one Agent Graph, properly sequenced.
+
+In Langfuse terms, a trace is the top-level timeline for one logical user task. A run or observation is one child operation inside that timeline, such as a LangGraph invocation, model call, tool call, or chain step.
+
+`CallbackHandler` is the bridge that receives LangChain/LangGraph callback events and sends them to Langfuse. Passing `trace_context={"trace_id": trace_id}` tells it to attach this request's events to the existing logical trace.
+
+```text
+Langfuse trace: deep:t-123
+  run: proposal request
+    model call
+    tool call submit_plan
+  run: refine request
+    model call
+    tool call submit_plan
+  run: approve request
+    model calls
+    research tools
+    report writer
+```
+
+Without the seeded trace ID, those three HTTP requests look like unrelated traces. Debugging "why did this approved plan produce that report?" becomes a manual correlation problem.
 
 ## The design: state channels and middleware
 
@@ -236,6 +306,21 @@ The fix was to skip framework-tagged synthetic messages:
 ```python
 if msg.additional_kwargs.get("lc_source") == "summarization":
     continue
+```
+
+This helps because the injection code is not looking for "any human-shaped message." It is looking for the latest real user-authored message.
+
+The synthetic summary is human-shaped because it is represented as a `HumanMessage`, but it is framework-authored. The `lc_source` tag is the only reliable clue in that list that the message came from summarization middleware.
+
+```text
+Before fix
+  reverse scan finds synthetic HumanMessage
+  context attaches to summary
+  model treats summary prose as user words
+
+After fix
+  reverse scan skips lc_source=summarization
+  context attaches to real user message, or injection stops
 ```
 
 Lesson: when your code finds "the latest item of type X in a list," enumerate every party that can insert an X. Framework middleware can insert objects that pass `isinstance(msg, HumanMessage)` without being genuine user input.
