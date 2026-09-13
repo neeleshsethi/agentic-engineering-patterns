@@ -1,0 +1,2545 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A learning series on building production agent systems that fail loudly, not silently — state, streaming, locking, durable runs, and prompt design.">
+      
+      
+        <meta name="author" content="Neelesh Sethi">
+      
+      
+      
+        <link rel="prev" href="../10-nine-silent-failures/">
+      
+      
+        <link rel="next" href="../source-notes/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Glossary - Agentic Engineering Patterns</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/scrubber.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#glossary" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Agentic Engineering Patterns" class="md-header__button md-logo" aria-label="Agentic Engineering Patterns" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Agentic Engineering Patterns
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Glossary
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/neeleshsethi/agentic-engineering-patterns" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    neeleshsethi/agentic-engineering-patterns
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Agentic Engineering Patterns" class="md-nav__button md-logo" aria-label="Agentic Engineering Patterns" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Agentic Engineering Patterns
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/neeleshsethi/agentic-engineering-patterns" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    neeleshsethi/agentic-engineering-patterns
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01-problem-design-implementation-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chapter 1 · Problem, design, and implementation plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02-end-to-end-architecture-and-orchestrator-flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chapter 2 · End-to-end architecture and orchestrator flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02-state-and-checkpoints/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 1 · State and checkpoints
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03-context-injection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 2 · Context injection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04-planning-and-human-approval/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 3 · Planning and human approval
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05-identifiers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 4 · Identifiers that hold a run together
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06-streaming-and-background-work/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 5 · Streaming and background work
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07-distributed-locks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 6 · Distributed locks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08-queue-and-worker-execution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 7 · Queue and worker execution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09-orchestrator-prompt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 8 · Orchestrator prompt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09a-clarifications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Clarifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09b-code-components-and-organization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Code components and organization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09c-plan-lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Plan lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09d-reactive-mode-prompt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Reactive mode prompt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lessons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interactive lessons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10-nine-silent-failures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone · Nine silent failures in one agent
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_18">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Glossary
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Glossary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#web-and-infrastructure-terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Web and infrastructure terms
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Web and infrastructure terms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#replica" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Replica
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sse-server-sent-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SSE (Server-Sent Events)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#last-event-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Last-Event-ID
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fifo-queue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FIFO queue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#visibility-timeout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visibility timeout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dlq-dead-letter-queue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DLQ (dead-letter queue)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ttl-time-to-live" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TTL (time-to-live)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dynamodb-terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DynamoDB terms
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DynamoDB terms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conditional-write" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conditional write
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attribute_not_existspk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        attribute_not_exists(PK)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conditionexpression" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ConditionExpression
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pk-sk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PK / SK
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#locking-terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Locking terms
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Locking terms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lock" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lock
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#claim" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Claim
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lease" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lease
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#token" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Token (ownership token / claim_token)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fencing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fencing / write fence
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#zombie" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Zombie
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#langgraph-terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LangGraph terms
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LangGraph terms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#node" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Node
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#channel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Channel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lastvalue-the-footgun" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LastValue (the footgun)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#checkpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checkpoint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#checkpointer-saver" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checkpointer / saver
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#super-step" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Super-step
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interrupt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        interrupt()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resume-commandresume" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resume / Command(resume=…)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pending-resume-write" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pending resume write
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#thread-thread_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Thread / thread_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#middleware" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Middleware
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#toolmessage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ToolMessage
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#agent-design-terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent-design terms
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Agent-design terms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#plan-plan_id-interrupt_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plan / plan_id / interrupt_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#projection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Projection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run-state
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#streamenvelope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        StreamEnvelope
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#idempotency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Idempotency
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#idempotency-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Idempotency key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sequence-number-seq" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sequence number (seq)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#heartbeat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Heartbeat
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#grounding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Grounding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#entity-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entity resolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ordinal-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ordinal id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#provenance-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provenance id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#owner_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        owner_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trace_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        trace_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-one-distinction-the-whole-series-turns-on" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The one distinction the whole series turns on
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The one distinction the whole series turns on">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#transport-success-vs-semantic-success" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transport success vs semantic success
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_18_2" id="__nav_18_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source Notes (advanced)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_18_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Source Notes (advanced)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/before-resume/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Before Resume
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/orchestrator-prompt-annotated/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Orchestrator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/life-of-a-deep-run/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Life of a Deep Run
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#web-and-infrastructure-terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Web and infrastructure terms
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Web and infrastructure terms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#replica" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Replica
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sse-server-sent-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SSE (Server-Sent Events)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#last-event-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Last-Event-ID
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fifo-queue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        FIFO queue
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#visibility-timeout" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Visibility timeout
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dlq-dead-letter-queue" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DLQ (dead-letter queue)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ttl-time-to-live" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TTL (time-to-live)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dynamodb-terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        DynamoDB terms
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="DynamoDB terms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#conditional-write" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conditional write
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#attribute_not_existspk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        attribute_not_exists(PK)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conditionexpression" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ConditionExpression
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pk-sk" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PK / SK
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#locking-terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Locking terms
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Locking terms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#lock" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lock
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#claim" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Claim
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lease" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Lease
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#token" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Token (ownership token / claim_token)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fencing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fencing / write fence
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#zombie" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Zombie
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#langgraph-terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LangGraph terms
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LangGraph terms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#node" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Node
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        State
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#channel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Channel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lastvalue-the-footgun" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        LastValue (the footgun)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#checkpoint" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checkpoint
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#checkpointer-saver" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Checkpointer / saver
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#super-step" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Super-step
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interrupt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        interrupt()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resume-commandresume" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resume / Command(resume=…)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pending-resume-write" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pending resume write
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#thread-thread_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Thread / thread_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#middleware" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Middleware
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#toolmessage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ToolMessage
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#agent-design-terms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent-design terms
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Agent-design terms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#plan-plan_id-interrupt_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plan / plan_id / interrupt_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#projection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Projection
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Run-state
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#streamenvelope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        StreamEnvelope
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#idempotency" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Idempotency
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#idempotency-key" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Idempotency key
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sequence-number-seq" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sequence number (seq)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#heartbeat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Heartbeat
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#grounding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Grounding
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#entity-resolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entity resolution
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        run_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ordinal-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ordinal id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#provenance-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Provenance id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#owner_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        owner_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#trace_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        trace_id
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-one-distinction-the-whole-series-turns-on" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The one distinction the whole series turns on
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The one distinction the whole series turns on">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#transport-success-vs-semantic-success" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transport success vs semantic success
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/neeleshsethi/agentic-engineering-patterns/edit/main/articles/00-glossary.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="glossary">Glossary<a class="headerlink" href="#glossary" title="Permanent link">&para;</a></h1>
+<p>Every term the series uses, defined once. Each article links here the first time it uses one of these words. If a passage ever loses you, this is the page to keep open beside it.</p>
+<p>The definitions are ordered roughly from "things a normal web engineer already knows" to "things specific to agent systems."</p>
+<hr />
+<h2 id="web-and-infrastructure-terms">Web and infrastructure terms<a class="headerlink" href="#web-and-infrastructure-terms" title="Permanent link">&para;</a></h2>
+<h3 id="replica">Replica<a class="headerlink" href="#replica" title="Permanent link">&para;</a></h3>
+<p>One of several identical copies of your API server running at once, behind a load balancer. Two requests from the same user can land on two different replicas. Anything one replica keeps in its own memory is invisible to the others — which is why shared state has to live in a database, not in a Python variable.</p>
+<h3 id="sse-server-sent-events">SSE (Server-Sent Events)<a class="headerlink" href="#sse-server-sent-events" title="Permanent link">&para;</a></h3>
+<p>A long-lived HTTP response where the server keeps sending small text frames over time instead of one final body. It is how an agent streams progress ("planning…", "querying…") to a browser. The browser's built-in <code>EventSource</code> object consumes it. See <a href="../06-streaming-and-background-work/">SSE Cancellation</a>.</p>
+<h3 id="last-event-id">Last-Event-ID<a class="headerlink" href="#last-event-id" title="Permanent link">&para;</a></h3>
+<p>A header the browser's <code>EventSource</code> automatically re-sends when it reconnects after a dropped connection. It contains the <code>id:</code> of the last frame the browser received. The server uses it as a cursor to resume the stream exactly where it left off.</p>
+<h3 id="fifo-queue">FIFO queue<a class="headerlink" href="#fifo-queue" title="Permanent link">&para;</a></h3>
+<p>A "first-in, first-out" message queue. Messages are delivered in order. The variant used here also guarantees that only one message per <strong>group</strong> is being processed at a time — which is how "one worker per conversation" becomes a property of the queue instead of code you write.</p>
+<h3 id="visibility-timeout">Visibility timeout<a class="headerlink" href="#visibility-timeout" title="Permanent link">&para;</a></h3>
+<p>When a worker picks up a queue message, the queue hides it from other workers for a set time. If the worker finishes and deletes the message, it is gone. If the worker dies and the timeout lapses, the queue makes the message visible again and another worker gets it. This is the mechanism that redelivers work after a crash.</p>
+<h3 id="dlq-dead-letter-queue">DLQ (dead-letter queue)<a class="headerlink" href="#dlq-dead-letter-queue" title="Permanent link">&para;</a></h3>
+<p>A separate queue where a message lands after it has failed too many times ("poison pill"). Instead of retrying forever, the system parks it here and raises an alarm so a human can look. In this design it is the <em>only</em> thing that pages a person.</p>
+<h3 id="ttl-time-to-live">TTL (time-to-live)<a class="headerlink" href="#ttl-time-to-live" title="Permanent link">&para;</a></h3>
+<p>An expiry timestamp on a database row. A background sweeper deletes rows past their TTL, eventually. It is janitorial cleanup, not a precise timer — deletion can lag by hours, so correctness must never depend on it.</p>
+<hr />
+<h2 id="dynamodb-terms">DynamoDB terms<a class="headerlink" href="#dynamodb-terms" title="Permanent link">&para;</a></h2>
+<h3 id="conditional-write">Conditional write<a class="headerlink" href="#conditional-write" title="Permanent link">&para;</a></h3>
+<p>A database write that only succeeds if a condition is true at the moment of writing. The check and the write happen together, atomically, with no gap for a second writer to sneak in. This is the single most important primitive in the series — it is how one winner is picked out of a race.</p>
+<h3 id="attribute_not_existspk"><code>attribute_not_exists(PK)</code><a class="headerlink" href="#attribute_not_existspk" title="Permanent link">&para;</a></h3>
+<p>The condition "only write this if there is no item with this primary key yet." In plain English: <em>"only if this slot is empty."</em> For a lock it means "acquire only if nobody holds it." See <a href="../07-distributed-locks/">Distributed Locks</a>.</p>
+<h3 id="conditionexpression">ConditionExpression<a class="headerlink" href="#conditionexpression" title="Permanent link">&para;</a></h3>
+<p>The DynamoDB parameter that carries a conditional write's condition. When the condition is false, DynamoDB rejects the write with a <code>ConditionalCheckFailedException</code> — which your code treats as the normal "someone else got there first" signal, not an error.</p>
+<h3 id="pk-sk">PK / SK<a class="headerlink" href="#pk-sk" title="Permanent link">&para;</a></h3>
+<p>Partition key and sort key — the two parts of a DynamoDB item's address. <code>PK</code> groups related items together; <code>SK</code> orders them within the group. One table can hold several <em>kinds</em> of item by giving them different <code>PK</code> prefixes (for example <code>run#abc</code> vs <code>lock#abc</code>).</p>
+<hr />
+<h2 id="locking-terms">Locking terms<a class="headerlink" href="#locking-terms" title="Permanent link">&para;</a></h2>
+<h3 id="lock">Lock<a class="headerlink" href="#lock" title="Permanent link">&para;</a></h3>
+<p>A rule enforced through data: "only one process may act on X at a time." Here a lock is not a language primitive; it is a row in a database that every replica can see.</p>
+<h3 id="claim">Claim<a class="headerlink" href="#claim" title="Permanent link">&para;</a></h3>
+<p>This series' word for a lock used to guard a resumable run. Before running, a request writes a small marker — the claim — that says "I am running this thread; hands off." If the marker already exists and is still live, another request got there first. Same idea as a lock, named for what it does.</p>
+<h3 id="lease">Lease<a class="headerlink" href="#lease" title="Permanent link">&para;</a></h3>
+<p>The claim's expiry. A claim is deliberately short-lived so that if its holder crashes, the thread is not wedged forever. A healthy holder keeps pushing the expiry forward while it works ("renewing the lease"). See <a href="../07-distributed-locks/#the-lease-must-be-short-the-work-is-long">Distributed Locks</a>.</p>
+<h3 id="token">Token (ownership token / claim_token)<a class="headerlink" href="#token" title="Permanent link">&para;</a></h3>
+<p>A fresh random string minted each time a claim is acquired. It identifies <em>this specific tenure</em>, not the worker. Every write to the claim is guarded by "only if the stored token still equals mine," so a process that lost the claim can neither renew nor delete it. Think of a hotel key card: reprogramming the door for a new guest silently invalidates the old card.</p>
+<h3 id="fencing">Fencing / write fence<a class="headerlink" href="#fencing" title="Permanent link">&para;</a></h3>
+<p>A backstop for when even a lock check races. Every real data write is made conditional on a slot only the rightful owner can fill. A stale process ("zombie") collides on its very next write — so the corruption attempt is itself the detection. See <a href="../07-distributed-locks/#the-write-fence-when-even-the-lock-check-races">Distributed Locks</a>.</p>
+<h3 id="zombie">Zombie<a class="headerlink" href="#zombie" title="Permanent link">&para;</a></h3>
+<p>A worker that froze (a long pause, a network partition) without dying, lost its claim to a replacement, then woke up still believing it owns the thread. The write fence exists to catch it.</p>
+<hr />
+<h2 id="langgraph-terms">LangGraph terms<a class="headerlink" href="#langgraph-terms" title="Permanent link">&para;</a></h2>
+<p>LangGraph is the framework that runs the agent as a graph of steps. These terms are how it models a run.</p>
+<h3 id="node">Node<a class="headerlink" href="#node" title="Permanent link">&para;</a></h3>
+<p>One step in the graph — a function that reads the current state and returns an update to it. An agent's "call the model" and "run a tool" are nodes.</p>
+<h3 id="state">State<a class="headerlink" href="#state" title="Permanent link">&para;</a></h3>
+<p>The dictionary the graph reads and writes as it runs. It holds named <strong>channels</strong> like <code>messages</code>, <code>plan</code>, and <code>raw_question</code>. See <a href="../02-state-and-checkpoints/">LangGraph State</a>.</p>
+<h3 id="channel">Channel<a class="headerlink" href="#channel" title="Permanent link">&para;</a></h3>
+<p>One key in the state, with a rule for what happens when a node writes it. The two rules that matter: <strong>LastValue</strong> (a new write replaces the old value) and <strong>reducer</strong> (a new write combines with the old value, e.g. appending to a message list).</p>
+<h3 id="lastvalue-the-footgun">LastValue (the footgun)<a class="headerlink" href="#lastvalue-the-footgun" title="Permanent link">&para;</a></h3>
+<p>The default channel rule: the latest write wins. The trap: <em>not writing</em> a key does not clear it — it keeps whatever the last checkpoint held. So a new turn that forgets to overwrite a channel silently inherits the previous turn's value.</p>
+<h3 id="checkpoint">Checkpoint<a class="headerlink" href="#checkpoint" title="Permanent link">&para;</a></h3>
+<p>The saved copy of the graph's state at a point in time, plus LangGraph's bookkeeping. It lives in a database, so a later HTTP request — even on a different <a href="#replica">replica</a> — can reload it and continue. It is the run's source of truth.</p>
+<h3 id="checkpointer-saver">Checkpointer / saver<a class="headerlink" href="#checkpointer-saver" title="Permanent link">&para;</a></h3>
+<p>The component that writes checkpoints. In this series it writes to DynamoDB. You rarely call it directly; LangGraph calls it automatically after each step.</p>
+<h3 id="super-step">Super-step<a class="headerlink" href="#super-step" title="Permanent link">&para;</a></h3>
+<p>One "tick" of the graph: the batch of nodes that run together before the next checkpoint is written. Checkpoints happen per super-step.</p>
+<h3 id="interrupt"><code>interrupt()</code><a class="headerlink" href="#interrupt" title="Permanent link">&para;</a></h3>
+<p>The one primitive for pausing a graph to wait for a human. It saves state to the checkpoint and raises a special exception; the HTTP response returns with whatever streamed so far, and the graph freezes in the database. See <a href="../04-planning-and-human-approval/">Human-in-the-Loop Approval</a>.</p>
+<h3 id="resume-commandresume">Resume / <code>Command(resume=…)</code><a class="headerlink" href="#resume-commandresume" title="Permanent link">&para;</a></h3>
+<p>Continuing a paused graph. A later HTTP request sends <code>Command(resume=value)</code>; LangGraph reloads the checkpoint and delivers <code>value</code> as the return of the original <code>interrupt()</code> call. <strong>Crucial subtlety:</strong> resume re-runs the current node <em>from the top</em>, so everything before <code>interrupt()</code> runs again on every resume.</p>
+<h3 id="pending-resume-write">Pending resume write<a class="headerlink" href="#pending-resume-write" title="Permanent link">&para;</a></h3>
+<p>The low-level checkpoint entry that carries a human decision back into a paused <code>interrupt()</code>. In the production approve path, the API stages <code>(RESUME, {"type": "approve"})</code> with <code>saver.put_writes()</code> before enqueueing work. This is not a normal state channel: it is neither <code>LastValue</code> nor a reducer, and it does not appear in <code>get_state().values</code>.</p>
+<h3 id="thread-thread_id">Thread / thread_id<a class="headerlink" href="#thread-thread_id" title="Permanent link">&para;</a></h3>
+<p>The durable identity of one conversation or run. Same <code>thread_id</code> means same graph thread and same checkpoint. Refine and approve requests, possibly minutes apart on different replicas, find each other by sharing a <code>thread_id</code>.</p>
+<h3 id="middleware">Middleware<a class="headerlink" href="#middleware" title="Permanent link">&para;</a></h3>
+<p>Code that wraps a model call to change the request just before it reaches the model, without touching saved state. Used here to inject per-user context into the prompt, and to hide tools the agent is not allowed to use.</p>
+<h3 id="toolmessage">ToolMessage<a class="headerlink" href="#toolmessage" title="Permanent link">&para;</a></h3>
+<p>The result of a tool call, fed back to the model as its next input. This series uses it as a <em>continuation signal</em>: after a human approves or refines, the gate returns a ToolMessage telling the model what to do next, because a tool result has higher salience than the system prompt.</p>
+<hr />
+<h2 id="agent-design-terms">Agent-design terms<a class="headerlink" href="#agent-design-terms" title="Permanent link">&para;</a></h2>
+<h3 id="gate">Gate<a class="headerlink" href="#gate" title="Permanent link">&para;</a></h3>
+<p>The approval checkpoint in the workflow — implemented as the <code>submit_plan</code> tool. It projects the plan, calls <code>interrupt()</code> once, and returns an instruction. See <a href="../04-planning-and-human-approval/">Human-in-the-Loop Approval</a>.</p>
+<h3 id="plan-plan_id-interrupt_id">Plan / plan_id / interrupt_id<a class="headerlink" href="#plan-plan_id-interrupt_id" title="Permanent link">&para;</a></h3>
+<p>The <strong>plan</strong> is the set of research steps the human approves. <strong>plan_id</strong> is stable across refinements (it identifies the plan, not the revision). <strong>interrupt_id</strong> is minted fresh on every pause, so it identifies the exact revision the user was looking at — which is what catches a stale browser tab approving an out-of-date plan.</p>
+<h3 id="projection">Projection<a class="headerlink" href="#projection" title="Permanent link">&para;</a></h3>
+<p>A value derived from a source of truth, rebuilt on demand rather than stored and mutated. The typed <code>Plan</code> is a projection over the agent's raw todo list; the user-facing event feed is a projection over the run's real state. A projection can be thrown away and recomputed, which is what makes the system's persistence safe.</p>
+<h3 id="run-state">Run-state<a class="headerlink" href="#run-state" title="Permanent link">&para;</a></h3>
+<p>A single database row that tracks the lifecycle of one run attempt. Fields: <code>thread_id</code>, <code>run_id</code>, <code>status</code>, <code>receive_count</code>, and optionally a <code>reason</code> on failure. Status moves through: <code>queued</code> (written by the API on approval) → <code>running</code> / <code>retrying</code> (written by the worker on pickup) → <code>completed</code> / <code>failed</code> (written last). The SSE tail polls this record to decide when to close the browser stream — it must not rely only on a final stream sentinel, because a crashed worker may never write one.</p>
+<h3 id="streamenvelope">StreamEnvelope<a class="headerlink" href="#streamenvelope" title="Permanent link">&para;</a></h3>
+<p>The curated event shape the frontend receives. Raw LangGraph or DeepAgents events are framework internals; the API or worker projects them into <code>StreamEnvelope</code> records before the UI sees them.</p>
+<h3 id="idempotency">Idempotency<a class="headerlink" href="#idempotency" title="Permanent link">&para;</a></h3>
+<p>The property that doing something twice has the same effect as doing it once. Critical wherever work can be retried or replayed after a crash.</p>
+<h3 id="idempotency-key">Idempotency key<a class="headerlink" href="#idempotency-key" title="Permanent link">&para;</a></h3>
+<p>A value that identifies a <em>logical</em> event regardless of which attempt produced it. Because it is derived from execution position (not from a counter or a random id), a replayed event carries the same key and the reader can dedupe it. See <a href="../08-queue-and-worker-execution/#sequence-number-versus-idempotency-key">Durable Async Runs</a>.</p>
+<h3 id="sequence-number-seq">Sequence number (seq)<a class="headerlink" href="#sequence-number-seq" title="Permanent link">&para;</a></h3>
+<p>A plain counter that gives the event feed a total order and doubles as the reader's cursor. Unlike the idempotency key, it takes <em>new</em> values on replay — which is exactly why the two are kept separate.</p>
+<h3 id="heartbeat">Heartbeat<a class="headerlink" href="#heartbeat" title="Permanent link">&para;</a></h3>
+<p>A periodic "I am still alive" signal. Here it is tied to progress (each checkpoint write) rather than a wall-clock timer, so a process that is alive-but-stuck stops beating and gets reclaimed. See <a href="../08-queue-and-worker-execution/#heartbeat-on-progress-not-on-a-clock">Durable Async Runs</a>.</p>
+<h3 id="grounding">Grounding<a class="headerlink" href="#grounding" title="Permanent link">&para;</a></h3>
+<p>The rule that the final answer may only use facts from tool results, never the model's own memory. In a regulated domain a fabricated figure that looks real is a compliance problem, so grounding is enforced by the prompt (code cannot tell where a number came from). See <a href="../09-orchestrator-prompt/#grounding-the-purely-prompt-invariant">Designing the Orchestrator Prompt</a>.</p>
+<h3 id="entity-resolution">Entity resolution<a class="headerlink" href="#entity-resolution" title="Permanent link">&para;</a></h3>
+<p>Working out what a vague question actually refers to — turning "give me my sales" into a specific country, brand, and time period — before deciding anything else.</p>
+<h3 id="run_id">run_id<a class="headerlink" href="#run_id" title="Permanent link">&para;</a></h3>
+<p>One execution <em>attempt</em> of a thread's work. A <a href="#thread-thread_id">thread</a> can be run more than once — an initial enqueue, a retry after a crash, a queue redelivery — and each attempt gets a fresh <strong>run_id</strong>, so logs and run-state records can tell the attempts apart. Contrast <code>thread_id</code>, which stays constant across all of them. See <a href="../05-identifiers/">Identifiers</a>.</p>
+<h3 id="ordinal-id">Ordinal id<a class="headerlink" href="#ordinal-id" title="Permanent link">&para;</a></h3>
+<p>The stable position of a step within an approved plan — step 1, step 2, step 3. Unlike <a href="#sequence-number-seq">seq</a>, which orders the live event stream and takes new values on replay, a step's ordinal is fixed once the plan is <a href="../04-planning-and-human-approval/">locked</a>, so a report can refer to "the result of step 2" and mean the same thing on every replay. See <a href="../05-identifiers/">Identifiers</a>.</p>
+<h3 id="provenance-id">Provenance id<a class="headerlink" href="#provenance-id" title="Permanent link">&para;</a></h3>
+<p>A pointer from a fact back to the tool result that produced it — which <code>query_source</code> call a given figure in the report came from. It makes <a href="#grounding">grounding</a> <em>auditable</em>: every number carries the id of its retrieval, so a reviewer, or code, can confirm no figure was invented. See <a href="../05-identifiers/">Identifiers</a>.</p>
+<h3 id="owner_id">owner_id<a class="headerlink" href="#owner_id" title="Permanent link">&para;</a></h3>
+<p>Who proposed a plan and owns a thread. Checked on resume so one user cannot approve or resume another user's run. An authorization identity — not an ordering or dedup one.</p>
+<h3 id="trace_id">trace_id<a class="headerlink" href="#trace_id" title="Permanent link">&para;</a></h3>
+<p>The observability correlation id that ties every log line, span, and model call for one request together. It exists for humans debugging after the fact; nothing in the run's <em>correctness</em> depends on it. Distinct from <a href="#run_id">run_id</a>, which identifies the attempt itself.</p>
+<hr />
+<h2 id="the-one-distinction-the-whole-series-turns-on">The one distinction the whole series turns on<a class="headerlink" href="#the-one-distinction-the-whole-series-turns-on" title="Permanent link">&para;</a></h2>
+<h3 id="transport-success-vs-semantic-success">Transport success vs semantic success<a class="headerlink" href="#transport-success-vs-semantic-success" title="Permanent link">&para;</a></h3>
+<p><strong>Transport success</strong> means the HTTP request finished and nothing threw — <code>200 OK</code>. <strong>Semantic success</strong> means the right context, state, lock, plan, and persistence rules all actually held. A silent failure is any case where the first is true and the second is not. Every article is about one way those two can drift apart.</p>
+<hr />
+<p><em>Missing a term? It belongs here — tell your teacher (the agent) and it will be added.</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../10-nine-silent-failures/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Capstone · Nine silent failures in one agent">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Capstone · Nine silent failures in one agent
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../source-notes/" class="md-footer__link md-footer__link--next" aria-label="Next: Overview">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Overview
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/neeleshsethi/agentic-engineering-patterns" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.action.edit"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../assets/scrubber.js"></script>
+      
+    
+  </body>
+</html>

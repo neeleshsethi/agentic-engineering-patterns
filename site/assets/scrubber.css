@@ -1,0 +1,112 @@
+/* Interactive step-through ("scrubber") component.
+   Author a timeline in markdown as raw HTML; this styles it and scrubber.js drives it.
+   Colors use Material's CSS variables so light/dark just work. */
+
+.scrubber {
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 0.4rem;
+  margin: 1.5em 0;
+  overflow: hidden;
+  background: var(--md-code-bg-color);
+}
+
+.scrubber-stage {
+  position: relative;
+  padding: 1.1rem 1.2rem 0.6rem;
+  min-height: 8.5rem;
+}
+
+/* Steps stack; only the active one shows. */
+.scrubber-step {
+  display: none;
+  animation: scrubber-fade 260ms ease;
+}
+.scrubber-step.is-active {
+  display: block;
+}
+@keyframes scrubber-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scrubber-step { animation: none; }
+}
+
+.scrubber-time {
+  display: inline-block;
+  font-family: var(--md-code-font-family, monospace);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--md-primary-fg-color);
+  background: color-mix(in srgb, var(--md-primary-fg-color) 12%, transparent);
+  padding: 0.12rem 0.5rem;
+  border-radius: 1rem;
+  margin-bottom: 0.55rem;
+}
+
+.scrubber-caption {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--md-default-fg-color--light);
+  margin-bottom: 0.6rem;
+}
+
+.scrubber-item {
+  font-family: var(--md-code-font-family, monospace);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  margin: 0;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.3rem;
+  background: var(--md-default-bg-color);
+  border: 1px dashed var(--md-default-fg-color--lightest);
+  color: var(--md-default-fg-color);
+}
+.scrubber-item .ok   { color: #2e7d32; font-weight: 600; }
+.scrubber-item .warn { color: #c77700; font-weight: 600; }
+.scrubber-item .bad  { color: #c62828; font-weight: 600; }
+
+.scrubber-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.7rem;
+  border-top: 1px solid var(--md-default-fg-color--lightest);
+  background: color-mix(in srgb, var(--md-default-fg-color) 3%, transparent);
+}
+
+.scrubber-controls button {
+  font: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+  border: 1px solid var(--md-default-fg-color--lighter);
+  background: var(--md-default-bg-color);
+  color: var(--md-default-fg-color);
+  border-radius: 0.3rem;
+  padding: 0.22rem 0.6rem;
+  transition: background 120ms ease, opacity 120ms ease;
+}
+.scrubber-controls button:hover { background: var(--md-accent-fg-color--transparent); }
+.scrubber-controls button:disabled { opacity: 0.4; cursor: default; }
+
+.scrubber-dots {
+  display: flex;
+  gap: 0.3rem;
+  flex: 1;
+  justify-content: center;
+}
+.scrubber-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  background: var(--md-default-fg-color--lighter);
+  cursor: pointer;
+}
+.scrubber-dot.is-active {
+  background: var(--md-primary-fg-color);
+  transform: scale(1.2);
+}

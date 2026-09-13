@@ -1,0 +1,1524 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A learning series on building production agent systems that fail loudly, not silently — state, streaming, locking, durable runs, and prompt design.">
+      
+      
+        <meta name="author" content="Neelesh Sethi">
+      
+      
+      
+        <link rel="prev" href="../04-planning-and-human-approval/">
+      
+      
+        <link rel="next" href="../06-streaming-and-background-work/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Step 4 · Identifiers that hold a run together - Agentic Engineering Patterns</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/scrubber.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#step-4-identifiers-that-hold-a-run-together" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Agentic Engineering Patterns" class="md-header__button md-logo" aria-label="Agentic Engineering Patterns" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Agentic Engineering Patterns
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Step 4 · Identifiers that hold a run together
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/neeleshsethi/agentic-engineering-patterns" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    neeleshsethi/agentic-engineering-patterns
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Agentic Engineering Patterns" class="md-nav__button md-logo" aria-label="Agentic Engineering Patterns" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Agentic Engineering Patterns
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/neeleshsethi/agentic-engineering-patterns" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    neeleshsethi/agentic-engineering-patterns
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01-problem-design-implementation-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chapter 1 · Problem, design, and implementation plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02-end-to-end-architecture-and-orchestrator-flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chapter 2 · End-to-end architecture and orchestrator flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02-state-and-checkpoints/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 1 · State and checkpoints
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03-context-injection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 2 · Context injection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04-planning-and-human-approval/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 3 · Planning and human approval
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 4 · Identifiers that hold a run together
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 4 · Identifiers that hold a run together
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-four-questions-to-ask-of-any-identifier" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The four questions to ask of any identifier
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#identity-of-the-run-thread_id-and-run_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identity of the run: thread_id and run_id
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#identity-of-the-plan-plan_id-interrupt_id-and-the-step-ordinal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identity of the plan: plan_id, interrupt_id, and the step ordinal
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#identity-for-safe-replay-idempotency-key-versus-seq" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identity for safe replay: idempotency key versus seq
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#identity-for-ownership-and-locking-owner_id-and-claim_token" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identity for ownership and locking: owner_id and claim_token
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#identity-for-truth-and-audit-provenance-id-and-trace_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identity for truth and audit: provenance id and trace_id
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-whole-map-on-one-axis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The whole map on one axis
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06-streaming-and-background-work/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 5 · Streaming and background work
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07-distributed-locks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 6 · Distributed locks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08-queue-and-worker-execution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 7 · Queue and worker execution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09-orchestrator-prompt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 8 · Orchestrator prompt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09a-clarifications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Clarifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09b-code-components-and-organization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Code components and organization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09c-plan-lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Plan lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09d-reactive-mode-prompt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Reactive mode prompt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lessons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interactive lessons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10-nine-silent-failures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone · Nine silent failures in one agent
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18" >
+        
+          
+          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00-glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Glossary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_18_2" id="__nav_18_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source Notes (advanced)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_18_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Source Notes (advanced)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/before-resume/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Before Resume
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/orchestrator-prompt-annotated/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Orchestrator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/life-of-a-deep-run/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Life of a Deep Run
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-four-questions-to-ask-of-any-identifier" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The four questions to ask of any identifier
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#identity-of-the-run-thread_id-and-run_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identity of the run: thread_id and run_id
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#identity-of-the-plan-plan_id-interrupt_id-and-the-step-ordinal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identity of the plan: plan_id, interrupt_id, and the step ordinal
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#identity-for-safe-replay-idempotency-key-versus-seq" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identity for safe replay: idempotency key versus seq
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#identity-for-ownership-and-locking-owner_id-and-claim_token" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identity for ownership and locking: owner_id and claim_token
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#identity-for-truth-and-audit-provenance-id-and-trace_id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Identity for truth and audit: provenance id and trace_id
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-whole-map-on-one-axis" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The whole map on one axis
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/neeleshsethi/agentic-engineering-patterns/edit/main/articles/05-identifiers.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="step-4-identifiers-that-hold-a-run-together">Step 4 · Identifiers That Hold a Run Together<a class="headerlink" href="#step-4-identifiers-that-hold-a-run-together" title="Permanent link">&para;</a></h1>
+<p>A worker crashes mid-run. A second worker picks the run up from its <a href="../00-glossary/#checkpoint">checkpoint</a> and re-emits the events the first one already produced. The user's report ends up with two copies of every section. <code>200 OK</code>, no error, duplicated content — a <a href="../00-glossary/#transport-success-vs-semantic-success">silent failure</a>.</p>
+<p>The cause is almost always the same: the code deduplicated events by their <strong><a href="../00-glossary/#sequence-number-seq">sequence number</a></strong>, and on replay the sequence numbers came out different, so the reader thought the replayed events were new. The fix is not more code. It is understanding that a single run answers to <em>half a dozen different names</em>, each with a different job, and that using the wrong name for a job is its own class of bug.</p>
+<p>This chapter is the map of those names. Everything after it in the series uses them; getting them straight here means the later articles read as "of course."</p>
+<blockquote>
+<p>All of these terms live in the <a href="../00-glossary/">glossary</a> too. This article is where they connect.</p>
+</blockquote>
+<pre class="mermaid"><code>sequenceDiagram
+    participant T  as Thread (thread_id = T1)
+    participant W1 as Worker 1 (run_id = R1)
+    participant W2 as Worker 2 (run_id = R2)
+    participant S  as Event sink / reader
+
+    Note over T: thread_id = T1 — stable for the life of the conversation
+
+    T-&gt;&gt;W1: start attempt
+    W1-&gt;&gt;S: emit event (idempotency_key = T1·step2·write1, seq = 2)
+    W1--&gt;&gt;T: 💥 crash
+
+    T-&gt;&gt;W2: resume from checkpoint (new run_id = R2, same thread_id)
+    W2-&gt;&gt;S: re-emit event (idempotency_key = T1·step2·write1, seq = 1)
+
+    Note over S: idempotency_key already seen → drop duplicate ✓
+    Note over S: seq reset to 1 — using seq as key would emit a duplicate ✗</code></pre>
+<h2 id="the-four-questions-to-ask-of-any-identifier">The four questions to ask of any identifier<a class="headerlink" href="#the-four-questions-to-ask-of-any-identifier" title="Permanent link">&para;</a></h2>
+<p>For every id in the system, four questions settle what it is for:</p>
+<ol>
+<li><strong>What does it identify?</strong> A conversation? One attempt? A plan revision? A fact?</li>
+<li><strong>What is its lifetime and scope?</strong> Does it live for one request, one run, or forever?</li>
+<li><strong>Is it stable across replay?</strong> When a node re-runs from a checkpoint, does this id come back <em>identical</em>, or does it take a new value?</li>
+<li><strong>What invariant does it guard?</strong> What breaks if it is wrong?</li>
+</ol>
+<p>Question 3 is the one that catches people, and it is the axis this whole chapter is organized around: <strong>some ids must be identical on replay, and some must change on replay, and confusing the two is the duplicate-report bug above.</strong></p>
+<h2 id="identity-of-the-run-thread_id-and-run_id">Identity of the run: <code>thread_id</code> and <code>run_id</code><a class="headerlink" href="#identity-of-the-run-thread_id-and-run_id" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong><a href="../00-glossary/#thread-thread_id"><code>thread_id</code></a></strong> names one conversation — one logical timeline. It is stable forever. It is also the FIFO group key that makes <a href="../08-queue-and-worker-execution/">"one worker per thread"</a> a property of the queue.</li>
+<li><strong><a href="../00-glossary/#run_id"><code>run_id</code></a></strong> names one <em>attempt</em> to execute that thread's work. A thread can be run several times — an enqueue, a retry after a crash, a redelivery — and each attempt gets a fresh <code>run_id</code>.</li>
+</ul>
+<p>The relationship is one-to-many: one <code>thread_id</code>, many <code>run_id</code>s over its life. Logs keyed only on <code>thread_id</code> cannot tell a retry from the original; logs keyed on <code>run_id</code> can.</p>
+<h2 id="identity-of-the-plan-plan_id-interrupt_id-and-the-step-ordinal">Identity of the plan: <code>plan_id</code>, <code>interrupt_id</code>, and the step ordinal<a class="headerlink" href="#identity-of-the-plan-plan_id-interrupt_id-and-the-step-ordinal" title="Permanent link">&para;</a></h2>
+<p>These three describe <em>what the human approved</em> and <em>which version of it</em>:</p>
+<ul>
+<li><strong><a href="../00-glossary/#plan-plan_id-interrupt_id"><code>plan_id</code></a></strong> identifies the logical plan. It is <strong>derived deterministically from the thread</strong>, so re-running <code>submit_plan</code> on every resume rebuilds the <em>identical</em> id. A random id or a timestamp here would fork a new plan on every replay and break resume. (This is why the plan is a <a href="../00-glossary/#projection">projection</a>, covered in <a href="../04-planning-and-human-approval/">HITL Approval</a>.)</li>
+<li><strong><a href="../00-glossary/#plan-plan_id-interrupt_id"><code>interrupt_id</code></a></strong> is minted fresh on every pause, so it identifies <em>the exact revision the user was looking at</em>. When two browser tabs both try to approve, the one holding a stale <code>interrupt_id</code> is rejected. This is the stale-tab check <code>plan_id</code> cannot provide by itself when the logical plan id stays stable across refinements.</li>
+<li><strong><a href="../00-glossary/#ordinal-id">Ordinal id</a></strong> is the stable position of a step <em>within</em> a locked plan — step 1, step 2, step 3. Once the plan is locked the ordinal is fixed, so "the result of step 2" means the same thing on every replay, in every report.</li>
+</ul>
+<p>Note the split even here: <code>plan_id</code> and the step ordinal are <strong>stable</strong>; <code>interrupt_id</code> is <strong>minted per pause</strong>. Same object, different jobs, different stability.</p>
+<h2 id="identity-for-safe-replay-idempotency-key-versus-seq">Identity for safe replay: idempotency key versus <code>seq</code><a class="headerlink" href="#identity-for-safe-replay-idempotency-key-versus-seq" title="Permanent link">&para;</a></h2>
+<p>This is the pair the opening bug is about, and the most important distinction in the chapter.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>A run is replayed after a crash. For each logical event:
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  idempotency key  →  derived from EXECUTION POSITION
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>                      (which step, which logical write)
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>                      → IDENTICAL on replay  → reader dedupes correctly
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>  seq              →  a plain counter on the event stream
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>                      → NEW value on replay  → only good for ordering
+</code></pre></div>
+<ul>
+<li>The <strong><a href="../00-glossary/#idempotency-key">idempotency key</a></strong> answers "is this the same <em>logical</em> event I already saw?" Because it is built from <em>where in the execution</em> the event occurred, a replayed event carries the same key, and the reader drops the duplicate.</li>
+<li>The <strong><a href="../00-glossary/#sequence-number-seq">sequence number</a></strong> (<code>seq</code>) answers "what order do these go in, and where is my cursor?" It takes new values on replay, which is fine for ordering — and fatal if you use it for identity.</li>
+</ul>
+<blockquote>
+<p><strong>The rule the whole system depends on: derive identity from execution <em>position</em>, never from the ordering counter.</strong> Build the idempotency key from <code>seq</code> and you have written the duplicate-report bug. This is treated in depth in <a href="../08-queue-and-worker-execution/#sequence-number-versus-idempotency-key">Durable Async Runs</a>.</p>
+</blockquote>
+<h2 id="identity-for-ownership-and-locking-owner_id-and-claim_token">Identity for ownership and locking: <code>owner_id</code> and <code>claim_token</code><a class="headerlink" href="#identity-for-ownership-and-locking-owner_id-and-claim_token" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong><a href="../00-glossary/#owner_id"><code>owner_id</code></a></strong> is <em>who</em> — the user who proposed the plan. It is checked on resume so one user cannot approve or resume another user's run. An authorization identity.</li>
+<li><strong><a href="../00-glossary/#token"><code>claim_token</code></a></strong> is <em>this acquisition of the lock</em>. It is minted fresh each time a worker claims the run, and it identifies <strong>the tenure, not the worker</strong>. Every write to the claim is guarded by "only if the stored token still equals mine," so a worker that lost the claim can neither renew nor delete it. This is the fencing mechanism in <a href="../07-distributed-locks/">Distributed Locks</a>.</li>
+</ul>
+<p><code>claim_token</code> is another <strong>changes-on-replay</strong> id: a new acquisition is a new tenure, deliberately.</p>
+<h2 id="identity-for-truth-and-audit-provenance-id-and-trace_id">Identity for truth and audit: <code>provenance id</code> and <code>trace_id</code><a class="headerlink" href="#identity-for-truth-and-audit-provenance-id-and-trace_id" title="Permanent link">&para;</a></h2>
+<p>The last pair is about trusting the output, not running it:</p>
+<ul>
+<li><strong><a href="../00-glossary/#provenance-id">Provenance id</a></strong> is a pointer from a <em>fact</em> back to the tool result that produced it — which <code>query_source</code> call a given figure in the report came from. It turns <a href="../00-glossary/#grounding">grounding</a> from a promise into something <em>auditable</em>: every number carries the id of its retrieval, so a reviewer, or code, can confirm no figure was invented. In a regulated domain this is the difference between a quality issue and a compliance one.</li>
+<li><strong><a href="../00-glossary/#trace_id"><code>trace_id</code></a></strong> ties every log line, span, and model call for one request together for the humans debugging later. Nothing in the run's <em>correctness</em> depends on it — it is pure observability.</li>
+</ul>
+<p>Deep runs need provenance because their evidence is async, resumable, parallel, and reused across turns. A synchronous one-shot agent can treat "the list of tool results in memory" as the answer. A deep agent cannot:</p>
+<ul>
+<li>SQS can redeliver the same work; the report writer must recognize the same evidence set.</li>
+<li><code>source_results</code> accumulates across turns; "all results in state" is not the same as "results for this question."</li>
+<li>Parallel retrievals can finish in one graph step; retries need deterministic deduplication.</li>
+<li>Citations, cards, charts, and activity logs all need to point to the exact retrieval that produced a fact.</li>
+</ul>
+<p>The production provenance id was deliberately deterministic:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">provenance_id</span> <span class="o">=</span> <span class="s2">"</span><span class="si">{source}</span><span class="s2">:</span><span class="si">{plan_id}</span><span class="s2">:</span><span class="si">{step_id}</span><span class="s2">:{sha1(sub_question)[:8]}"</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># e.g. cortex:plan-thread-123-2:step-1:a1b2c3d4</span>
+</code></pre></div>
+<p>An identical retry intentionally gets the same id. A changed clarification answer changes the sub-question hash, so the new retrieval gets a new id. Because the <code>plan_id</code> is embedded, the system can filter current-cycle evidence by rebuilding the id for the current plan and comparing strings, without relying on timestamps.</p>
+<p>Three ordinal values sit next to provenance, and conflating them is a bug:</p>
+<table>
+<thead>
+<tr>
+<th>Ordinal</th>
+<th>Counts</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>retrieval_ordinal</code></td>
+<td>Retrievals in the report</td>
+<td>Maps inline citation markers like <code>[3]</code> back to <code>source_results</code>.</td>
+</tr>
+<tr>
+<td><code>source_ordinal</code></td>
+<td>Retrievals in the cycle</td>
+<td>Join key on cards and tables so citations attach to the right retrieval.</td>
+</tr>
+<tr>
+<td><code>card["ordinal"]</code></td>
+<td>Cards in display order</td>
+<td>Display only. It is not a citation join key.</td>
+</tr>
+</tbody>
+</table>
+<p>The trap is that one retrieval can fan out into multiple cards. Display order and retrieval order then diverge, so joining citations to cards by display ordinal can attach a neighboring retrieval's card.</p>
+<p>Finally, a deep report needs an evidence-set identity, not just an id per retrieval:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">cycle_stamp</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="s2">"plan_id"</span><span class="p">:</span> <span class="n">plan</span><span class="o">.</span><span class="n">plan_id</span><span class="p">,</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="s2">"provenance_ids"</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">({</span><span class="n">r</span><span class="o">.</span><span class="n">provenance_id</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results</span><span class="p">}),</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="p">}</span>
+</code></pre></div>
+<p><code>reported_cycle</code> stores the stamp of the last delivered report; if an SQS redelivery reaches the exit path with the same stamp, report generation is a no-op. <code>chart_cycle</code> plays the same role for chart anchors, ensuring stale chart specs cannot attach to a new report.</p>
+<h2 id="the-whole-map-on-one-axis">The whole map on one axis<a class="headerlink" href="#the-whole-map-on-one-axis" title="Permanent link">&para;</a></h2>
+<p>The single most useful way to hold all of these is by the replay question:</p>
+<table>
+<thead>
+<tr>
+<th>Stable across replay (identity)</th>
+<th>New on replay (ordering / tenure)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>thread_id</code> — the conversation</td>
+<td><code>run_id</code> — the attempt</td>
+</tr>
+<tr>
+<td><code>plan_id</code> — the plan</td>
+<td><code>interrupt_id</code> — the pause</td>
+</tr>
+<tr>
+<td>step <strong>ordinal</strong> — position in the plan</td>
+<td><code>seq</code> — stream order + cursor</td>
+</tr>
+<tr>
+<td><strong>idempotency key</strong> — the logical write</td>
+<td><code>claim_token</code> — the lock tenure</td>
+</tr>
+<tr>
+<td><code>owner_id</code>, <code>provenance id</code>, <code>trace_id</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>When you reach for an id, ask which column it belongs in. If you need to recognize "the same thing" after a crash, it must come from the left column — and it must be derived from position, never from a counter.</p>
+<hr />
+<div class="admonition check">
+<p class="admonition-title">You should now understand</p>
+<ul>
+<li>Why a production run needs several identifiers, not one universal id</li>
+<li>Which identifiers must stay stable across replay</li>
+<li>Which identifiers must be new for each attempt, pause, or lock tenure</li>
+<li>Why sequence numbers are good cursors but bad deduplication identities</li>
+<li>Why provenance ids are part of correctness, not just observability</li>
+</ul>
+</div>
+<details class="question">
+<summary>Try this</summary>
+<p><strong>A worker crashes after emitting two progress events. The replacement worker replays the same node and emits those same logical events again. Which value should the reader use to drop duplicates: <code>seq</code> or idempotency key? Why?</strong></p>
+<details class="success">
+<summary>Answer</summary>
+<p>Use the idempotency key. It is derived from execution position, so the replayed logical event gets the same key and can be deduplicated. <code>seq</code> is only the stream order and cursor. It can take new values on replay, so using it as identity turns replay into duplicate output.</p>
+</details>
+</details>
+<p><em>Next: <a href="../06-streaming-and-background-work/">Step 5 · Streaming and Background Work</a> — now that the run's names are clear, make progress visible to the browser without letting the browser own completion.</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../04-planning-and-human-approval/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Step 3 · Planning and human approval">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Step 3 · Planning and human approval
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../06-streaming-and-background-work/" class="md-footer__link md-footer__link--next" aria-label="Next: Step 5 · Streaming and background work">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Step 5 · Streaming and background work
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/neeleshsethi/agentic-engineering-patterns" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.action.edit"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../assets/scrubber.js"></script>
+      
+    
+  </body>
+</html>

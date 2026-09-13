@@ -374,7 +374,25 @@ Lesson: when context should only apply at one phase of a multi-phase pipeline, e
 
 ## 2. A framework dependency swapped in a synthetic HumanMessage under our feet
 
-The injection code scanned the message list in reverse to find the latest `HumanMessage` and attach the context block to it.
+The injection code was the context middleware's model-call wrapper — the `UserContextMiddleware._inject(...)` method shown earlier in this article. It runs immediately before each LLM call and rewrites the model request, not the checkpointed state.
+
+The risky part was this pattern: scan the message list in reverse, find the latest `HumanMessage`, and attach the context block to it.
+
+```python
+def _inject(request: ModelRequest) -> ModelRequest:
+    messages = list(request.messages)
+    context = request.state.get("user_context")
+
+    for i in range(len(messages) - 1, -1, -1):
+        if isinstance(messages[i], HumanMessage):
+            messages[i] = HumanMessage(
+                content=compose_with_context(messages[i].content, context),
+                additional_kwargs=messages[i].additional_kwargs,
+            )
+            break
+
+    return request.override(messages=messages)
+```
 
 The bug was that `deepagents` unconditionally installs a summarization middleware that fires near the context window limit. When triggered, it rewrites the message list and inserts a synthetic `HumanMessage` containing the summary:
 
