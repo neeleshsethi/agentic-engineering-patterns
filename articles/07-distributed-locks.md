@@ -1,4 +1,4 @@
-# Distributed Locks
+# Step 6 · Distributed Locks
 
 ## The problem: two clicks, one plan, two runs
 
@@ -149,7 +149,7 @@ except ClientError:
 Three ideas make this hold:
 
 - **The corruption attempt is the detection.** The zombie is never told it lost. The very write that would have corrupted the log is the atomic operation that reveals it lost. The storage layer is the final arbiter of who is alive.
-- **"Mine" is decided by content, not identity.** Branch 1 compares an [idempotency key](00-glossary.md#idempotency-key) — a value derived from *execution position*, identical on replay — not a worker id. Equal key means the logical write already exists; who physically wrote it is irrelevant. (This is why the key must not be built from the sequence number, which changes on replay — see [Durable Async Runs](07-durable-async-agent-runs.md#sequence-number-versus-idempotency-key).)
+- **"Mine" is decided by content, not identity.** Branch 1 compares an [idempotency key](00-glossary.md#idempotency-key) — a value derived from *execution position*, identical on replay — not a worker id. Equal key means the logical write already exists; who physically wrote it is irrelevant. (This is why the key must not be built from the sequence number, which changes on replay — see [Durable Async Runs](08-queue-and-worker-execution.md#sequence-number-versus-idempotency-key).)
 - **The lock read is lazy.** Healthy workers never poll the claim. It is read only on the rare collision path, so the common case pays nothing.
 
 ## Release must prove ownership
@@ -165,6 +165,58 @@ table.delete_item(
 ```
 
 Without the guard, a slow request that already lost its lease would, on teardown, delete the *next* holder's claim — reopening the exact double-run window the lock exists to close. "Release a lock" and "release *your* lock" are different operations.
+
+## Why acquire and release stay atomic
+
+First, "atomic" means **all-or-nothing, with no visible halfway state**.
+
+For a database write, that means the database does the check and the change as one indivisible operation. No other worker can slip into the tiny gap between "I checked the row" and "I updated the row," because there is no gap exposed to your application.
+
+The unsafe version looks like this:
+
+```text
+1. read the lock row
+2. decide it looks free
+3. write my claim
+```
+
+Two workers can both complete step 1 before either reaches step 3. Both think the lock is free, and both write. That is a race.
+
+The atomic version looks like this:
+
+```text
+write my claim only if the row is still free
+```
+
+The database evaluates the condition and commits the write together. The lock is safe because acquire and release use that atomic conditional-write shape instead of read-then-write application logic.
+
+Acquire is atomic because the condition and the write happen together:
+
+```text
+write claim only if:
+  slot is empty
+  OR existing lease has expired
+```
+
+Two workers can race into that line at the same time. DynamoDB does not let both observe "empty" and then both write. It evaluates the condition against the current item and commits one winning write as one indivisible operation. The loser receives `ConditionalCheckFailedException` and never owns the claim.
+
+Release is atomic for the same reason, but the condition is different:
+
+```text
+delete claim only if:
+  stored claim_token == my claim_token
+```
+
+The release does not read the row, decide in Python, and then delete later. The ownership check and delete are one operation. If another worker reclaimed the expired lock between those moments, the stored token has changed, so the old holder's delete fails instead of deleting the new holder's claim.
+
+That is the rule interns should remember:
+
+```text
+Acquire atomically creates ownership.
+Release atomically proves ownership before deleting it.
+```
+
+If either side becomes "read, then decide, then write," the lock has a race window.
 
 ## Capacity and table design
 
@@ -229,4 +281,18 @@ The word "expiry" hides two unrelated fields on the lock item. Confusing them is
 - Verify ownership on release; never delete a claim unconditionally
 
 ---
-*Next: [Durable Async Runs](07-durable-async-agent-runs.md) — the full run that survives crashes, deploys, and reconnects, of which this lock is one part. New term? Check the [glossary](00-glossary.md). Confused by any step above? Ask — that is what your teacher is for.*
+
+!!! check "You should now understand"
+    - Why an in-process lock is invisible to other API replicas or workers
+    - What "atomic" means: all-or-nothing, with no halfway state your application can race through
+    - Why acquire is a conditional write and release is a token-guarded conditional delete
+    - Why a lease must expire and also be renewed by progress
+    - Why a write fence catches a worker that lost ownership but woke up later
+
+??? question "Try this"
+    **Worker A holds a claim with token `aaa`. It freezes, the lease expires, and Worker B acquires the same thread with token `bbb`. Worker A wakes up and tries to release the lock. What must happen?**
+
+    ??? success "Answer"
+        A's release must fail because the stored token is now `bbb`, not `aaa`. Release is `delete only if claim_token == my token`. Without that atomic ownership check, A would delete B's live claim and reopen the double-run race.
+
+*Next: [Step 7 · Queue and Worker Execution](08-queue-and-worker-execution.md) — the full run that survives crashes, deploys, and reconnects, with the lock as one part of the worker ritual.*

@@ -1,6 +1,8 @@
-# Human-in-the-Loop Plan Approval
+# Step 3 · Planning and Human Approval
 
-Part 1 made a run outlive its request. Part 2 assembles the run's core shape — a plan, a human approval, then execution on a worker. We start with the **approval gate**, because it is the mechanism everything else in Part 2 hangs on: the [next article](09-designing-the-orchestrator-prompt.md) designs the prompt that produces the plan, and [Distributed Locks](05-distributed-locks.md) and [Durable Async Runs](07-durable-async-agent-runs.md) protect the execution that follows approval.
+The agent now has durable state and the right context at the model boundary. The next job is to stop it from doing expensive work too early.
+
+This chapter builds the planning gate: the model drafts a plan, the human approves or refines it, and only then does execution begin. That one design choice changes the topology of the system. The run can no longer live inside one HTTP request.
 
 > Terms below — [`interrupt()`](00-glossary.md#interrupt), [checkpoint](00-glossary.md#checkpoint), [gate](00-glossary.md#gate), [lease](00-glossary.md#lease), [replica](00-glossary.md#replica) — are defined once in the [glossary](00-glossary.md).
 
@@ -36,12 +38,12 @@ def submit_plan(plan: Plan, thread_id: str) -> str:
 The frontend renders the plan, the user clicks approve or asks for a change, and the frontend sends a *second* HTTP request carrying the decision:
 
 ```python
-Command(resume={"type": "approve"})
+{"type": "approve"}
 # or
-Command(resume={"type": "refine", "feedback": "add a competitive analysis step"})
+{"type": "refine", "feedback": "add a competitive analysis step"}
 ```
 
-LangGraph finds the paused graph in the [checkpoint](00-glossary.md#checkpoint), re-runs the node, and delivers the `Command` as the return value of `interrupt()`. That is the entire mechanism: two requests, one checkpoint, one `interrupt()` call. Everything else in this article is built on top.
+LangGraph finds the paused graph in the [checkpoint](00-glossary.md#checkpoint), re-runs the node, and delivers the decision as the return value of `interrupt()`. In tests or an interim synchronous path, you may see this as `Command(resume=...)`. In the production approve path, the API writes the resume decision into the checkpoint first, queues work, and a worker later resumes with no graph input. Everything else in this article is built on top of that same pause/resume primitive.
 
 ```mermaid
 sequenceDiagram
@@ -53,10 +55,11 @@ sequenceDiagram
     A->>C: interrupt() freezes state
     A-->>U: stream plan, close (no "end")
     Note over U,C: minutes or days pass; no process is running
-    U->>A: POST /approve  (second request)
+    U->>A: POST /approve/async  (second request)
     A->>C: read pending interrupt, validate
-    A->>C: Command(resume) → reload, re-run node from top
-    A-->>U: stream execution to "end"
+    A->>C: saver.put_writes() stages resume decision
+    A-->>U: 202 queued
+    Note over C: Worker later reloads and resumes with input=None
 ```
 
 The dashed pause is the whole point: between the two requests, **nothing is running**. The plan lives in the checkpoint, and any [replica](00-glossary.md#replica) can pick it up.
@@ -85,26 +88,32 @@ interrupt({
     # 1. What the human needs to decide:
     "plan": plan.model_dump(),           # the human-readable steps, scope, entities
     # 2. What the code needs to validate the decision on resume:
-    "plan_id": plan.plan_id,             # which plan revision
+    "plan_id": plan.plan_id,             # which logical plan
     "thread_id": thread_id,              # which thread
     "owner_id": owner_id,                # who proposed it
     "interrupt_id": str(uuid.uuid4()),   # which exact interrupt
 })
 ```
 
-If the human cannot make an informed decision from the payload, they approve blindly. And if the code cannot identify *which* plan the human approved, a stale browser tab can approve a revision that no longer exists.
+If the human cannot make an informed decision from the payload, they approve blindly. And if the code cannot identify *which exact pause* the human approved, a stale browser tab can approve a revision that no longer exists.
+
+`plan_id` and `interrupt_id` do different jobs. `plan_id` names the logical plan and may stay stable across refinements. `interrupt_id` is minted for each pause, so it is the stronger stale-tab guard.
 
 On the approve endpoint, read the payload back from the checkpointer and validate it *before* resuming:
 
 ```python
 gate = read_pending_interrupt(thread_id)   # LangGraph exposes the pending writes
-if gate["plan_id"]  != request.plan_id:   raise HTTPException(409)  # stale tab
-if gate["owner_id"] != request.user_id:   raise HTTPException(403)  # wrong user
-# only now:
-graph.astream(Command(resume={"type": "approve"}), config)
+if gate["plan_id"]      != request.plan_id:      raise HTTPException(409)
+if gate["interrupt_id"] != request.interrupt_id: raise HTTPException(409)
+if gate["owner_id"]     != request.user_id:      raise HTTPException(403)
+# only now, in the async production path:
+persist_resume_decision(thread_id, {"type": "approve"})
+put_run_state(thread_id, run_id, status="queued")
+enqueue_deep_run(thread_id, run_id)
+return Response(status_code=202)
 ```
 
-If validation fails, the graph stays paused. No state change, no double execution.
+If validation fails, the graph stays paused. No state change, no double execution. If validation succeeds, execution still does not run in the approval request; the API has only made the approval durable and queued the worker.
 
 ## The Refine Loop: The Design That Does Not Work
 
@@ -137,6 +146,8 @@ def submit_plan(title, scope, runtime) -> Command:
         locked = plan.model_copy(update={"status": "locked"})
         return Command(update={
             "plan": locked.model_dump(),
+            # Production approval was staged before the worker resumed.
+            # This update runs when the worker drains that pending resume value.
             "messages": [ToolMessage("Plan approved and locked. Execute the steps now.")],
         })
 
@@ -209,7 +220,7 @@ table.put_item(
 )
 ```
 
-Two racing resumes hit this write; exactly one wins, the loser gets a 409. The lease lets a crashed resume stream recover, and a token-guarded release stops a slow stream from deleting a newer holder's claim. This is the same pattern, at a smaller scale, as the worker lock in [Distributed Locks](./05-distributed-locks.md).
+Two racing resumes hit this write; exactly one wins, the loser gets a 409. The lease lets a crashed resume stream recover, and a token-guarded release stops a slow stream from deleting a newer holder's claim. This is the same pattern, at a smaller scale, as the worker lock in [Distributed Locks](./07-distributed-locks.md).
 
 ## An Implementation Path
 
@@ -222,12 +233,13 @@ Each step is runnable and testable before the next:
 4. Add the refine path. Return feedback as a ToolMessage; let the agent edit and resubmit.
    Do NOT loop inside the tool or call an LLM from it.
 5. Add validation. Put plan_id and interrupt_id in the payload; test the stale-tab case.
-6. Add the concurrency claim. Two simultaneous approves -> exactly one 200, one 409.
+6. Add the async approve path. Persist resume decision, write `queued`, enqueue FIFO, return `202`.
+7. Add the concurrency claim or worker lock. Two simultaneous approves -> one queued run, one conflict or safe duplicate.
 ```
 
 The hardest step is 5: idempotency and stale-state bugs both surface there. Run the approve endpoint twice on the same payload and confirm the second call is a 409 or a safe no-op.
 
-Once a plan is locked, the run itself has to survive worker crashes and reconnects — that is [Durable Async Agent Runs](./07-durable-async-agent-runs.md).
+Once a plan is locked, the run itself has to survive worker crashes and reconnects — that is [Durable Async Agent Runs](./08-queue-and-worker-execution.md).
 
 ## Guardrails
 
@@ -237,7 +249,22 @@ Once a plan is locked, the run itself has to survive worker crashes and reconnec
 - Never loop inside the gate tool; refine is the agent's own loop
 - Derive the plan from the agent's working state with a pure function; never let the model write typed plan fields directly
 - Keep every status transition and concurrency check in code, not in the prompt
-- Validate `plan_id` and `interrupt_id` before resuming, to reject stale-tab approvals
+- Validate `plan_id` and `interrupt_id` before staging the resume decision, to reject stale-tab approvals
+- In the production path, stage approval in the checkpoint, queue work, and let the worker resume with no input
 
 ---
-*Next: [The Orchestrator Prompt](09-designing-the-orchestrator-prompt.md) — the gate exists, so now design the prompt that produces the plan flowing through it: what belongs in the prompt (judgment) versus in the code (the boundaries you just built). New term? See the [glossary](00-glossary.md).*
+
+!!! check "You should now understand"
+    - Why planning should happen before expensive execution
+    - How `interrupt()` turns one user task into multiple HTTP requests
+    - Why everything before `interrupt()` must be deterministic or idempotent
+    - Why the interrupt payload must contain both human-readable plan data and machine-checkable validation data
+    - Why refine belongs in the agent loop, not inside the tool function
+
+??? question "Try this"
+    **A teammate wants to call the LLM from inside `submit_plan()` when the human asks for a refinement. Why is that the wrong boundary?**
+
+    ??? success "Answer"
+        The plan would now be authored by a separate out-of-band model call that does not share the agent's full prompt, tools, state, or conversation context. The gate tool should pause exactly once and return the human's feedback as a tool result. The agent loop should read that feedback, update the plan, and call `submit_plan()` again.
+
+*Next: [Step 4 · Identifiers](05-identifiers.md) — once a plan can pause, refine, and queue, you need to name the thread, plan, pause, attempt, stream events, and ownership token precisely.*

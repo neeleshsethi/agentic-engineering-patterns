@@ -1,4 +1,4 @@
-# LangGraph State
+# Step 1 · State and Checkpoints
 
 A user asks, "What were sales in France?" The agent answers with a confident, well-formatted report — about **Germany**. The request returned `200 OK`. No error, no retry, no log line out of place. The previous question in that conversation had been about Germany, and somehow it leaked into this turn.
 
@@ -34,6 +34,24 @@ Checkpoint after the input is merged
 
 The caller wrote `messages` and nothing else. `add_messages` appended the new message correctly — but `raw_question` and `user_context` still hold last turn's values, because nobody overwrote them. A downstream node reads `raw_question`, sees "Germany," and does exactly what it was told.
 
+```mermaid
+flowchart LR
+    subgraph t1 ["Turn 1 — 'Germany'"]
+        a1["writes:<br/>messages = [Turn 1]<br/>raw_question = Germany<br/>user_context = Australia"]
+    end
+    subgraph c1 ["Checkpoint after Turn 1"]
+        b1["messages = [Turn 1] ✓<br/>raw_question = Germany ✓<br/>user_context = Australia ✓"]
+    end
+    subgraph t2 ["Turn 2 — 'France'"]
+        a2["writes:<br/>messages = [Turn 2]<br/>⚠ raw_question — not written<br/>⚠ user_context — not written"]
+    end
+    subgraph c2 ["Checkpoint after Turn 2"]
+        b2["messages = [Turn 1, Turn 2] ✓<br/>raw_question = Germany ← STALE<br/>user_context = Australia ← STALE"]
+    end
+    t1 --> c1 --> t2 --> c2
+    style b2 fill:#fff0f0,stroke:#cc3333
+```
+
 **The fix is one sentence:** if a key must describe *this* turn, the caller must write it *every* turn. Everything below is how to make that discipline hard to get wrong.
 
 ## State versus checkpoint
@@ -53,6 +71,8 @@ node returns {"plan": plan_dict}
 
 A checkpoint holds more than the final visible state. During an [`interrupt()`](00-glossary.md#interrupt) it also records pending writes and the interrupt payload needed to resume — which is why the stale-value problem survives across pauses, not just across turns.
 
+There is one subtle exception to the channel model: a human resume decision is staged as checkpoint plumbing, not as normal state. In the production approval path, the API writes `(RESUME, {"type": "approve"})` into LangGraph's pending-writes area with `saver.put_writes()`. That value is neither `LastValue` nor a reducer; it is a one-shot resume value drained when the worker re-enters the paused `interrupt()`.
+
 ## Channel types: replace versus combine
 
 You choose the rule per key. There are two you will use constantly:
@@ -63,9 +83,12 @@ You choose the rule per key. There are two you will use constantly:
 ```python
 class DeepState(TypedDict):
     plan: NotRequired[dict[str, Any]]        # LastValue: replace
+    entity_groups: NotRequired[list[dict[str, str]]]  # LastValue: full-list swap
     raw_question: NotRequired[str]           # LastValue: replace
     user_context: NotRequired[str]           # LastValue: replace
     messages: Annotated[list[AnyMessage], add_messages]  # reducer: append
+    source_results: Annotated[list[SourceResult], operator.add]  # reducer: append
+    step_status: Annotated[dict[str, str], operator.or_]  # reducer: merge
 ```
 
 Rule of thumb: reach for `LastValue` **only** when stale carry-over is genuinely acceptable, or when every new turn is guaranteed to write an explicit replacement. If you cannot guarantee that, you have a France/Germany bug waiting to happen.
@@ -91,6 +114,8 @@ The problem is rarely that state is *absent*. Far more often, state exists but h
 
 - Treating an omitted key as if it clears prior state (the France/Germany bug).
 - A channel that should merge but uses `LastValue`, so writes clobber each other.
+- A sticky `LastValue` channel, such as `plan`, being re-persisted on a later turn even though it was minted for an older `deep_run_id`.
+- Confusing checkpoint pending writes with ordinary state fields. The approval decision is staged beside state so a worker can resume with no input; it should not appear in `get_state().values`.
 - Multiple nodes writing the same key with incompatible assumptions.
 - Mutable objects shared across parallel branches, mutated in place.
 - Channel declaration, initialization, and consumption split across unrelated files, so no one place shows the full contract.
@@ -104,4 +129,19 @@ The problem is rarely that state is *absent*. Far more often, state exists but h
 
 ---
 
-State is where the agent's mind lives. The next article, [Context Injection](02-context-injection.md), is about a specific, high-stakes case of getting values into that state: attaching the *right* context to the model at the *right* boundary — and how the wrong context, like a stale `user_context` above, produces an answer that looks fine and is wrong.
+State is where the agent's mind lives. The next step, [Context Injection](03-context-injection.md), is about a specific, high-stakes case of getting values into that state: attaching the *right* context to the model at the *right* boundary — and how the wrong context, like a stale `user_context` above, produces an answer that looks fine and is wrong.
+
+---
+
+!!! check "You should now understand"
+    - Why `LastValue` channels keep stale data when a key is not written in a new turn — "omitted ≠ cleared"
+    - The difference between *state* (the data your graph reads and writes) and *checkpoints* (the durable snapshot that survives crashes and deploys)
+    - How to prevent stale carry-over: every turn-scoped key must be written explicitly on every turn
+    - Why a resume decision is checkpoint pending-write plumbing, not a state channel
+    - Why "write required keys through one factory function" is an API, not a convention — and why the distinction matters in review
+
+??? question "Try this"
+    **A node reads `raw_question` from state, uses it to query an external data source, and writes the result back to state. On turn 2, a new engineer updates the endpoint so `raw_question` is only included in the graph input when the user explicitly sends it. On turns where the user doesn't send it, the field is omitted. What is the failure mode, and how do you catch it in a code review?**
+
+    ??? success "Answer"
+        `raw_question` is a `LastValue` channel. Omitting it on turn 2 does not clear it — it retains the turn-1 value. The node then queries an external source with a stale question and writes a stale result to state. The response is `200 OK`, the logs look clean, and the user gets an answer to a question they didn't ask. In review, ask: "Is there any path through this endpoint that omits a state key that a downstream node reads?" The answer here is yes. The fix is to make the input factory require `raw_question` on every call — a `TypeError` at startup beats a silent wrong answer in production.

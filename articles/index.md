@@ -17,24 +17,24 @@ A silent failure is any moment those two drift apart. Keep the [glossary](00-glo
 
 ## How to read this
 
-The series builds up. Read it in order the first time.
+The series is a build path, not a bug catalog. Read it as if you are implementing the system in this order.
 
-### Foundations — the shapes of the bug
-1. [Silent Failures](01-silent-failures-overview.md) — the failure shape, and why uptime dashboards miss it.
-2. [Context Injection](02-context-injection.md) — attaching the wrong context at the wrong boundary.
-3. [LangGraph State](03-langgraph-state.md) — how "I didn't write that key" silently keeps stale data.
+### First, understand the project
+1. [Problem, Design Decisions, and Implementation Plan](01-problem-design-implementation-plan.md) — the production problem, the design principles, and the build order.
+2. [End-to-End Architecture and Orchestrator Flow](02-end-to-end-architecture-and-orchestrator-flow.md) — the full approve-to-worker lifecycle before the implementation details.
 
-### Mechanisms — the moving parts
-4. [SSE Cancellation](04-sse-cancellation.md) — when a client disconnect kills work you needed to finish.
-5. [Distributed Locks](05-distributed-locks.md) — one run at a time, across replicas, even under crashes.
-6. [Durable Async Runs](07-durable-async-agent-runs.md) — a run that survives a worker crash, a deploy, and a reconnect.
+### Then build it step by step
+3. [State and Checkpoints](02-state-and-checkpoints.md) — give the agent memory that survives one request.
+4. [Context Injection](03-context-injection.md) — put the right user and business context at the right model boundary.
+5. [Planning and Human Approval](04-planning-and-human-approval.md) — make the agent show its plan before expensive work begins.
+6. [Identifiers](05-identifiers.md) — name the run, plan, pause, attempt, stream event, lock tenure, and fact provenance correctly.
+7. [Streaming and Background Work](06-streaming-and-background-work.md) — let the user watch progress without letting the browser own correctness.
+8. [Distributed Locks](07-distributed-locks.md) — make exactly one worker own a run, even under double-clicks, crashes, and retries.
+9. [Queue and Worker Execution](08-queue-and-worker-execution.md) — move approved work out of the API process and make replay safe.
+10. [The Orchestrator Prompt](09-orchestrator-prompt.md) — decide what the prompt shapes and what code must enforce.
 
-### Building an agent — putting it together
-7. [Human-in-the-Loop Approval](08-human-in-the-loop-plan-approval.md) — pause a run for a human and resume it safely.
-8. [Designing the Orchestrator Prompt](09-designing-the-orchestrator-prompt.md) — where prompt wording ends and code enforcement begins.
-
-### Case study
-9. [Nine Silent Failures](06-nine-silent-failures-langgraph-research-agent.md) — nine real bugs caught in review before shipping, each one an instance of the patterns above.
+### Finally, review the scars
+11. [Nine Silent Failures](10-nine-silent-failures.md) — the final case study. Each failure should now feel recognizable, not mysterious.
 
 ## Reference
 - [Glossary](00-glossary.md) — every term, defined once.

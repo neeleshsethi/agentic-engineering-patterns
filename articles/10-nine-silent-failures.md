@@ -1,8 +1,8 @@
-# 9 Silent Failures We Caught Before Shipping Our LangGraph Research Agent
+# Capstone · Nine Silent Failures In One LangGraph Research Agent
 
-How a deep agent can look healthy, return `200 OK`, and still be wrong.
+Use this as the final review exercise: a deep agent can look healthy, return `200 OK`, and still be wrong.
 
-> **Part 3 · Capstone.** This is where the series lands: the nine bugs below are the failure modes from Parts 0–2 — state, context, streaming, approval, locking, durability — seen together in one real system. It also stands on its own, so a few ideas from earlier articles are re-introduced briefly here.
+> **Capstone.** This is where the series lands: the nine bugs below are the failure modes from the build path — state, context, planning, identifiers, streaming, locking, durability, and prompt boundaries — seen together in one real system. It also stands on its own, so a few ideas from earlier articles are re-introduced briefly here.
 
 This article is written for the engineer who has built normal Python APIs and is now trying to understand production agents. If that is you, here is the uncomfortable shift: with agent systems, "the request succeeded" is not the same as "the work was correct."
 
@@ -72,7 +72,7 @@ User turn
     claim_token = "random-uuid"
 ```
 
-## The architecture: one user turn, three HTTP requests
+## The architecture: one user turn, several HTTP requests
 
 Most backend systems map one user action to one request. Deep mode does not. A single research turn spans at minimum three separate HTTP requests over potentially 30 or more minutes:
 
@@ -85,9 +85,15 @@ POST /deep/{thread_id}/plan/refine <- optional: user wants changes
   -> Command(resume={type: refine, feedback: "..."})
   -> streams updated plan, closes at "interrupt" again
 
-POST /deep/{thread_id}/approve     <- user locks the plan
-  -> Command(resume={type: approve})
-  -> graph resumes execution, streams to "end"
+POST /deep/{thread_id}/approve/async <- user locks the plan
+  -> validate plan_id + interrupt_id
+  -> stage resume decision in checkpoint
+  -> write run-state queued
+  -> enqueue FIFO message
+  -> return 202 queued
+
+GET /deep/{thread_id}/events       <- browser watches research
+  -> tail curated event log until run-state completed/failed
 ```
 
 These are independent HTTP requests, potentially from different browser tabs, different API replicas, and minutes apart. The graph does not know they are related. LangGraph's checkpointer does.
@@ -118,7 +124,7 @@ The plan is therefore stored twice for practical purposes:
 
 That is why `read_pending_gate(thread_id)` can see `gate["plan"]["plan_id"]` before the graph resumes. It is reading the pending interrupt metadata from the checkpoint, not recomputing the plan.
 
-On the refine or approve request, `read_pending_gate(thread_id)` reads the interrupt payload directly from the checkpointer, with no graph compile required, to validate preconditions. Then the endpoint calls `graph.astream_events(Command(resume=decision), config)` on the same `thread_id`. LangGraph reads the checkpoint, finds the pending interrupt, delivers the `Command` as the resume value, and the graph continues from exactly where it stopped.
+On the refine or approve request, `read_pending_gate(thread_id)` reads the interrupt payload directly from the checkpointer, with no graph compile required, to validate preconditions. A refine request may synchronously resume to produce another plan. In the production approve path, the endpoint stages the approval decision into the checkpoint, writes run-state as `queued`, enqueues a FIFO message, and returns `202 queued`.
 
 ```python
 # deep.py router - approve endpoint
@@ -128,15 +134,13 @@ if gate is None:
 if gate["plan"]["plan_id"] != payload.plan_id:
     raise HTTPException(409, "plan_id_mismatch")
 
-async for chunk in stream_deep_typed(
-    graph_input=Command(resume={"type": "approve"}),
-    thread_id=thread_id,
-    ...,
-):
-    yield chunk
+persist_resume_decision(thread_id, {"type": "approve"})
+put_run_state(thread_id, run_id, status="queued")
+enqueue_deep_run(thread_id, run_id)
+return {"status": "queued", "run_id": run_id}
 ```
 
-The `plan_id` check prevents a stale browser tab from approving an older plan after the user has refined it.
+The `plan_id` and `interrupt_id` checks prevent a stale browser tab from approving an older pause after the user has refined it. `plan_id` may identify the logical plan across refinements; `interrupt_id` identifies the exact interrupt the user saw.
 
 ```text
 Tab A sees plan_id p1
@@ -145,6 +149,8 @@ Tab A clicks approve with p1
 API reads pending gate p2
 API returns 409 plan_id_mismatch
 ```
+
+Later, the worker receives the queue message and calls `agent.astream_events(None, config)`. The approval is not in the SQS message and not in an ordinary state channel; it is already staged in checkpoint pending writes.
 
 ### Why the checkpoint and the resume claim live in the same DynamoDB table
 
@@ -609,6 +615,20 @@ The review habits that caught these before they shipped were consistent:
 - For every abstract pattern, such as injection, locking, or persistence, enumerate failure modes phase by phase and ask whether a transport-level success code actually means the semantic work completed.
 
 Built on LangGraph, Python 3.11, DynamoDB, and Starlette SSE. The stack is incidental. Context injection targeting, lock ownership, async cancellation, and writer-reader key mismatch are universal failure classes.
+
+---
+
+!!! check "You should now understand"
+    - How the same `200 OK` shape appears across state, context, streaming, locking, and persistence bugs
+    - Why the useful review question is semantic: "did the right invariant hold?", not only "did the request finish?"
+    - Why stale state, stale browser tabs, stale lock holders, and stale memory records are the same family of production problem
+    - Why each earlier chapter exists: every build step prevents one class of silent failure in this case study
+
+??? question "Final review"
+    **Pick any one bug in the table above. Name the chapter that should have taught you to catch it, the invariant that failed, and the smallest test or review question that would expose it.**
+
+    ??? success "Example answer"
+        For "unconditional lock release," the chapter is [Step 6 · Distributed Locks](07-distributed-locks.md). The failed invariant is: a process may only release the claim it still owns. The review question is: "Does release prove ownership with the current claim token, or does it delete by thread id alone?" The test is a takeover scenario: A acquires, A's lease expires, B acquires, A attempts release, and B's claim must remain.
 
 Thanks and regards,  
 Neelesh Sethi
