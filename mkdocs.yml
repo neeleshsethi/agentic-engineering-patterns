@@ -45,6 +45,7 @@ nav:
   - Home: index.md
   - "Part 0 · Design foundation":
       - What a Deep Agent Is: 01-silent-failures-overview.md
+      - Identifiers: 10-identifiers.md
       - LangGraph State: 03-langgraph-state.md
       - Context Injection: 02-context-injection.md
   - "Part 1 · Async tasks that run":

@@ -68,23 +68,24 @@ The series is ordered the way you would actually **build** the system, not as a 
 
 **Part 0 — Design foundation.** You are here. Then:
 
-1. [LangGraph State](03-langgraph-state.md) — how the agent holds state, and how a graph can run while silently losing data between nodes.
-2. [Context Injection](02-context-injection.md) — getting the right context to the right boundary; the wrong context at the wrong seam answers wrong while looking fine.
+1. [Identifiers](10-identifiers.md) — the half-dozen names a single run answers to, and which of them stay stable across a replay. Read this next; the later articles assume it.
+2. [LangGraph State](03-langgraph-state.md) — how the agent holds state, and how a graph can run while silently losing data between nodes.
+3. [Context Injection](02-context-injection.md) — getting the right context to the right boundary; the wrong context at the wrong seam answers wrong while looking fine.
 
 **Part 1 — Async tasks that run.**
 
-3. [SSE & Background Tasks](04-sse-cancellation.md) — making a run outlive the HTTP request, so a client disconnect cannot cancel work you still need.
+4. [SSE & Background Tasks](04-sse-cancellation.md) — making a run outlive the HTTP request, so a client disconnect cannot cancel work you still need.
 
 **Part 2 — Plan → SQS → worker.**
 
-4. [The Orchestrator Prompt](09-designing-the-orchestrator-prompt.md) — the model produces the plan; the prompt shapes judgment while code enforces boundaries.
 5. [Human-in-the-Loop Approval](08-human-in-the-loop-plan-approval.md) — the gate that shows the plan to a human before anything expensive executes.
-6. [Distributed Locks](05-distributed-locks.md) — a lease and a tenure token so only one worker owns a run, and what a safe takeover looks like.
-7. [Durable Async Runs](07-durable-async-agent-runs.md) — persist intent, enqueue to a FIFO queue, one worker per thread, and resume a run on a different worker after a crash.
+6. [The Orchestrator Prompt](09-designing-the-orchestrator-prompt.md) — the model produces the plan; the prompt shapes judgment while code enforces boundaries.
+7. [Distributed Locks](05-distributed-locks.md) — a lease and a tenure token so only one worker owns a run, and what a safe takeover looks like.
+8. [Durable Async Runs](07-durable-async-agent-runs.md) — persist intent, enqueue to a FIFO queue, one worker per thread, and resume a run on a different worker after a crash.
 
 **Part 3 — Capstone.**
 
-8. [Nine Silent Failures](06-nine-silent-failures-langgraph-research-agent.md) — nine of these bugs caught in code review before shipping one real LangGraph research agent.
+9. [Nine Silent Failures](06-nine-silent-failures-langgraph-research-agent.md) — nine of these bugs caught in code review before shipping one real LangGraph research agent.
 
 ## The habit that catches most of these bugs
 

@@ -17,23 +17,24 @@ The series follows the order you would actually **build** a deep agent — desig
 ### Part 0 — Design foundation
 
 1. [What a Deep Agent Is](articles/01-silent-failures-overview.md) — a deep agent is not a prompt around a model; it is a distributed system with memory, checkpoints, gates, locks, and streams. The one distinction the series hangs on: **transport success ≠ semantic success**.
-2. [LangGraph State](articles/03-langgraph-state.md) — state channels and reducers, and how a graph can compile and run while silently losing information between nodes.
-3. [Context Injection](articles/02-context-injection.md) — getting the right context to the right boundary; the wrong context attached at the wrong seam looks stable and answers wrong.
+2. [Identifiers](articles/10-identifiers.md) — the half-dozen names a single run answers to (`thread_id`, `run_id`, `plan_id`, `interrupt_id`, `seq`, idempotency key, `claim_token`, provenance id) and the one axis that matters: which are stable across a replay and which are not.
+3. [LangGraph State](articles/03-langgraph-state.md) — state channels and reducers, and how a graph can compile and run while silently losing information between nodes.
+4. [Context Injection](articles/02-context-injection.md) — getting the right context to the right boundary; the wrong context attached at the wrong seam looks stable and answers wrong.
 
 ### Part 1 — Async tasks that run
 
-4. [SSE & Background Tasks](articles/04-sse-cancellation.md) — a run must outlive the HTTP request; a client disconnect must not cancel work that is still needed.
+5. [SSE & Background Tasks](articles/04-sse-cancellation.md) — a run must outlive the HTTP request; a client disconnect must not cancel work that is still needed.
 
 ### Part 2 — Plan → SQS → worker
 
-5. [Human-in-the-Loop Approval](articles/08-human-in-the-loop-plan-approval.md) — the gate that pauses a run and shows the plan to a human before anything expensive or irreversible executes.
-6. [The Orchestrator Prompt](articles/09-designing-the-orchestrator-prompt.md) — with the gate in place, design the prompt that produces the plan: the prompt shapes judgment, the code enforces boundaries.
-7. [Distributed Locks](articles/05-distributed-locks.md) — guard worker concurrency with a lease and a tenure token, and understand what a safe takeover looks like.
-8. [Durable Async Runs](articles/07-durable-async-agent-runs.md) — persist intent, enqueue to a FIFO queue, one worker per thread, the pickup ritual, and resuming a run on a different worker after a crash.
+6. [Human-in-the-Loop Approval](articles/08-human-in-the-loop-plan-approval.md) — the gate that pauses a run and shows the plan to a human before anything expensive or irreversible executes.
+7. [The Orchestrator Prompt](articles/09-designing-the-orchestrator-prompt.md) — with the gate in place, design the prompt that produces the plan: the prompt shapes judgment, the code enforces boundaries.
+8. [Distributed Locks](articles/05-distributed-locks.md) — guard worker concurrency with a lease and a tenure token, and understand what a safe takeover looks like.
+9. [Durable Async Runs](articles/07-durable-async-agent-runs.md) — persist intent, enqueue to a FIFO queue, one worker per thread, the pickup ritual, and resuming a run on a different worker after a crash.
 
 ### Part 3 — Capstone
 
-9. [Nine Silent Failures](articles/06-nine-silent-failures-langgraph-research-agent.md) — a case study: nine bugs caught in code review before shipping a LangGraph research agent, each returning `200 OK` while corrupting the meaning of the run.
+10. [Nine Silent Failures](articles/06-nine-silent-failures-langgraph-research-agent.md) — a case study: nine bugs caught in code review before shipping a LangGraph research agent, each returning `200 OK` while corrupting the meaning of the run.
 
 ## Repository Structure
 
