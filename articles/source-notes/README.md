@@ -3,12 +3,14 @@
 These three notes are a faithful reconstruction of the internal design docs behind a production
 **deep agent** — a human-in-the-loop research orchestrator that plans, gets a human to approve the
 plan, then executes it durably on a worker fleet. They are the *source material* the published
-[Silent Failures in Agentic AI](../01-silent-failures-overview.md) series draws from, at full
+[Agentic Engineering Patterns](../01-problem-design-implementation-plan.md) series draws from, at full
 depth.
 
 Names are genericized (product → "the platform", brand → `BRAND_A`, sources → `SOURCE_A..D`,
-tables → `app-{env}-deep-*`, retrieval tool → `query_source`). Framework names (LangGraph,
-deepagents, DynamoDB, SQS) are real. Raw OCR of the originals is kept in the repo's local `data/extracted/` directory (gitignored — not published).
+tables → `app-{env}-deep-*`, retrieval tools sometimes collapsed to `query_source`). Framework
+names (LangGraph, deepagents, DynamoDB, SQS) are real. Raw OCR of the originals is kept in the
+repo's local `data/extracted/` directory (gitignored — not published). The production orchestrator
+uses a seven-tool allow-list; `query_source` is a teaching simplification where noted.
 
 ## The three notes
 
@@ -33,20 +35,22 @@ If you only want one idea from the whole set, it's this:
 
 ## How these map to the published series
 
-The published [`articles/01–06`](../01-silent-failures-overview.md) are the teaching version —
+The published [`articles/01–10`](../01-problem-design-implementation-plan.md) are the teaching version —
 genericized to "a research agent", no product context. These notes are where each of those
 failures actually came from:
 
 | Published article | Grounded by these notes |
 |---|---|
-| [02 – Context injection](../02-context-injection.md) | `before-resume` Step 3 (transient injection, the `[/User context]` boundary) · `orchestrator-prompt-annotated` Step 4 EXECUTE / Bug 1 (the entity-override the injection causes) |
-| [03 – LangGraph state](../03-langgraph-state.md) | `before-resume` Part 1 (state channels, `LastValue` footguns) · `orchestrator-prompt-annotated` Part 4 (the read-only Plan projection) |
-| [04 – SSE cancellation](../04-sse-cancellation.md) | `life-of-a-deep-run` Step 4 (SSE tail, `Last-Event-ID` replay=live) · termination-on-status (E-cases) |
-| [05 – Distributed locks](../05-distributed-locks.md) | `life-of-a-deep-run` Part 3 (the keycard lock) & Part 4 (zombie fencing) · `before-resume` Part 4 (the resume claim — same pattern, smaller lease). *The published article now includes the tenure-token and write-fence sections drawn from these.* |
-| [06 – Nine silent failures](../06-nine-silent-failures-langgraph-research-agent.md) | The edge-case catalogs in all three notes; Bug 1 in `orchestrator-prompt-annotated` is the canonical entity-override failure |
-| [07 – Durable async agent runs](../07-durable-async-agent-runs.md) | The whole of `life-of-a-deep-run`, genericized: two-table split, one-worker-per-thread FIFO, heartbeat-on-progress, `seq`/`idem_key`, replay==tail, crash recovery, dead-letter paging |
-| [08 – Human-in-the-loop plan approval](../08-human-in-the-loop-plan-approval.md) | `orchestrator-prompt-annotated` Part 3 (build-it-yourself) + Part 2/4 (gate internals, read-only Plan projection) · `before-resume` Parts 4–5 (refine/approve, the resume claim) |
-| [09 – Designing the orchestrator prompt](../09-designing-the-orchestrator-prompt.md) | `orchestrator-prompt-annotated` Parts 1, 5, 6 (annotated prompt, allow-list middleware, ToolMessage continuation, grounding) · Bug 1 as the load-bearing prompt-only invariant |
+| [02 – End-to-end architecture](../02-end-to-end-architecture-and-orchestrator-flow.md) | OCR correction pass: async approval, pending resume writes, SQS FIFO, worker resume with `None`, stream curation, seven-tool allow-list |
+| [03 – State and checkpoints](../02-state-and-checkpoints.md) | `before-resume` Part 1 (state channels, `LastValue` footguns) · OCR Q3b (reducer vs last-value vs pending resume writes) |
+| [04 – Context injection](../03-context-injection.md) | `before-resume` Step 3 (transient injection, the `[/User context]` boundary) · `orchestrator-prompt-annotated` Step 4 EXECUTE / Bug 1 (the entity-override the injection causes) |
+| [05 – Human-in-the-loop plan approval](../04-planning-and-human-approval.md) | `orchestrator-prompt-annotated` Part 3 (build-it-yourself) + Part 2/4 (gate internals, read-only Plan projection) · OCR Q1 (async approve path) |
+| [06 – Identifiers](../05-identifiers.md) | OCR approval facts: `interrupt_id` rejects stale approvals; `plan_id` alone is not enough |
+| [07 – SSE cancellation](../06-streaming-and-background-work.md) | `life-of-a-deep-run` Step 4 (SSE tail, `Last-Event-ID` replay=live) · termination-on-status (E-cases) |
+| [08 – Distributed locks](../07-distributed-locks.md) | `life-of-a-deep-run` Part 3 (the keycard lock) & Part 4 (zombie fencing) · worker lock under `lock#{thread_id}` |
+| [09 – Durable async agent runs](../08-queue-and-worker-execution.md) | The whole of `life-of-a-deep-run`, genericized: two-table split, one-worker-per-thread FIFO, heartbeat-on-progress, `seq`/`idem_key`, replay==tail, crash recovery, dead-letter paging |
+| [10 – Designing the orchestrator prompt](../09-orchestrator-prompt.md) | `orchestrator-prompt-annotated` Parts 1, 5, 6 (annotated prompt, allow-list middleware, ToolMessage continuation, grounding) · OCR Q2 (seven allowed tools) |
+| [11 – Nine silent failures](../10-nine-silent-failures.md) | The edge-case catalogs in all three notes; Bug 1 in `orchestrator-prompt-annotated` is the canonical entity-override failure |
 
 The published series now covers all three source notes: **05 + 07** carry `life-of-a-deep-run`;
 **08 + 09** carry `orchestrator-prompt-annotated`; and `before-resume` is folded across **08**

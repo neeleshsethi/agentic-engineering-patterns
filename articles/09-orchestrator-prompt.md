@@ -1,4 +1,4 @@
-# Designing the Orchestrator Prompt
+# Step 8 · Orchestrator Prompt
 
 Once an agent's control flow lives in code — a gate, a state machine, a set of endpoints — a question sharpens: what is the prompt still *for*? The answer is a dividing line worth stating up front.
 
@@ -8,7 +8,7 @@ The prompt decides what the model should *think about* — how to break a questi
 
 The running example is a pharmaceutical commercial-analytics orchestrator. Identifiers are generic (`BRAND_A`, `SOURCE_A..D`, `query_source`), but the domain matters here: in regulated analytics, some of these rules are law, not style, and that changes where they have to live.
 
-> Terms used below — [gate](00-glossary.md#gate), [middleware](00-glossary.md#middleware), [ToolMessage](00-glossary.md#toolmessage), [grounding](00-glossary.md#grounding), [entity resolution](00-glossary.md#entity-resolution) — are in the [glossary](00-glossary.md). This article builds on [Human-in-the-Loop Approval](08-human-in-the-loop-plan-approval.md).
+> Terms used below — [gate](00-glossary.md#gate), [middleware](00-glossary.md#middleware), [ToolMessage](00-glossary.md#toolmessage), [grounding](00-glossary.md#grounding), [entity resolution](00-glossary.md#entity-resolution) — are in the [glossary](00-glossary.md). This article builds on [Human-in-the-Loop Approval](04-planning-and-human-approval.md).
 
 ## The Test: Prompt Or Structure?
 
@@ -38,13 +38,25 @@ class AllowedToolsMiddleware(AgentMiddleware):
         return handler(self._filter(request))
 ```
 
-The orchestrator is allowed exactly three tools: `write_todos`, `submit_plan`, `query_source`. The framework can inject any number of others; the middleware makes them invisible. The rule is a contract, not a request.
+In the teaching examples, we often collapse retrieval behind one generic `query_source` tool. The production orchestrator had a larger but still fixed allow-list:
 
-**Gate sequencing, status, concurrency.** Whether the plan is approved, when it locks, how many times it was refined, whether two requests raced — all of that is code (the gate's `interrupt()`, `model_copy` on the plan status, a DynamoDB claim). See [Human-in-the-Loop Plan Approval](./08-human-in-the-loop-plan-approval.md) for the mechanism. Here the point is only that these were *not* delegated to the prompt.
+```text
+write_todos
+submit_plan
+query_cortex
+query_iqvia_gmi
+run_analysis
+rebuild_artifacts
+read_file
+```
+
+The framework can inject any number of others; the middleware makes them invisible. The rule is a contract, not a request. Retrieval tools are plan-gated, synthesis tools work over already-held evidence, and `read_file` is guarded for playbook files only. Analyst or sub-agent tools are not directly reachable by the orchestrator.
+
+**Gate sequencing, status, concurrency.** Whether the plan is approved, when it locks, how many times it was refined, whether two requests raced — all of that is code (the gate's `interrupt()`, `model_copy` on the plan status, a DynamoDB claim). See [Human-in-the-Loop Plan Approval](./04-planning-and-human-approval.md) for the mechanism. Here the point is only that these were *not* delegated to the prompt.
 
 | Rule | Where it lives | Why not the prompt |
 |------|----------------|--------------------|
-| "Don't call the sub-agent / filesystem tools" | Allow-list middleware | Removed from the request; nothing to disobey |
+| "Don't call the sub-agent / unguarded filesystem tools" | Allow-list middleware + read guard | Removed from the request, or fenced before execution |
 | "Only proceed if the plan is approved" | The gate's `interrupt()` | Structural pause; the model cannot continue past it |
 | Plan status transitions, modification count | Gate-owned fields (`model_copy`) | Not in the todos, so the projection cannot produce them from model output |
 | `plan_id` / owner validation, one-resume-at-a-time | Endpoint preconditions + DynamoDB claim | Concurrency is not observable to a single model call |
@@ -60,7 +72,7 @@ The workflow is written as five numbered, labeled steps — PLAN, SUBMIT, REFINE
 ```text
 Workflow: plan, get approval, then execute.
   1. PLAN       break the question into steps, record them with write_todos
-  2. SUBMIT     call submit_plan; never call query_source before approval
+  2. SUBMIT     call submit_plan; never call retrieval before approval
   3. REFINE     update the todos, then call submit_plan again
   4. EXECUTE    once locked, run the steps; entities are FINAL
   5. FOLLOW-UP  a new question starts a fresh cycle from step 1
@@ -98,7 +110,7 @@ The lesson is not "prompts are unreliable." It is: **know which invariants have 
 
 The clearest case of a prompt-only rule is grounding, and it is where the domain earns its keep.
 
-> Ground the final report ONLY in `query_source` results. If a call fails, mark the step completed and state plainly in the report that its retrieval failed. Never state, estimate, or approximate a figure not present in a tool result. If every retrieval fails, report that and stop.
+> Ground the final report ONLY in approved tool results. If a retrieval call fails, mark the step completed and state plainly in the report that retrieval failed. Never state, estimate, or approximate a figure not present in a tool result. If every retrieval fails, report that and stop.
 
 Why this cannot be code: deciding whether a number in the report came from a tool result or from the model's own memory is not tractable at inference time. The enforcement surface is the prompt; the only backstop is logging every `query_source` call so a post-hoc audit can catch fabricated figures.
 
@@ -139,4 +151,19 @@ Ship the prompt with a version string (`PROMPT_VERSION = "2.2"`) carried as trac
 - Deliver post-decision instructions as tool results, not only as system-prompt text
 
 ---
-*Next: [Distributed Locks](05-distributed-locks.md) — the plan is approved and about to execute on a worker. Before it runs, one guarantee must hold: exactly one worker owns the run. New term? See the [glossary](00-glossary.md).*
+
+!!! check "You should now understand"
+    - Why prompts should shape judgment but not enforce deterministic boundaries
+    - Why forbidden tools should be removed from the request instead of prohibited in prose
+    - Why a public `query_source` example may stand for several production retrieval tools
+    - Why workflow phases should be numbered and named
+    - Why grounding is a prompt-only invariant unless you add provenance and audit
+    - Why post-approval instructions are more salient as tool results than buried prompt text
+
+??? question "Try this"
+    **You need the agent to never call retrieval tools before plan approval. Should that rule live in the prompt or code?**
+
+    ??? success "Answer"
+        Code. The approval gate should structurally pause execution, and middleware should remove tools that are not allowed in the current phase. The prompt can explain the workflow, but it should not be the only thing preventing an expensive or unauthorized tool call.
+
+*Next: [Capstone · Nine Silent Failures](10-nine-silent-failures.md) — now use the real case study as a review exam for the whole system.*

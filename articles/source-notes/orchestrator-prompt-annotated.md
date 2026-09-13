@@ -469,7 +469,7 @@ def submit_plan(plan: Plan, thread_id: str) -> str:
 ```
 
 The frontend renders the plan, the user clicks approve or requests changes, and sends a second
-request:
+request. In tests or the older synchronous path this can be represented as:
 
 ```python
 Command(resume={"type": "approve"})
@@ -478,9 +478,10 @@ Command(resume={"type": "refine", "feedback": "add a step for competitive analys
 ```
 
 LangGraph finds the paused graph in the checkpoint, re-runs the node from the top, and delivers the
-`Command` as `interrupt()`'s return value. **This is the entire mechanism.** Two requests, one
-checkpoint, one `interrupt()` call. Everything else — the refine loop, the modification limit, the
-approval gate — is built on top.
+resume value as `interrupt()`'s return value. In the production approve path, the API stages that
+resume value with `saver.put_writes()`, writes run-state as `queued`, enqueues SQS FIFO, and returns
+`202 queued`; a worker later resumes with `agent.astream_events(None, ...)`. The older synchronous
+approve stream is only the interim S2 shape.
 
 ### The idempotency rule you cannot ignore
 
@@ -615,9 +616,9 @@ Each step is runnable and testable before the next:
    pauses. Resume from a test: `graph.invoke(Command(resume={"type": "approve"}))`. Verify the
    graph continues and the plan is accessible after resume.
 3. **Add a second HTTP endpoint.** Build the approve endpoint. Have it call
-   `read_pending_interrupt(thread_id)` (reads the checkpoint's pending writes — LangGraph provides
-   this), validate the payload, then `graph.astream_events(Command(resume={"type": "approve"}),
-   config)`. Test with two real HTTP requests.
+   `read_pending_interrupt(thread_id)` (reads the checkpoint's pending writes), validate the payload,
+   then stage the resume decision in the checkpoint, write run-state as `queued`, enqueue SQS FIFO,
+   and return `202 queued`. Test with two real HTTP requests.
 4. **Add the refine path.** On a refine decision, have `submit_plan` return the feedback to the
    agent as a ToolMessage ("the user requested changes: … update your steps and call `submit_plan`
    again") instead of applying it. Verify the agent edits its plan and calls `submit_plan` again,
@@ -642,11 +643,11 @@ no-op.
   normal invocation. It isn't — it's a resume. It re-runs the current node from the top and
   delivers the `Command` as the interrupt's return value. Treat it like a fresh invocation (new
   messages list, expecting a start-from-scratch) and you get confusing re-execution.
-- **The plan ID in two places.** The frontend sends a `plan_id` in the approve/refine payload; the
-  backend has the actual one in the checkpoint. If they diverge (a refine that changed the plan),
-  stale-tab detection fires. Keeping the frontend always sending the current `plan_id` requires the
-  backend to return it in every interrupt event, and the frontend to track it across renders — a
-  frontend contract, not just a backend concern.
+- **The plan and interrupt IDs in two places.** The frontend sends `plan_id` and `interrupt_id` in
+  the approve/refine payload; the backend has the actual pending values in the checkpoint.
+  `plan_id` names the logical plan and may stay stable across refinements. `interrupt_id` names the
+  exact pause the user saw, so it is the value that catches a stale tab after a refine. Keeping both
+  values current is a frontend contract, not just a backend concern.
 
 ---
 
@@ -787,11 +788,12 @@ class _AllowedToolsMiddleware(AgentMiddleware):
         return handler(self._filter(request))
 ```
 
-The orchestrator is allowed exactly three tools: `write_todos`, `submit_plan`, `query_source`. The
-framework can inject any number of others — the middleware makes them invisible. **The contract is
-structural; the prompt doesn't mention it at all.** This pattern generalizes: whenever the LLM
-should never call a tool in a given context, removing it from the request is more reliable than
-prompting against it.
+The public notes often collapse retrieval behind `query_source`, but the production orchestrator
+allow-list contains seven tools: `write_todos`, `submit_plan`, `query_cortex`, `query_iqvia_gmi`,
+`run_analysis`, `rebuild_artifacts`, and guarded `read_file`. The framework can inject any number
+of others — the middleware makes them invisible. **The contract is structural; the prompt doesn't
+mention it at all.** This pattern generalizes: whenever the LLM should never call a tool in a given
+context, removing it from the request is more reliable than prompting against it.
 
 ### The ToolMessage as the continuation signal
 

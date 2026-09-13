@@ -1,8 +1,8 @@
-# Durable Async Agent Runs
+# Step 7 · Queue and Worker Execution
 
 A long agent run should survive a worker crash, a deploy, and a client that closes its laptop. That means the run cannot live in one process's memory. It has to live in durable storage, and every process — the API, the worker, a failure detector — has to be able to reconstruct it from there.
 
-This article covers what happens *after* a plan is approved: the run is handed to a background worker, executes for tens of minutes, streams progress to the browser, and can be resumed by a different worker if the first one dies. It assumes the vocabulary from the [glossary](00-glossary.md) — [checkpoint](00-glossary.md#checkpoint), [replica](00-glossary.md#replica), [lease](00-glossary.md#lease), [idempotency](00-glossary.md#idempotency) — and builds directly on [Distributed Locks](05-distributed-locks.md).
+This article covers what happens *after* a plan is approved: the run is handed to a background worker, executes for tens of minutes, streams progress to the browser, and can be resumed by a different worker if the first one dies. It assumes the vocabulary from the [glossary](00-glossary.md) — [checkpoint](00-glossary.md#checkpoint), [replica](00-glossary.md#replica), [lease](00-glossary.md#lease), [idempotency](00-glossary.md#idempotency) — and builds directly on [Distributed Locks](07-distributed-locks.md).
 
 ## Two Streams, Two Tables, Two Audiences
 
@@ -38,8 +38,8 @@ Serialize only where correctness needs it (per thread), and keep parallelism eve
 Order matters at the approval boundary. Write the durable state first, enqueue last.
 
 ```python
-# 1. persist the approval into the checkpoint (durable)
-graph.update_state(config, {"plan": approved_plan})
+# 1. persist the approval decision into the checkpoint (durable)
+persist_resume_decision(thread_id, {"type": "approve"})
 
 # 2. write a run-state record so the run exists even before a worker touches it
 put_run_state(thread_id, status="queued", run_id=run_id)
@@ -48,7 +48,9 @@ put_run_state(thread_id, status="queued", run_id=run_id)
 send_message({"thread_id": thread_id, "run_id": run_id}, group_id=thread_id)
 ```
 
-The reasoning: a lost message can be re-enqueued, but a lost approval cannot be reconstructed. The queue message is deliberately tiny — a pointer plus intent. The real state is already in the checkpoint. A double-clicked approve produces a byte-identical message, which content-based deduplication drops.
+The reasoning: a lost message can be re-enqueued, but a lost approval cannot be reconstructed. The queue message is deliberately tiny — a pointer plus intent. The real state, including the pending resume decision, is already in the checkpoint. A double-clicked approve produces a byte-identical message, which content-based deduplication drops.
+
+The approval decision is not written as a normal state field. It is staged into LangGraph's pending-writes area, so the paused `interrupt()` can consume it later.
 
 ## Pickup Is A Ritual, Not A Function Call
 
@@ -60,10 +62,12 @@ When a worker receives a message, a fixed sequence runs *before* the graph does:
 3. seed    read max(sequence) for this thread's events
 4. wrap    compile the graph with a lease-extending saver
 5. renew   push the lease expiry forward
-6. run     stream the graph
+6. run     call agent.astream_events(None, config)
 ```
 
 Step 1 matters because the queue shows the receive count only to the current holder of the message. Copying it into durable state is what lets anyone — the API, a detector, a human — reason about how many attempts a run has taken after the fact.
+
+Step 6 matters because `None` is the correctness signal. The worker is not inventing a new input, and it is not receiving approval from SQS. The approval was already staged in the checkpoint before enqueue. The worker reloads the checkpoint, LangGraph drains the pending resume value, and execution continues.
 
 ## Heartbeat On Progress, Not On A Clock
 
@@ -155,7 +159,7 @@ Three properties make this robust:
 - **Termination is on status, not a sentinel.** A crashed worker never writes a "done" event. If the only exit were a sentinel event, the user would watch a spinner forever. The run-state record can be flipped to `failed` by a detector that is not the worker.
 - **Dedup makes at-least-once look exactly-once.** Every duplicated feed line from a redelivery collapses on the idempotency key at read time.
 
-See [SSE Cancellation](./04-sse-cancellation.md) for what happens to server-side work when that client connection closes.
+See [SSE Cancellation](./06-streaming-and-background-work.md) for what happens to server-side work when that client connection closes.
 
 ## Crash Recovery Costs One Unit Of Work
 
@@ -168,7 +172,7 @@ cost of a crash   = one duplicated model/tool call, one receive consumed
 
 Per-node pending writes mean a parallel sibling that already finished is not re-executed. The at-most-one incomplete node re-runs, and its replayed events dedup on the reader side.
 
-For the ownership and zombie-fencing mechanics that keep two workers from writing the same thread, see [Distributed Locks](./05-distributed-locks.md).
+For the ownership and zombie-fencing mechanics that keep two workers from writing the same thread, see [Distributed Locks](./07-distributed-locks.md).
 
 ## Poison Pills Page A Human, Nothing Else Does
 
@@ -191,4 +195,18 @@ Everything else in this design recovers on its own. The dead-letter queue is the
 - Reserve paging for the dead-letter path; let every other failure self-recover
 
 ---
-*Next: [Nine Silent Failures](06-nine-silent-failures-langgraph-research-agent.md) — Part 3, the capstone. Every mechanism is now in place; this is nine of these bugs, caught in one real system before it shipped. New term? See the [glossary](00-glossary.md).*
+
+!!! check "You should now understand"
+    - Why approved work should be persisted before it is enqueued
+    - Why checkpoints are truth and event streams are narration
+    - Why the worker pickup sequence is a ritual, not a casual function call
+    - Why heartbeat should follow checkpoint progress instead of a wall clock
+    - Why replay needs both `seq` for order and idempotency keys for deduplication
+
+??? question "Try this"
+    **A worker emits progress lines, crashes before checkpointing the node, and another worker replays that node. What should the user see?**
+
+    ??? success "Answer"
+        The user should see each logical progress line once. The replayed events get new `seq` values because they are new stream records, but the same idempotency keys because they represent the same logical writes. The reader deduplicates by idempotency key and keeps `seq` only for ordering and cursor movement.
+
+*Next: [Step 8 · Orchestrator Prompt](09-orchestrator-prompt.md) — with the runtime shape built, decide which rules the prompt should shape and which rules code must enforce.*

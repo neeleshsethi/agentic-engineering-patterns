@@ -12,29 +12,19 @@ The running theme is simple: a deep agent is not just a prompt around a model. I
 
 ## Article Series
 
-The series follows the order you would actually **build** a deep agent — design it, give it state, let its work run past a single request, then plan → queue → execute that work safely. The "silent failure" bugs are woven in where each mechanism is introduced, and the capstone collects nine of them in one real system.
+The series follows the order you would actually **build** a production deep agent. First understand what the system is and the principles that keep it correct. Then add one production mechanism at a time. The final case study only comes after the reader has the concepts needed to diagnose it.
 
-### Part 0 — Design foundation
-
-1. [What a Deep Agent Is](articles/01-silent-failures-overview.md) — a deep agent is not a prompt around a model; it is a distributed system with memory, checkpoints, gates, locks, and streams. The one distinction the series hangs on: **transport success ≠ semantic success**.
-2. [Identifiers](articles/10-identifiers.md) — the half-dozen names a single run answers to (`thread_id`, `run_id`, `plan_id`, `interrupt_id`, `seq`, idempotency key, `claim_token`, provenance id) and the one axis that matters: which are stable across a replay and which are not.
-3. [LangGraph State](articles/03-langgraph-state.md) — state channels and reducers, and how a graph can compile and run while silently losing information between nodes.
-4. [Context Injection](articles/02-context-injection.md) — getting the right context to the right boundary; the wrong context attached at the wrong seam looks stable and answers wrong.
-
-### Part 1 — Async tasks that run
-
-5. [SSE & Background Tasks](articles/04-sse-cancellation.md) — a run must outlive the HTTP request; a client disconnect must not cancel work that is still needed.
-
-### Part 2 — Plan → SQS → worker
-
-6. [Human-in-the-Loop Approval](articles/08-human-in-the-loop-plan-approval.md) — the gate that pauses a run and shows the plan to a human before anything expensive or irreversible executes.
-7. [The Orchestrator Prompt](articles/09-designing-the-orchestrator-prompt.md) — with the gate in place, design the prompt that produces the plan: the prompt shapes judgment, the code enforces boundaries.
-8. [Distributed Locks](articles/05-distributed-locks.md) — guard worker concurrency with a lease and a tenure token, and understand what a safe takeover looks like.
-9. [Durable Async Runs](articles/07-durable-async-agent-runs.md) — persist intent, enqueue to a FIFO queue, one worker per thread, the pickup ritual, and resuming a run on a different worker after a crash.
-
-### Part 3 — Capstone
-
-10. [Nine Silent Failures](articles/06-nine-silent-failures-langgraph-research-agent.md) — a case study: nine bugs caught in code review before shipping a LangGraph research agent, each returning `200 OK` while corrupting the meaning of the run.
+1. [Problem, Design Decisions, and Implementation Plan](articles/01-problem-design-implementation-plan.md) — the production problem, the design principles, and the build order.
+2. [End-to-End Architecture and Orchestrator Flow](articles/02-end-to-end-architecture-and-orchestrator-flow.md) — the full approve-to-worker lifecycle.
+3. [State and Checkpoints](articles/02-state-and-checkpoints.md) — memory that survives one request.
+4. [Context Injection](articles/03-context-injection.md) — the right context at the right model boundary.
+5. [Planning and Human Approval](articles/04-planning-and-human-approval.md) — show the plan before expensive work begins.
+6. [Identifiers](articles/05-identifiers.md) — which names stay stable across replay and which must change.
+7. [Streaming and Background Work](articles/06-streaming-and-background-work.md) — progress streams without letting browser disconnects cancel required work.
+8. [Distributed Locks](articles/07-distributed-locks.md) — one worker owns a run; acquire and release stay atomic.
+9. [Queue and Worker Execution](articles/08-queue-and-worker-execution.md) — approved work leaves the API process and becomes replay-safe.
+10. [The Orchestrator Prompt](articles/09-orchestrator-prompt.md) — prompt shapes judgment; code enforces boundaries.
+11. [Nine Silent Failures](articles/10-nine-silent-failures.md) — the capstone: nine real bugs caught before release.
 
 ## Repository Structure
 
@@ -58,8 +48,6 @@ Help engineers build production-ready agentic systems by documenting the kinds o
 
 ## Learning Path For Python Interns
 
-If you are new to deep agents, **read the [Article Series](#article-series) in order (Part 0 → Part 3).** The goal is not to memorize LangGraph APIs. The goal is to learn what can silently go wrong when agent state outlives one HTTP request — and to build the machinery that keeps a run correct once it does.
-
-The arc is deliberate: understand what a deep agent *is* and how it holds state (Part 0), let its work run past a single request (Part 1), then plan, approve, and execute that work safely on a worker (Part 2). The capstone (Part 3) shows nine of these failures in one real system, so read it last.
+If you are new to deep agents, **read the [Article Series](#article-series) in order.** The goal is not to memorize LangGraph APIs. The goal is to build the production mental model: what state existed before this step, what state must exist after it, and what can go silently wrong at the boundary.
 
 The `examples/` folders contain small before/after snippets for the same concepts. Read them when a production code sample in the long article feels too compressed. For each example, ask two questions: what state existed before this function ran, and what state must be true after it finishes?

@@ -43,20 +43,17 @@ theme:
 
 nav:
   - Home: index.md
-  - "Part 0 · Design foundation":
-      - What a Deep Agent Is: 01-silent-failures-overview.md
-      - Identifiers: 10-identifiers.md
-      - LangGraph State: 03-langgraph-state.md
-      - Context Injection: 02-context-injection.md
-  - "Part 1 · Async tasks that run":
-      - SSE & Background Tasks: 04-sse-cancellation.md
-  - "Part 2 · Plan → SQS → worker":
-      - Human-in-the-Loop Approval: 08-human-in-the-loop-plan-approval.md
-      - The Orchestrator Prompt (the plan): 09-designing-the-orchestrator-prompt.md
-      - Distributed Locks: 05-distributed-locks.md
-      - Durable Async Runs: 07-durable-async-agent-runs.md
-  - "Part 3 · Capstone":
-      - Nine Silent Failures: 06-nine-silent-failures-langgraph-research-agent.md
+  - "Chapter 1 · Problem, design, and implementation plan": 01-problem-design-implementation-plan.md
+  - "Chapter 2 · End-to-end architecture and orchestrator flow": 02-end-to-end-architecture-and-orchestrator-flow.md
+  - "Step 1 · State and checkpoints": 02-state-and-checkpoints.md
+  - "Step 2 · Context injection": 03-context-injection.md
+  - "Step 3 · Planning and human approval": 04-planning-and-human-approval.md
+  - "Step 4 · Identifiers that hold a run together": 05-identifiers.md
+  - "Step 5 · Streaming and background work": 06-streaming-and-background-work.md
+  - "Step 6 · Distributed locks": 07-distributed-locks.md
+  - "Step 7 · Queue and worker execution": 08-queue-and-worker-execution.md
+  - "Step 8 · Orchestrator prompt": 09-orchestrator-prompt.md
+  - "Capstone · Nine silent failures in one agent": 10-nine-silent-failures.md
   - Reference:
       - Glossary: 00-glossary.md
       - "Source Notes (advanced)":

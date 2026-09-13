@@ -1,6 +1,8 @@
-# SSE and Background Tasks
+# Step 5 · Streaming and Background Work
 
-Part 0 was about what the agent *knows* — its state and the context reaching the model. Part 1 is about how its work *runs*, and the first rule is this: **the work must be able to outlive the HTTP request that started it.** Here is what breaks when it cannot.
+The agent can now hold state, inject context, pause for approval, and name the pieces of a run. The next step is user experience: the browser should see progress while the system works.
+
+That does not mean the browser owns the work. The first rule of streaming production agents is this: **required work must outlive the HTTP connection showing its progress.** Here is what breaks when it cannot.
 
 ## The problem: the user closes the tab, and the save never happens
 
@@ -86,4 +88,17 @@ The happy-path test never catches this bug — you have to hang up early.
 - Test with forced early disconnects, not only happy-path streams
 
 ---
-*Next: Part 2 begins with [Human-in-the-Loop Approval](08-human-in-the-loop-plan-approval.md). Now that a run can outlive its request, the agent needs to pause that run for a human to approve its plan before anything expensive executes. New term? See the [glossary](00-glossary.md).*
+
+!!! check "You should now understand"
+    - Why SSE is a progress channel, not the source of truth for the run
+    - Why an `await` after a terminal `yield` can be cancelled by browser disconnect
+    - Why `CancelledError` escapes `except Exception`
+    - Why required persistence should be owned before the terminal frame is yielded
+
+??? question "Try this"
+    **Your stream yields an `end` event and then awaits `save_turn()`. The frontend closes the EventSource immediately after receiving `end`. What is the silent failure?**
+
+    ??? success "Answer"
+        The server generator is cancelled at its next `await`, so `save_turn()` may never start. The user saw the answer and the stream ended cleanly, but history is missing. Start the required save as an owned background task before yielding the terminal frame, and test with a forced disconnect.
+
+*Next: [Step 6 · Distributed Locks](07-distributed-locks.md) — streaming made progress visible; locking makes sure only one worker owns the run.*
