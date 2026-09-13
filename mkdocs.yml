@@ -43,18 +43,18 @@ theme:
 
 nav:
   - Home: index.md
-  - Foundations:
-      - Silent Failures (start here): 01-silent-failures-overview.md
-      - Context Injection: 02-context-injection.md
+  - "Part 0 · Design foundation":
+      - What a Deep Agent Is: 01-silent-failures-overview.md
       - LangGraph State: 03-langgraph-state.md
-  - Mechanisms:
-      - SSE Cancellation: 04-sse-cancellation.md
+      - Context Injection: 02-context-injection.md
+  - "Part 1 · Async tasks that run":
+      - SSE & Background Tasks: 04-sse-cancellation.md
+  - "Part 2 · Plan → SQS → worker":
+      - Human-in-the-Loop Approval: 08-human-in-the-loop-plan-approval.md
+      - The Orchestrator Prompt (the plan): 09-designing-the-orchestrator-prompt.md
       - Distributed Locks: 05-distributed-locks.md
       - Durable Async Runs: 07-durable-async-agent-runs.md
-  - Building an Agent:
-      - Human-in-the-Loop Approval: 08-human-in-the-loop-plan-approval.md
-      - Designing the Orchestrator Prompt: 09-designing-the-orchestrator-prompt.md
-  - Case Study:
+  - "Part 3 · Capstone":
       - Nine Silent Failures: 06-nine-silent-failures-langgraph-research-agent.md
   - Reference:
       - Glossary: 00-glossary.md

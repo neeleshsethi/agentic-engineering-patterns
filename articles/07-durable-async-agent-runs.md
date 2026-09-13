@@ -189,3 +189,6 @@ Everything else in this design recovers on its own. The dead-letter queue is the
 - Derive dedup identity from execution position, never from the ordering counter
 - Terminate streams on durable status, never on a sentinel event a crash can skip
 - Reserve paging for the dead-letter path; let every other failure self-recover
+
+---
+*Next: [Nine Silent Failures](06-nine-silent-failures-langgraph-research-agent.md) — Part 3, the capstone. Every mechanism is now in place; this is nine of these bugs, caught in one real system before it shipped. New term? See the [glossary](00-glossary.md).*

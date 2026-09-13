@@ -137,3 +137,6 @@ Ship the prompt with a version string (`PROMPT_VERSION = "2.2"`) carried as trac
 - Enumerate the exact misbehaviors when the model negotiates around a rule
 - Number and name workflow phases so the model can locate itself
 - Deliver post-decision instructions as tool results, not only as system-prompt text
+
+---
+*Next: [Distributed Locks](05-distributed-locks.md) — the plan is approved and about to execute on a worker. Before it runs, one guarantee must hold: exactly one worker owns the run. New term? See the [glossary](00-glossary.md).*
