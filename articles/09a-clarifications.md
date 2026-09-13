@@ -87,6 +87,14 @@ The key distinction:
 
 So yes: **clarification handling is deterministic for deep at the report boundary.** The model is still prompted to relay the question politely, but it is not trusted to decide whether a report may be written. If any current-cycle result is an elicitation, `pending_elicitation()` blocks the report.
 
+The deterministic deep path has three owners:
+
+1. **Source adapter/client** stamps `SourceResult.is_elicitation`.
+2. **`provenance.py`** owns `pending_elicitation()`, the shared predicate that asks, "is any current-cycle step still waiting on the user?"
+3. **The report gates call that predicate before output is written.** `SufficiencyGateMiddleware` should not grade a report-ready evidence set while elicitation is pending, and `DeepExitPathMiddleware` must skip report generation when `pending_elicitation()` is true.
+
+That is the "middleware gate" in deep: the model may phrase the relayed question, but the sufficiency/exit path code decides whether a report is allowed.
+
 Deep needs that code backstop because the failure mode is expensive: a polished report written over "which market definition?" looks like success and is wrong.
 
 ## Partial Source Clarification
