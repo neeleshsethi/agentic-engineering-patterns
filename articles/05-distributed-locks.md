@@ -166,6 +166,58 @@ table.delete_item(
 
 Without the guard, a slow request that already lost its lease would, on teardown, delete the *next* holder's claim — reopening the exact double-run window the lock exists to close. "Release a lock" and "release *your* lock" are different operations.
 
+## Capacity and table design
+
+A lock this cheap is easy to under-think. Here is exactly what it costs to store and run.
+
+### One table, three kinds of item
+
+The lock is not its own table. It is one item in the table that already holds the run's events and run-state, kept apart by a [`PK`](00-glossary.md#pk-sk) prefix:
+
+| Item kind | PK | SK | Fields |
+|-----------|----|----|--------|
+| event | `abc` | `seq` (1, 2, 3…) | `idem_key`, `event`, `ttl` |
+| run-state | `run#abc` | `0` | `status`, `reason`, `receive_count` |
+| **lock** | `lock#abc` | `0` | `owner`, `expires_at`, `ttl` |
+
+DynamoDB is schemaless beyond the key, so the three coexist for free. Each thread's lock lives under its *own* partition key (`lock#<thread_id>`), so lock writes spread across partitions — there is no single hot lock row to bottleneck on.
+
+### How much memory a lock takes
+
+A lock item carries a partition key, a sort key, an owner token, and two timestamps:
+
+```text
+lock#3f9c…  (PK, ~41 B)   0 (SK)   owner "…uuid4…" (~36 B)   expires_at (N)   ttl (N)
+```
+
+Counting attribute names and values, a lock item is well under **200 bytes** — comfortably inside DynamoDB's 1 KB write unit and 4 KB read unit. Storage is negligible: even 100,000 simultaneously-locked threads is roughly **20 MB**. And locks are transient — the [`ttl`](00-glossary.md#ttl-time-to-live) sweeps abandoned rows, so the steady-state count tracks *concurrent active runs*, not total runs ever started.
+
+### What it costs to run
+
+Per run, the lock does a small, fixed number of writes:
+
+| Operation | When | Cost |
+|-----------|------|------|
+| Acquire | once, at pickup | 1 conditional write |
+| Renew | once per checkpoint | 1 write per checkpoint |
+| Release | once, at completion | 1 write |
+| Check | only on a write-fence collision | 1 read (rare) |
+
+Reads are essentially free — the healthy path never polls the lock. Writes are dominated by renewals. A 45-minute run that checkpoints ~50 times spends about **52 lock writes total**.
+
+*Worked example.* 200 concurrent runs, each checkpointing every ~45 s → 200 ÷ 45 ≈ **4.4 renew writes/sec**, plus a trickle of acquires and releases. Call it ~5 writes/sec. On-demand DynamoDB absorbs that without thought; provisioned capacity needs single-digit WCU. The lock is not where your bill lives.
+
+### The two "time to live"s — they are different
+
+The word "expiry" hides two unrelated fields on the lock item. Confusing them is a real bug.
+
+| Field | Who enforces it | Typical value | Purpose |
+|-------|-----------------|---------------|---------|
+| `expires_at` | **your code**, inside the acquire/renew condition | the lease, e.g. 10–30 min | The **enforced** lease and the *acquired time-to-live*: how long a fresh acquisition stays valid before another worker may reclaim it (`acquire only if empty OR expires_at < now`). A healthy holder keeps pushing it forward. |
+| `ttl` | **DynamoDB's sweeper** | ~24 h | Janitorial only. Deletes abandoned rows so a crashed run's lock eventually vanishes without a human. Best-effort; deletion can lag hours. No lock logic may depend on it. |
+
+**Sizing the lease (`expires_at`):** it must exceed the longest single unit of work *between renewals* — one model call or one tool call, on the order of 30–120 s — with margin, because that is the window during which no renewal arrives. A 10–30 minute lease over a per-checkpoint renewal is comfortable. Do not size it to the whole run; that is what renewal is for. And never let `ttl` double as the lease — a sweeper that runs hours late would leave a dead lock wedging the thread long past its intended life.
+
 ## Guardrails
 
 - Put the lock where every replica can see it — a database item, never process memory
