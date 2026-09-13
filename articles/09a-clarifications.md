@@ -76,14 +76,18 @@ The source's ask-back must be detected before the report writer runs. Do not rel
 | Status-code protocol | A deterministic classifier maps `input-required` to elicitation. |
 | Prose-only replies | A narrow deterministic ladder catches clarification phrases and question-shaped no-table replies. |
 
-From there, quick/reactive and deep behave differently:
+The key distinction:
 
-| Mode | What stops the answer | Bookkeeping |
-|---|---|---|
-| Reactive | Prompt rules tell the one-pass router to relay the source question instead of synthesizing. | Results stay available for the next turn. |
-| Deep | The prompt relays, and `DeepExitPathMiddleware` checks `pending_elicitation()` before report generation. | The step stays open; the report is skipped in code. |
+> Detection is deterministic before either mode sees the result. Acting on that detection is prompt-led in reactive, but code-enforced in deep.
 
-Deep needs the code backstop because the failure mode is expensive: a polished report written over "which market definition?" looks like success and is wrong.
+| Mode | Detection | What stops the answer | Bookkeeping |
+|---|---|---|---|
+| Reactive | Deterministic `is_elicitation` flag when the source/client can set it; prompt backstop for question-shaped replies | Prompt rules tell the one-pass router to relay the source question instead of synthesizing. | Results stay available for the next turn. |
+| Deep | Deterministic `is_elicitation` flag on `SourceResult`; deep treats that flag as the source of truth | `DeepExitPathMiddleware` checks `pending_elicitation()` and skips report generation in code. | The step stays open; the report is skipped until the user answers. |
+
+So yes: **clarification handling is deterministic for deep at the report boundary.** The model is still prompted to relay the question politely, but it is not trusted to decide whether a report may be written. If any current-cycle result is an elicitation, `pending_elicitation()` blocks the report.
+
+Deep needs that code backstop because the failure mode is expensive: a polished report written over "which market definition?" looks like success and is wrong.
 
 ## Partial Source Clarification
 
