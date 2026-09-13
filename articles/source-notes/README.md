@@ -50,9 +50,11 @@ failures actually came from:
 | [08 – Distributed locks](../07-distributed-locks.md) | `life-of-a-deep-run` Part 3 (the keycard lock) & Part 4 (zombie fencing) · worker lock under `lock#{thread_id}` |
 | [09 – Durable async agent runs](../08-queue-and-worker-execution.md) | The whole of `life-of-a-deep-run`, genericized: two-table split, one-worker-per-thread FIFO, heartbeat-on-progress, `seq`/`idem_key`, replay==tail, crash recovery, dead-letter paging |
 | [10 – Designing the orchestrator prompt](../09-orchestrator-prompt.md) | `orchestrator-prompt-annotated` Parts 1, 5, 6 (annotated prompt, allow-list middleware, ToolMessage continuation, grounding) · OCR Q2 (seven allowed tools) |
-| [11 – Clarifications](../09a-clarifications.md) | OCR Q6 (clarification families, deterministic source elicitation, partial clarification, fresh invocation vs resume), Q3d (turn types) |
+| [11 – Clarifications](../09a-clarifications.md) | OCR Q6 (clarification families, deterministic source elicitation, partial clarification, fresh invocation vs resume) |
 | [12 – Code components and organization](../09b-code-components-and-organization.md) | OCR Q0 (deep module map), Q4-Q5 (middleware order and loop budgets), Q7 (provenance/citation/chart ownership) |
-| [13 – Nine silent failures](../10-nine-silent-failures.md) | The edge-case catalogs in all three notes; Bug 1 in `orchestrator-prompt-annotated` is the canonical entity-override failure |
+| [13 – Plan lifecycle](../09c-plan-lifecycle.md) | OCR Q3d (when the plan workflow runs, extension turns, elicitation replies, presentation changes) |
+| [14 – Reactive mode prompt](../09d-reactive-mode-prompt.md) | OCR appendix (reactive one-pass system prompt structure, prompt layers, clarification guard, elicitation relay) |
+| [15 – Nine silent failures](../10-nine-silent-failures.md) | The edge-case catalogs in all three notes; Bug 1 in `orchestrator-prompt-annotated` is the canonical entity-override failure |
 
 The published series now covers all three source notes: **05 + 07** carry `life-of-a-deep-run`;
 **08 + 09** carry `orchestrator-prompt-annotated`; and `before-resume` is folded across **08**
