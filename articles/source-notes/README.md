@@ -8,8 +8,7 @@ depth.
 
 Names are genericized (product → "the platform", brand → `BRAND_A`, sources → `SOURCE_A..D`,
 tables → `app-{env}-deep-*`, retrieval tool → `query_source`). Framework names (LangGraph,
-deepagents, DynamoDB, SQS) are real. Raw OCR of the originals lives in
-[`../../data/extracted/photos_ocr_raw.txt`](../../data/extracted/photos_ocr_raw.txt).
+deepagents, DynamoDB, SQS) are real. Raw OCR of the originals is kept in the repo's local `data/extracted/` directory (gitignored — not published).
 
 ## The three notes
 

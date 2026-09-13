@@ -2,6 +2,8 @@
 
 Context injection is one of the easiest ways to create a system that appears stable while producing the wrong answer. The agent still runs. The prompt still looks complete. But the wrong context is attached at the wrong boundary.
 
+> New to the vocabulary here — [middleware](00-glossary.md#middleware), [checkpoint](00-glossary.md#checkpoint), [state](00-glossary.md#state)? Each term is defined once in the [glossary](00-glossary.md).
+
 ## What Context Injection Means
 
 Context injection is the act of adding extra text or data to the model input that the user did not type in that exact request.

@@ -1,0 +1,101 @@
+site_name: Agentic Engineering Patterns
+site_description: >-
+  A learning series on building production agent systems that fail loudly, not
+  silently — state, streaming, locking, durable runs, and prompt design.
+site_author: Neelesh Sethi
+
+# The articles/ directory is the site content.
+docs_dir: articles
+
+# Update these two if the repo moves.
+repo_url: https://github.com/neeleshsethi/agentic-engineering-patterns
+repo_name: neeleshsethi/agentic-engineering-patterns
+edit_uri: edit/main/articles/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+
+nav:
+  - Home: index.md
+  - Foundations:
+      - Silent Failures (start here): 01-silent-failures-overview.md
+      - Context Injection: 02-context-injection.md
+      - LangGraph State: 03-langgraph-state.md
+  - Mechanisms:
+      - SSE Cancellation: 04-sse-cancellation.md
+      - Distributed Locks: 05-distributed-locks.md
+      - Durable Async Runs: 07-durable-async-agent-runs.md
+  - Building an Agent:
+      - Human-in-the-Loop Approval: 08-human-in-the-loop-plan-approval.md
+      - Designing the Orchestrator Prompt: 09-designing-the-orchestrator-prompt.md
+  - Case Study:
+      - Nine Silent Failures: 06-nine-silent-failures-langgraph-research-agent.md
+  - Reference:
+      - Glossary: 00-glossary.md
+      - "Source Notes (advanced)":
+          - Overview: source-notes/README.md
+          - Before Resume: source-notes/before-resume.md
+          - The Orchestrator: source-notes/orchestrator-prompt-annotated.md
+          - Life of a Deep Run: source-notes/life-of-a-deep-run.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - md_in_html
+  - footnotes
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
+
+plugins:
+  - search
+
+# Custom styling + the interactive step-through ("scrubber") component.
+# Files live under articles/assets/ so MkDocs serves them from docs_dir.
+extra_css:
+  - assets/scrubber.css
+extra_javascript:
+  - assets/scrubber.js
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/neeleshsethi/agentic-engineering-patterns
