@@ -55,6 +55,8 @@ nav:
   - "Step 8 · Orchestrator prompt": 09-orchestrator-prompt.md
   - "Deep dive · Clarifications": 09a-clarifications.md
   - "Deep dive · Code components and organization": 09b-code-components-and-organization.md
+  - "Deep dive · Plan lifecycle": 09c-plan-lifecycle.md
+  - "Deep dive · Reactive mode prompt": 09d-reactive-mode-prompt.md
   - "Interactive lessons": lessons/index.html
   - "Capstone · Nine silent failures in one agent": 10-nine-silent-failures.md
   - Reference:
