@@ -126,7 +126,7 @@ The **plan** is the set of research steps the human approves. **plan_id** is sta
 A value derived from a source of truth, rebuilt on demand rather than stored and mutated. The typed `Plan` is a projection over the agent's raw todo list; the user-facing event feed is a projection over the run's real state. A projection can be thrown away and recomputed, which is what makes the system's persistence safe.
 
 ### Run-state
-A durable lifecycle row for a deep run: `queued`, `running`, `retrying`, `completed`, or `failed`. The SSE tail checks run-state to know when to end; it must not rely only on a final stream sentinel that a crash could skip.
+A single database row that tracks the lifecycle of one run attempt. Fields: `thread_id`, `run_id`, `status`, `receive_count`, and optionally a `reason` on failure. Status moves through: `queued` (written by the API on approval) → `running` / `retrying` (written by the worker on pickup) → `completed` / `failed` (written last). The SSE tail polls this record to decide when to close the browser stream — it must not rely only on a final stream sentinel, because a crashed worker may never write one.
 
 ### StreamEnvelope
 The curated event shape the frontend receives. Raw LangGraph or DeepAgents events are framework internals; the API or worker projects them into `StreamEnvelope` records before the UI sees them.

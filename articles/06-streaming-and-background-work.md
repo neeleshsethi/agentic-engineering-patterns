@@ -51,7 +51,23 @@ The save is cancelled, the `except` never fires, and you have no log line tellin
 
 ## The fix: own the work before the terminal frame
 
-Start the required work *before* you yield the terminal event, as a detached background task, and hold a strong reference so it is not garbage-collected mid-flight.
+The rule is simple: **required work must be started before the terminal frame is yielded.**
+
+```text
+BROKEN                              FIXED
+──────                              ─────
+
+  server          browser             server          browser
+    │                │                  │                │
+    │ yield "end" ──▶│                  │ create_task(save) ← background task
+    │                │ closes conn      │ yield "end" ──▶│
+    │ await save()   │                  │                │ closes conn
+    │    ↑ CANCELLED │                  │ (task runs on) │
+    │ no log, turn   │                  │ save() ✓       │
+    │ missing        │                  │                │
+```
+
+Start the required work as a detached background task, and hold a strong reference so it is not garbage-collected mid-flight.
 
 ```python
 ACTIVE_BACKGROUND_TASKS: set[asyncio.Task] = set()

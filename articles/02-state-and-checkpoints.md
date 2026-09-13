@@ -106,6 +106,33 @@ def build_proposal_graph_input(question: str, user_context: str) -> dict:
     }
 ```
 
+The fix is the `raw_question` line:
+
+```python
+"raw_question": question,
+```
+
+That line must run for every new user turn. Without it, the new message is appended to `messages`, but the old `raw_question` stays in the checkpoint.
+
+Here is the bug and the fix side by side:
+
+```python
+# BUG: only writes the chat transcript.
+# raw_question silently remains whatever the previous turn wrote.
+graph_input = {
+    "messages": [{"role": "user", "content": question}],
+}
+```
+
+```python
+# FIX: write every turn-scoped LastValue field on every turn.
+graph_input = {
+    "messages": [{"role": "user", "content": question}],
+    "raw_question": question,
+    "user_context": user_context,
+}
+```
+
 Now the convention is an API. A reviewer checks one function instead of searching every route that starts the graph, and a forgotten key becomes impossible rather than merely unlikely.
 
 ## What actually goes wrong
