@@ -1,22 +1,55 @@
 # 9 Silent Failures We Caught Before Shipping Our LangGraph Research Agent
 
-How code review caught bugs that produced `200 OK` and wrong answers.
+How a deep agent can look healthy, return `200 OK`, and still be wrong.
 
-We spent the past several months building an agentic research system on top of LangGraph. The agent takes a business question, proposes a multi-step research plan, pauses for human approval, then executes the plan and writes a report. The architecture looks straightforward on paper: LangGraph for orchestration, middleware for context injection, DynamoDB for persistence, and SSE for streaming.
+This article is written for the engineer who has built normal Python APIs and is now trying to understand production agents. If that is you, here is the uncomfortable shift: with agent systems, "the request succeeded" is not the same as "the work was correct."
 
-Code review before a recent release surfaced nine bugs. None crashed the system. None surfaced in logs. None would have tripped an alert. They all shared the same failure mode: the code ran to completion, returned `200 OK`, and produced a wrong result, either silently wrong data, silently missing data, or subtly wrong LLM outputs that no automated test would catch.
+We learned this while building a research agent for pharma business questions. The agent takes a question, proposes a multi-step research plan, pauses for human approval, then executes the approved plan and writes a report. On paper, the stack was ordinary enough: LangGraph for orchestration, middleware for context injection, DynamoDB for persistence, and Server-Sent Events for streaming progress to the browser.
 
-Here is each one, but first the architecture that makes the bugs interesting: a single user interaction spans multiple HTTP requests, and DynamoDB is doing double duty as both the checkpoint store and the distributed lock.
+Before one release, code review found nine bugs. None crashed the app. None produced scary logs. None would have paged anyone. They all did something more dangerous: they completed successfully while corrupting the meaning of the run.
+
+That is the core lesson of this piece:
+
+```text
+Transport success means:
+  the HTTP request finished
+
+Semantic success means:
+  the right context, state, lock, plan, and persistence rules all held
+```
+
+Deep agents fail when those two meanings drift apart.
+
+## The system in plain English
+
+Imagine a business user asks:
+
+```text
+Give me my sales.
+```
+
+That sentence is not enough by itself. The system needs to know what "my" means: which country, which product, which time period, and which previous conversation context should carry forward.
+
+So the agent does four things:
+
+1. It adds user-specific context before the model sees the question.
+2. It asks the model to propose a research plan.
+3. It pauses and waits for a human to approve or refine that plan.
+4. It resumes later, runs the research, streams progress, and saves the final answer.
+
+The hard part is that these steps do not happen inside one neat function call. A single user turn spans multiple HTTP requests, may resume on a different API replica, and depends on checkpointed state in DynamoDB.
+
+That is why the bugs below are interesting. They are not "the model hallucinated" stories. They are ordinary engineering bugs at the boundaries around the model.
 
 ## Vocabulary for a new engineer
 
-Read this section before the failure list if you are new to LangGraph or Deep Agents.
+You only need a handful of terms before the failure list. Each one is also in the [glossary](00-glossary.md), defined once for the whole series.
 
-`thread_id` is the durable conversation/run identity LangGraph uses to find the right checkpoint. If two requests use the same `thread_id`, they resume the same logical graph thread.
+`thread_id` is the durable identity of one conversation or run. LangGraph uses it to find the right checkpoint. Same `thread_id`, same logical graph thread.
 
-`state` is the logical dictionary the graph reads and writes. It contains channels such as `messages`, `plan`, `raw_question`, and `user_context`.
+`state` is the dictionary the graph reads and writes. It contains channels such as `messages`, `plan`, `raw_question`, and `user_context`.
 
-`checkpoint` is the persisted copy of that state plus LangGraph bookkeeping. In this system it lives in DynamoDB, so another HTTP request on another API replica can resume the same graph.
+`checkpoint` is the persisted copy of that state plus LangGraph bookkeeping. In this system it lives in DynamoDB, so a later HTTP request on another API replica can resume the same graph.
 
 `interrupt()` pauses the graph and stores a pending resume point in the checkpoint. The HTTP request can end while the graph waits for a human decision.
 
@@ -260,7 +293,7 @@ The bug was that we injected on every model call, including execution calls afte
 
 ```text
 [User context]
-User defaults: AUSTRALIA / PAXLOVID.
+User defaults: AUSTRALIA / BRAND_A.
 Use these when the question says "my" or omits country/brand.
 [/User context]
 

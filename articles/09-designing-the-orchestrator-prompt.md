@@ -8,6 +8,8 @@ The prompt decides what the model should *think about* — how to break a questi
 
 The running example is a pharmaceutical commercial-analytics orchestrator. Identifiers are generic (`BRAND_A`, `SOURCE_A..D`, `query_source`), but the domain matters here: in regulated analytics, some of these rules are law, not style, and that changes where they have to live.
 
+> Terms used below — [gate](00-glossary.md#gate), [middleware](00-glossary.md#middleware), [ToolMessage](00-glossary.md#toolmessage), [grounding](00-glossary.md#grounding), [entity resolution](00-glossary.md#entity-resolution) — are in the [glossary](00-glossary.md). This article builds on [Human-in-the-Loop Approval](08-human-in-the-loop-plan-approval.md).
+
 ## The Test: Prompt Or Structure?
 
 For any rule the agent must follow, ask one question: **can code enforce it deterministically?**
