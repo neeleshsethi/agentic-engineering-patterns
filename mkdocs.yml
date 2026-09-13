@@ -55,6 +55,7 @@ nav:
   - "Step 8 · Orchestrator prompt": 09-orchestrator-prompt.md
   - "Deep dive · Clarifications": 09a-clarifications.md
   - "Deep dive · Code components and organization": 09b-code-components-and-organization.md
+  - "Interactive lessons": lessons/index.html
   - "Capstone · Nine silent failures in one agent": 10-nine-silent-failures.md
   - Reference:
       - Glossary: 00-glossary.md
