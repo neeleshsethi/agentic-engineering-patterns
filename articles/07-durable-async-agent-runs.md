@@ -2,7 +2,7 @@
 
 A long agent run should survive a worker crash, a deploy, and a client that closes its laptop. That means the run cannot live in one process's memory. It has to live in durable storage, and every process — the API, the worker, a failure detector — has to be able to reconstruct it from there.
 
-This article covers what happens *after* a plan is approved: the run is handed to a background worker, executes for tens of minutes, streams progress to the browser, and can be resumed by a different worker if the first one dies.
+This article covers what happens *after* a plan is approved: the run is handed to a background worker, executes for tens of minutes, streams progress to the browser, and can be resumed by a different worker if the first one dies. It assumes the vocabulary from the [glossary](00-glossary.md) — [checkpoint](00-glossary.md#checkpoint), [replica](00-glossary.md#replica), [lease](00-glossary.md#lease), [idempotency](00-glossary.md#idempotency) — and builds directly on [Distributed Locks](05-distributed-locks.md).
 
 ## Two Streams, Two Tables, Two Audiences
 
@@ -95,15 +95,40 @@ The size rule that falls out: the visibility timeout must exceed the longest *si
 The feed needs a total order and a dedup identity. Use two different values, because they have opposite requirements under replay.
 
 - **Sequence** is a plain in-process counter, seeded once per pickup from the current max and incremented per emitted feed line. It gives ordering and becomes the reader's cursor. Gaps are allowed; ordering is guaranteed. On replay it takes new values.
-- **Idempotency key** identifies the *logical* event regardless of which attempt wrote it. It must be identical when a node is replayed, so it is derived from execution position — never from the sequence number, never random.
+- **[Idempotency key](00-glossary.md#idempotency-key)** identifies the *logical* event regardless of which attempt wrote it. It must be identical when a node is replayed, so it is derived from execution position — never from the sequence number, never random.
 
-```text
-attempt 1 (worker A): (seq  9, "ckpt31#tools#0")  (seq 10, "ckpt31#tools#1")  A dies
-attempt 2 (worker B): (seq 11, "ckpt31#tools#0")  (seq 12, "ckpt31#tools#1")
-                       same keys, new seqs -> reader dedups -> user sees each line once
-```
+Step through a crash-and-replay to see why the two values need opposite behavior:
 
-Exactly one of the two must change on replay (the sequence) and exactly one must not (the key). Many frameworks already compute a deterministic per-execution task id; if so, use it and let the framework own the hard part.
+<div class="scrubber" data-scrubber markdown="0">
+  <div class="scrubber-stage">
+    <div class="scrubber-step">
+      <span class="scrubber-time">Worker A · emits</span>
+      <div class="scrubber-caption">A runs the "tools" node from checkpoint 31 and emits two feed lines. seq counts up; idem_key is derived from execution position.</div>
+      <pre class="scrubber-item">seq 9   idem "ckpt31#tools#0"
+seq 10  idem "ckpt31#tools#1"   <span class="ok">← user sees both</span></pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">Worker A · dies</span>
+      <div class="scrubber-caption">A crashes before the post-node checkpoint. The queue will redeliver the message to another worker.</div>
+      <pre class="scrubber-item">seq 9   idem "ckpt31#tools#0"
+seq 10  idem "ckpt31#tools#1"   <span class="warn">← A gone, node not committed</span></pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">Worker B · resumes</span>
+      <div class="scrubber-caption">B reloads checkpoint 31 and re-runs the same node. seq continues from the table max (new numbers) — but idem_key repeats, because execution position is identical.</div>
+      <pre class="scrubber-item">seq 11  idem "ckpt31#tools#0"   <span class="warn">← same key, new seq</span>
+seq 12  idem "ckpt31#tools#1"   <span class="warn">← same key, new seq</span></pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">Reader · dedups</span>
+      <div class="scrubber-caption">The reader has already shown idem "ckpt31#tools#0" and "#1". It drops the repeats. The user sees each line exactly once.</div>
+      <pre class="scrubber-item">shown: {ckpt31#tools#0, ckpt31#tools#1}
+seq 11, 12 → <span class="bad">duplicate idem_key, skipped</span>   <span class="ok">✓ exactly-once</span></pre>
+    </div>
+  </div>
+</div>
+
+Exactly one of the two must change on replay (the [sequence](00-glossary.md#sequence-number-seq)) and exactly one must not (the key). Many frameworks already compute a deterministic per-execution task id; if so, use it and let the framework own the hard part.
 
 ## Replay And Live Tail Are The Same Query
 

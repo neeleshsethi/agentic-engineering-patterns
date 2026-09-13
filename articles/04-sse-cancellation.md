@@ -1,41 +1,53 @@
 # SSE Cancellation
 
-Server-Sent Events are a practical way to stream agent progress, but cancellation semantics are easy to get wrong. When a client disconnects, the stream may stop while the expensive background work continues.
+## The problem: the user closes the tab, and the save never happens
 
-## What SSE Is
+An agent finishes a run. Your code streams a final `end` event to the browser, then saves the turn to the database. It works every time you test it — because you sit and watch the stream finish.
 
-SSE is a long-lived HTTP response where the server sends text frames over time.
+In production, the browser is not so patient. The moment it receives the `end` event, it closes the connection. That disconnect cancels your server code *before the save runs*. The user got their answer, the request returned `200 OK`, and the turn was never written to history. Nothing threw. Nothing logged. This is a [silent failure](00-glossary.md#transport-success-vs-semantic-success).
 
-The browser can close the connection as soon as it receives the final event. In Starlette or FastAPI, that disconnect cancels the response generator at its next `await`.
+> **[SSE (Server-Sent Events)](00-glossary.md#sse-server-sent-events)** — a long-lived HTTP response where the server sends small text frames over time, instead of one final body. It is how an agent streams progress to a browser.
 
-```text
-server generator
-  yield "event: token"
-  yield "event: end"
-  await save_to_database()  <- may never run after client closes
+## What actually happens on disconnect
+
+[SSE](00-glossary.md#sse-server-sent-events) is a generator on the server: it `yield`s frames, and between yields it `await`s. When the browser closes the connection, the server framework (Starlette, FastAPI) cancels that generator at its **next `await`**.
+
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant S as Server generator
+    participant D as Database
+    S->>B: yield "event: token"
+    S->>B: yield "event: end"
+    B--xS: closes connection on 'end'
+    Note over S,D: next await is now cancelled
+    S-xD: await save_to_database()  ✗ never runs
 ```
 
-The HTTP stream succeeded from the user's perspective. The server-side persistence step may still be skipped.
+So any `await` placed *after* the terminal frame is a race against the client hanging up — and the client usually wins.
 
-## Hidden Failure
+```python
+# BEFORE — the save is cancelled before it starts
+yield end_event
+await save_to_database(...)   # the browser already left; this await never resolves
+```
 
-From the user's perspective, the request is gone. From the server's perspective, detached tasks may still be consuming tokens, holding locks, or writing partial state.
+## The exception you will not catch
 
-The opposite can also happen: work that you expected to run after the final event is cancelled before it starts.
+There is a second trap. When the framework cancels the generator, Python raises `asyncio.CancelledError`. In modern Python that inherits from `BaseException`, **not** `Exception`. So the usual safety net misses it entirely:
 
-`asyncio.CancelledError` inherits from `BaseException` in modern Python, not ordinary `Exception`. A broad `except Exception` block will not catch it.
+```python
+try:
+    await save_to_database(...)
+except Exception:      # does NOT catch CancelledError
+    logger.error("save failed")
+```
 
-## Risks
+The save is cancelled, the `except` never fires, and you have no log line telling you it happened.
 
-- Orphaned tasks continue after disconnect
-- Cleanup handlers do not propagate cancellation to child coroutines
-- Shared resources remain locked longer than intended
-- Post-stream writes are skipped after the client receives `end`
-- Half-finished writes leave records that no reader can interpret
+## The fix: own the work before the terminal frame
 
-## Safe Terminal-Event Pattern
-
-Start required persistence before yielding the terminal event. Keep a strong reference to the task so it is not garbage collected.
+Start the required work *before* you yield the terminal event, as a detached background task, and hold a strong reference so it is not garbage-collected mid-flight.
 
 ```python
 ACTIVE_BACKGROUND_TASKS: set[asyncio.Task] = set()
@@ -46,25 +58,30 @@ async def stream():
             task = asyncio.create_task(save_turn(event.turn))
             ACTIVE_BACKGROUND_TASKS.add(task)
             task.add_done_callback(ACTIVE_BACKGROUND_TASKS.discard)
-
         yield encode_sse(event)
 ```
 
-This does not make the save infallible. It changes the failure mode from "client disconnect cancels the save before it starts" to "background task owns its own completion and logging."
+This does not make the save infallible. It changes the failure mode from *"a client disconnect cancels the save before it starts"* to *"a background task owns its own completion and its own logging."* The task now runs to completion regardless of whether the browser is still listening.
 
-## Test Shape
+## Test it with a forced disconnect
+
+The happy-path test never catches this bug — you have to hang up early.
 
 ```text
 1. Open the stream.
 2. Read until the first terminal event.
 3. Close the client connection immediately.
 4. Assert the database save still completes.
-5. Assert lock release still happens or is safely skipped by token check.
+5. Assert lock release still happens, or is safely skipped by its token check.
 ```
 
 ## Guardrails
 
-- Treat disconnect as a first-class cancellation path
-- Propagate cancellation through every spawned task boundary
-- Test with forced disconnects, not only happy-path streams
-- Do not place required writes after a terminal `yield`
+- Treat a client disconnect as a first-class cancellation path, not an edge case
+- Never place a required write after a terminal `yield`; start it before, as an owned task
+- Remember `CancelledError` is a `BaseException` — a bare `except Exception` will not see it
+- Propagate cancellation through every task boundary you spawn
+- Test with forced early disconnects, not only happy-path streams
+
+---
+*Next: [Distributed Locks](05-distributed-locks.md) — the other thing that must survive a client that leaves early. New term? See the [glossary](00-glossary.md).*

@@ -2,6 +2,8 @@
 
 LangGraph makes long-running orchestration tractable, but correctness depends on disciplined state design. A graph can compile and run while silently losing information between nodes.
 
+> Key terms — [state](00-glossary.md#state), [channel](00-glossary.md#channel), [LastValue](00-glossary.md#lastvalue-the-footgun), [checkpoint](00-glossary.md#checkpoint) — are defined once in the [glossary](00-glossary.md).
+
 ## Mental Model
 
 LangGraph state is a dictionary with rules attached to each key. Those rules decide what happens when a node writes a new value.
