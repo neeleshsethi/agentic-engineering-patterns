@@ -2,6 +2,8 @@
 
 How a deep agent can look healthy, return `200 OK`, and still be wrong.
 
+> **Part 3 · Capstone.** This is where the series lands: the nine bugs below are the failure modes from Parts 0–2 — state, context, streaming, approval, locking, durability — seen together in one real system. It also stands on its own, so a few ideas from earlier articles are re-introduced briefly here.
+
 This article is written for the engineer who has built normal Python APIs and is now trying to understand production agents. If that is you, here is the uncomfortable shift: with agent systems, "the request succeeded" is not the same as "the work was correct."
 
 We learned this while building a research agent for pharma business questions. The agent takes a question, proposes a multi-step research plan, pauses for human approval, then executes the approved plan and writes a report. On paper, the stack was ordinary enough: LangGraph for orchestration, middleware for context injection, DynamoDB for persistence, and Server-Sent Events for streaming progress to the browser.

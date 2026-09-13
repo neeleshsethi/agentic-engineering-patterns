@@ -1,5 +1,9 @@
 # Human-in-the-Loop Plan Approval
 
+Part 1 made a run outlive its request. Part 2 assembles the run's core shape — a plan, a human approval, then execution on a worker. We start with the **approval gate**, because it is the mechanism everything else in Part 2 hangs on: the [next article](09-designing-the-orchestrator-prompt.md) designs the prompt that produces the plan, and [Distributed Locks](05-distributed-locks.md) and [Durable Async Runs](07-durable-async-agent-runs.md) protect the execution that follows approval.
+
+> Terms below — [`interrupt()`](00-glossary.md#interrupt), [checkpoint](00-glossary.md#checkpoint), [gate](00-glossary.md#gate), [lease](00-glossary.md#lease), [replica](00-glossary.md#replica) — are defined once in the [glossary](00-glossary.md).
+
 Some agent actions are expensive, slow, or irreversible. A research plan that hits external APIs, runs database queries, or spends real money should be shown to a human *before* it executes, not after. This article builds that approval gate from the ground up.
 
 The running example is a pharmaceutical commercial-analytics agent: it plans a set of data-retrieval steps, a human approves or refines the plan, and only then does it query anything. The identifiers are generic (`BRAND_A`, `SOURCE_A`, `query_source`), but the shape applies to any agent with a costly execute phase.
@@ -234,3 +238,6 @@ Once a plan is locked, the run itself has to survive worker crashes and reconnec
 - Derive the plan from the agent's working state with a pure function; never let the model write typed plan fields directly
 - Keep every status transition and concurrency check in code, not in the prompt
 - Validate `plan_id` and `interrupt_id` before resuming, to reject stale-tab approvals
+
+---
+*Next: [The Orchestrator Prompt](09-designing-the-orchestrator-prompt.md) — the gate exists, so now design the prompt that produces the plan flowing through it: what belongs in the prompt (judgment) versus in the code (the boundaries you just built). New term? See the [glossary](00-glossary.md).*

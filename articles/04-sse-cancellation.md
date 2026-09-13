@@ -1,4 +1,6 @@
-# SSE Cancellation
+# SSE and Background Tasks
+
+Part 0 was about what the agent *knows* — its state and the context reaching the model. Part 1 is about how its work *runs*, and the first rule is this: **the work must be able to outlive the HTTP request that started it.** Here is what breaks when it cannot.
 
 ## The problem: the user closes the tab, and the save never happens
 
@@ -84,4 +86,4 @@ The happy-path test never catches this bug — you have to hang up early.
 - Test with forced early disconnects, not only happy-path streams
 
 ---
-*Next: [Distributed Locks](05-distributed-locks.md) — the other thing that must survive a client that leaves early. New term? See the [glossary](00-glossary.md).*
+*Next: Part 2 begins with [Human-in-the-Loop Approval](08-human-in-the-loop-plan-approval.md). Now that a run can outlive its request, the agent needs to pause that run for a human to approve its plan before anything expensive executes. New term? See the [glossary](00-glossary.md).*
