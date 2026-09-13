@@ -140,6 +140,21 @@ The rule that the final answer may only use facts from tool results, never the m
 ### Entity resolution
 Working out what a vague question actually refers to — turning "give me my sales" into a specific country, brand, and time period — before deciding anything else.
 
+### run_id { #run_id }
+One execution *attempt* of a thread's work. A [thread](#thread-thread_id) can be run more than once — an initial enqueue, a retry after a crash, a queue redelivery — and each attempt gets a fresh **run_id**, so logs and run-state records can tell the attempts apart. Contrast `thread_id`, which stays constant across all of them. See [Identifiers](10-identifiers.md).
+
+### Ordinal id { #ordinal-id }
+The stable position of a step within an approved plan — step 1, step 2, step 3. Unlike [seq](#sequence-number-seq), which orders the live event stream and takes new values on replay, a step's ordinal is fixed once the plan is [locked](08-human-in-the-loop-plan-approval.md), so a report can refer to "the result of step 2" and mean the same thing on every replay. See [Identifiers](10-identifiers.md).
+
+### Provenance id { #provenance-id }
+A pointer from a fact back to the tool result that produced it — which `query_source` call a given figure in the report came from. It makes [grounding](#grounding) *auditable*: every number carries the id of its retrieval, so a reviewer, or code, can confirm no figure was invented. See [Identifiers](10-identifiers.md).
+
+### owner_id { #owner_id }
+Who proposed a plan and owns a thread. Checked on resume so one user cannot approve or resume another user's run. An authorization identity — not an ordering or dedup one.
+
+### trace_id { #trace_id }
+The observability correlation id that ties every log line, span, and model call for one request together. It exists for humans debugging after the fact; nothing in the run's *correctness* depends on it. Distinct from [run_id](#run_id), which identifies the attempt itself.
+
 ---
 
 ## The one distinction the whole series turns on
