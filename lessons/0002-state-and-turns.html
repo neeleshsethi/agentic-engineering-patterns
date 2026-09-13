@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 02 · State Channels and Turn Types</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="lesson-shell">
+  <header class="topbar">
+    <div class="brand"><span>Lesson 02</span><small>State Channels and Turn Types</small></div>
+    <nav class="nav-actions">
+      <a class="primary-link" href="index.html">Index</a>
+      <button class="icon-btn" data-prev>Prev</button>
+      <span class="progress" data-progress></span>
+      <button class="icon-btn" data-next>Next</button>
+    </nav>
+  </header>
+
+  <main class="deck">
+    <section class="slide">
+      <p class="eyebrow">Production Deep Agent Engineering</p>
+      <h1>State is the product</h1>
+      <p class="lead">A deep run is not just a model loop. It is a checkpointed state machine where each field has a merge rule, a lifetime, and a failure mode.</p>
+      <div class="meta"><span class="pill">7 slides</span><span class="pill">Reducers</span><span class="pill">Turn routing</span><span class="pill">1 quiz</span></div>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">The package map</p>
+      <h2>Four groups explain most of <code>agent/deep/</code></h2>
+      <div class="grid">
+        <div class="panel accent"><span class="label">Control flow</span><strong><code>graph.py</code>, <code>gate.py</code>, <code>plan.py</code></strong><br>The graph assembles the agent; the gate owns approval; the plan module converts todos into a typed plan.</div>
+        <div class="panel"><span class="label">Middleware</span><strong>Context, manifest, sufficiency, budget, exit</strong><br>These wrap model calls, tool calls, and exit behavior. Their order is part of the contract.</div>
+        <div class="panel"><span class="label">Execution</span><strong><code>analyst.py</code>, <code>interpreter.py</code></strong><br>Long-running analysis happens in a bounded code loop, outside the quick answer path.</div>
+        <div class="panel warn"><span class="label">Worker plumbing</span><strong>SQS, run state, locks, resume claims</strong><br>Approval is durable, queued, claimed, resumed, streamed, and completed by a worker.</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">Reducers</p>
+      <h2>Some channels accumulate</h2>
+      <table>
+        <thead><tr><th>Field</th><th>Reducer</th><th>Why it matters</th></tr></thead>
+        <tbody>
+          <tr><td><code>messages</code></td><td>Delta append</td><td>Keeps checkpoints compact while preserving conversation history.</td></tr>
+          <tr><td><code>source_results</code></td><td><code>operator.add</code></td><td>Parallel retrievals merge losslessly and previous turns remain available for reuse.</td></tr>
+          <tr><td><code>step_status</code></td><td>Dict merge</td><td>Parallel branches can update different steps without clobbering each other.</td></tr>
+          <tr><td><code>files</code></td><td>Delta merge</td><td>Playbook filesystem changes accumulate like a small workspace.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">Overrides</p>
+      <h2>Other channels replace the old value</h2>
+      <div class="grid">
+        <div class="panel"><span class="label">Plan</span><code>plan</code> is sticky. Only <code>submit_plan</code> writes it, so stale-plan bugs are serious.</div>
+        <div class="panel"><span class="label">Cycle</span><code>cycle</code> is the turn-boundary counter. It feeds <code>plan_id</code>.</div>
+        <div class="panel"><span class="label">Proposal context</span><code>raw_question</code>, <code>user_context</code>, language, and <code>deep_run_id</code> overwrite per proposal.</div>
+        <div class="panel"><span class="label">Exit outputs</span>Final answer, source cards, chart anchors, and <code>reported_cycle</code> are last-value outputs.</div>
+      </div>
+      <p class="lead"><strong>The approval decision is not just another state field.</strong> It is staged for resume, then consumed by the worker path.</p>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">Turn classifier</p>
+      <h2>The full plan workflow runs only twice</h2>
+      <table>
+        <thead><tr><th>Turn type</th><th>Plans?</th><th>What happens</th></tr></thead>
+        <tbody>
+          <tr><td>First question</td><td>Yes</td><td><code>write_todos</code> to <code>submit_plan</code> to approval gate.</td></tr>
+          <tr><td>New topic follow-up</td><td>Yes</td><td>Fresh cycle and fresh <code>plan_id</code>.</td></tr>
+          <tr><td>Entity or metric gap</td><td>No</td><td>Ask one terminal clarification before planning.</td></tr>
+          <tr><td>Mid-retrieval elicitation reply</td><td>No</td><td>Same locked plan; re-query only the open step.</td></tr>
+          <tr><td>Extension</td><td>No</td><td>Retrieve directly under the current locked plan.</td></tr>
+          <tr><td>Evidence reply or presentation change</td><td>No</td><td>Answer from held evidence or rebuild artifacts once.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">The invariant</p>
+      <h2>A submitted plan is fully determined</h2>
+      <div class="timeline">
+        <div class="step"><span class="num">1</span><div><strong>Clarify before planning.</strong> If there is no safe default for an entity or metric, ask before todos exist.</div></div>
+        <div class="step"><span class="num">2</span><div><strong>Approve exactly once.</strong> Plan-gate source ambiguity can ride the approval card, but approval is still the lock point.</div></div>
+        <div class="step"><span class="num">3</span><div><strong>Keep locked plans locked.</strong> Extensions and elicitation replies should not mint a new <code>plan_id</code>.</div></div>
+      </div>
+    </section>
+
+    <section class="slide quiz" data-right="Correct. Accumulating source_results is what lets later turns reuse already-fetched evidence." data-wrong="Close, but the key field is source_results: it accumulates across turns and retrieval branches.">
+      <p class="eyebrow">Check yourself</p>
+      <h2>Which state field makes partial data reuse possible?</h2>
+      <div class="quiz-options">
+        <button class="choice" data-correct="false"><code>final_answer</code>, because it preserves the last response</button>
+        <button class="choice" data-correct="true"><code>source_results</code>, because retrieval results append across turns</button>
+        <button class="choice" data-correct="false"><code>jump_to</code>, because it routes the next graph node</button>
+        <button class="choice" data-correct="false"><code>structured_response</code>, because it stores the model's schema output</button>
+      </div>
+      <div class="feedback"></div>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">Remember</p>
+      <h2>State design is failure design</h2>
+      <div class="grid">
+        <div class="panel accent">Use accumulating reducers for evidence, messages, and parallel branch bookkeeping.</div>
+        <div class="panel warn">Use last-value channels for proposal context and final report outputs.</div>
+        <div class="panel">Only new questions should reopen the plan workflow. A locked plan keeps carried evidence attached to the current cycle.</div>
+        <div class="panel">Next: provenance and identifiers, the labels that make this state safe to reuse.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">Source notes: <code>data/raw/iCloud Photos/1492026/extracted/combined.md</code></footer>
+</div>
+<script src="lesson.js"></script>
+</body>
+</html>

@@ -1,0 +1,326 @@
+/* Course-wide Reveal.js theme override */
+
+:root {
+  --r-background-color: #0f1117;
+  --r-main-font: 'Inter', system-ui, -apple-system, sans-serif;
+  --r-main-font-size: 28px;
+  --r-main-color: #e8e8e8;
+  --r-heading-font: 'Inter', system-ui, -apple-system, sans-serif;
+  --r-heading-color: #ffffff;
+  --r-heading-font-weight: 700;
+  --r-heading-text-transform: none;
+  --r-heading-letter-spacing: -0.02em;
+  --r-heading1-size: 2em;
+  --r-heading2-size: 1.5em;
+  --r-heading3-size: 1.1em;
+  --r-link-color: #60a5fa;
+  --r-link-color-hover: #93c5fd;
+  --r-selection-background-color: #1e40af;
+  --r-code-font: 'SF Mono', 'Fira Code', Consolas, monospace;
+  --accent: #60a5fa;
+  --accent-dim: #1e3a5f;
+  --green: #4ade80;
+  --green-dim: #14532d;
+  --red: #f87171;
+  --red-dim: #7f1d1d;
+  --yellow: #fbbf24;
+  --yellow-dim: #451a03;
+  --surface: #1a1d27;
+  --border: #2a2d3a;
+  --muted: #6b7280;
+  --mono: 'SF Mono', 'Fira Code', Consolas, monospace;
+}
+
+.reveal {
+  font-family: var(--r-main-font);
+}
+
+.reveal .slides section {
+  text-align: left;
+  padding: 0 2rem;
+}
+
+/* ── Series badge ───────────────────────────── */
+.series-badge {
+  font-size: 0.45em;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0.6rem;
+  display: block;
+}
+
+/* ── Lesson title slide ─────────────────────── */
+.title-slide {
+  display: flex !important;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.lesson-number {
+  font-size: 0.4em;
+  color: var(--muted);
+  font-weight: 400;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.lesson-meta-row {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 1.2rem;
+  font-size: 0.4em;
+  color: var(--muted);
+}
+
+/* ── Code ───────────────────────────────────── */
+.reveal pre {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  box-shadow: none;
+  font-size: 0.48em;
+  line-height: 1.55;
+  width: 100%;
+  margin: 0.5rem 0;
+}
+
+.reveal pre code {
+  font-family: var(--mono);
+  background: none;
+  border: none;
+  padding: 0;
+  color: #e2e8f0;
+  font-size: 1em;
+  overflow: visible;
+  max-height: none;
+}
+
+.reveal code {
+  font-family: var(--mono);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.05em 0.35em;
+  font-size: 0.88em;
+  color: #93c5fd;
+}
+
+/* ── Two-column layout ──────────────────────── */
+.cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.cols-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+/* ── Callout boxes ──────────────────────────── */
+.box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.8rem 1rem;
+  font-size: 0.55em;
+  line-height: 1.5;
+}
+
+.box-accent {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.box-danger {
+  border-color: var(--red);
+  background: var(--red-dim);
+}
+
+.box-tip {
+  border-color: var(--green);
+  background: var(--green-dim);
+}
+
+.box-warning {
+  border-color: var(--yellow);
+  background: var(--yellow-dim);
+}
+
+.box-label {
+  font-size: 0.75em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.35rem;
+  display: block;
+}
+
+.box-label.accent { color: var(--accent); }
+.box-label.danger { color: var(--red); }
+.box-label.tip { color: var(--green); }
+.box-label.warning { color: var(--yellow); }
+
+/* ── Swimlane diagram ───────────────────────── */
+.swimlane {
+  font-family: var(--mono);
+  font-size: 0.42em;
+  line-height: 1.6;
+  color: #e2e8f0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+  white-space: pre;
+  overflow: hidden;
+}
+
+/* ── SVG diagrams ───────────────────────────── */
+.diagram-svg {
+  width: 100%;
+  height: auto;
+  max-height: 420px;
+}
+
+/* Fragment helpers */
+.reveal .fragment.fade-up {
+  transform: translateY(10px);
+}
+
+/* Highlight colors for fragments */
+.reveal .fragment.highlight-accent.visible { color: var(--accent); }
+.reveal .fragment.highlight-green.visible { color: var(--green); }
+.reveal .fragment.highlight-red.visible { color: var(--red); }
+.reveal .fragment.highlight-yellow.visible { color: var(--yellow); }
+
+/* ── Quiz slides ────────────────────────────── */
+.quiz-slide h2 {
+  font-size: 0.9em;
+  margin-bottom: 0.7rem;
+  color: var(--accent);
+}
+
+.quiz-options-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.quiz-opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.55rem 0.85rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.5em;
+  line-height: 1.4;
+  transition: border-color 0.15s, background 0.15s;
+  user-select: none;
+}
+
+.quiz-opt:hover { border-color: var(--accent); background: var(--accent-dim); }
+.quiz-opt.selected { border-color: var(--accent); background: var(--accent-dim); }
+.quiz-opt.correct { border-color: var(--green); background: var(--green-dim); color: var(--green); }
+.quiz-opt.wrong { border-color: var(--red); background: var(--red-dim); color: var(--red); }
+
+.quiz-letter {
+  font-weight: 700;
+  font-size: 0.88em;
+  min-width: 1.2em;
+  padding-top: 0.05em;
+  color: var(--muted);
+}
+
+.quiz-check {
+  margin-top: 0.75rem;
+  padding: 0.4rem 1rem;
+  background: var(--accent);
+  color: #0f1117;
+  border: none;
+  border-radius: 5px;
+  font-family: var(--r-main-font);
+  font-size: 0.48em;
+  font-weight: 700;
+  cursor: pointer;
+  opacity: 0.95;
+}
+
+.quiz-check:disabled { opacity: 0.35; cursor: default; }
+.quiz-check:hover:not(:disabled) { opacity: 1; }
+
+.quiz-feedback {
+  margin-top: 0.5rem;
+  font-size: 0.45em;
+  min-height: 1.4em;
+  display: none;
+  line-height: 1.4;
+}
+
+.quiz-feedback.visible { display: block; }
+.quiz-feedback.correct { color: var(--green); }
+.quiz-feedback.wrong { color: var(--red); }
+
+/* ── Ask teacher ────────────────────────────── */
+.ask-teacher {
+  margin-top: 0.75rem;
+  padding: 0.55rem 0.85rem;
+  background: var(--yellow-dim);
+  border: 1px solid #92400e;
+  border-radius: 6px;
+  font-size: 0.45em;
+  color: var(--yellow);
+  line-height: 1.4;
+}
+
+/* ── Key points list ────────────────────────── */
+.reveal ul {
+  margin-left: 1.2em;
+}
+
+.reveal ul li {
+  margin-bottom: 0.45rem;
+  line-height: 1.45;
+}
+
+/* ── Rule / divider ─────────────────────────── */
+.rule {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0.75rem 0;
+}
+
+/* ── Slide footer ───────────────────────────── */
+.slide-footer {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 1.5rem;
+  font-size: 0.35em;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+/* ── Heading sizes ──────────────────────────── */
+.reveal h1 { font-size: 1.8em; letter-spacing: -0.02em; }
+.reveal h2 { font-size: 1.25em; font-weight: 700; margin-bottom: 0.6rem; }
+.reveal h3 { font-size: 0.9em; font-weight: 600; color: var(--accent); margin-bottom: 0.4rem; }
+
+/* ── Monospace text ─────────────────────────── */
+.mono { font-family: var(--mono); font-size: 0.9em; }
+.muted { color: var(--muted); }
+.accent { color: var(--accent); }
+.green { color: var(--green); }
+.red { color: var(--red); }
+.yellow { color: var(--yellow); }

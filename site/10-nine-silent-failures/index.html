@@ -1,0 +1,2415 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A learning series on building production agent systems that fail loudly, not silently — state, streaming, locking, durable runs, and prompt design.">
+      
+      
+        <meta name="author" content="Neelesh Sethi">
+      
+      
+      
+        <link rel="prev" href="../lessons/">
+      
+      
+        <link rel="next" href="../00-glossary/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Capstone · Nine silent failures in one agent - Agentic Engineering Patterns</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/scrubber.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#capstone-nine-silent-failures-in-one-langgraph-research-agent" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Agentic Engineering Patterns" class="md-header__button md-logo" aria-label="Agentic Engineering Patterns" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Agentic Engineering Patterns
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Capstone · Nine silent failures in one agent
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/neeleshsethi/agentic-engineering-patterns" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    neeleshsethi/agentic-engineering-patterns
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Agentic Engineering Patterns" class="md-nav__button md-logo" aria-label="Agentic Engineering Patterns" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Agentic Engineering Patterns
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/neeleshsethi/agentic-engineering-patterns" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    neeleshsethi/agentic-engineering-patterns
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01-problem-design-implementation-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chapter 1 · Problem, design, and implementation plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02-end-to-end-architecture-and-orchestrator-flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chapter 2 · End-to-end architecture and orchestrator flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02-state-and-checkpoints/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 1 · State and checkpoints
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03-context-injection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 2 · Context injection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04-planning-and-human-approval/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 3 · Planning and human approval
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05-identifiers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 4 · Identifiers that hold a run together
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06-streaming-and-background-work/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 5 · Streaming and background work
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07-distributed-locks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 6 · Distributed locks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08-queue-and-worker-execution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 7 · Queue and worker execution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09-orchestrator-prompt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 8 · Orchestrator prompt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09a-clarifications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Clarifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09b-code-components-and-organization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Code components and organization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09c-plan-lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Plan lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09d-reactive-mode-prompt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Reactive mode prompt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lessons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interactive lessons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone · Nine silent failures in one agent
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone · Nine silent failures in one agent
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-system-in-plain-english" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The system in plain English
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vocabulary-for-a-new-engineer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vocabulary for a new engineer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-architecture-one-user-turn-several-http-requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The architecture: one user turn, several HTTP requests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The architecture: one user turn, several HTTP requests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-the-checkpoint-ties-them-together" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the checkpoint ties them together
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-the-checkpoint-and-the-resume-claim-live-in-the-same-dynamodb-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why the checkpoint and the resume claim live in the same DynamoDB table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#one-langfuse-trace-across-all-three-requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One Langfuse trace across all three requests
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-design-state-channels-and-middleware" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The design: state channels and middleware
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The design: state channels and middleware">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-a-langgraph-channel-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What a LangGraph channel is
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-we-split-state-across-two-typeddicts-in-two-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why we split state across two TypedDicts in two files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-middleware-for-context-injection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why middleware for context injection
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-injected-context-kept-overriding-a-decision-the-user-already-made" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Injected context kept overriding a decision the user already made
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-a-framework-dependency-swapped-in-a-synthetic-humanmessage-under-our-feet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. A framework dependency swapped in a synthetic HumanMessage under our feet
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-a-search-loop-continued-past-its-target-and-decorated-the-wrong-message" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. A search loop continued past its target and decorated the wrong message
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-user-influenced-text-inside-a-trusted-block-could-forge-its-own-closing-delimiter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. User-influenced text inside a trusted block could forge its own closing delimiter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-a-three-file-invariant-had-no-structural-owner-and-no-error-on-violation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. A three-file invariant had no structural owner and no error on violation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-the-post-stream-database-write-got-cancelled-when-the-client-hung-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. The post-stream database write got cancelled when the client hung up
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-writer-and-reader-used-different-keys-for-the-same-record" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Writer and reader used different keys for the same record
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-the-lock-release-did-not-prove-it-still-owned-the-lock" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. The lock release did not prove it still owned the lock
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-embedding-stateful-context-in-message-records-made-an-explicit-reset-invisible" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Embedding stateful context in message records made an explicit reset invisible
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The pattern
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-note-on-the-approval-code-snippet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A note on the approval code snippet
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#four-more-from-production-post-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Four more from production (post-release)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Four more from production (post-release)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#quadratic-writes-from-replace-semantics-streaming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quadratic writes from replace-semantics streaming
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#async-client-bound-to-a-per-job-event-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Async client bound to a per-job event loop
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#burned-timeout-retried" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Burned timeout retried
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stale-plan-re-persisted-on-a-follow-up-turn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stale plan re-persisted on a follow-up turn
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18" >
+        
+          
+          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00-glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Glossary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_18_2" id="__nav_18_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source Notes (advanced)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_18_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Source Notes (advanced)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/before-resume/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Before Resume
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/orchestrator-prompt-annotated/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Orchestrator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/life-of-a-deep-run/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Life of a Deep Run
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-system-in-plain-english" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The system in plain English
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vocabulary-for-a-new-engineer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vocabulary for a new engineer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-architecture-one-user-turn-several-http-requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The architecture: one user turn, several HTTP requests
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The architecture: one user turn, several HTTP requests">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-the-checkpoint-ties-them-together" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How the checkpoint ties them together
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-the-checkpoint-and-the-resume-claim-live-in-the-same-dynamodb-table" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why the checkpoint and the resume claim live in the same DynamoDB table
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#one-langfuse-trace-across-all-three-requests" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One Langfuse trace across all three requests
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-design-state-channels-and-middleware" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The design: state channels and middleware
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The design: state channels and middleware">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-a-langgraph-channel-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What a LangGraph channel is
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-we-split-state-across-two-typeddicts-in-two-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why we split state across two TypedDicts in two files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#why-middleware-for-context-injection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why middleware for context injection
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-injected-context-kept-overriding-a-decision-the-user-already-made" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Injected context kept overriding a decision the user already made
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-a-framework-dependency-swapped-in-a-synthetic-humanmessage-under-our-feet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. A framework dependency swapped in a synthetic HumanMessage under our feet
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-a-search-loop-continued-past-its-target-and-decorated-the-wrong-message" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. A search loop continued past its target and decorated the wrong message
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-user-influenced-text-inside-a-trusted-block-could-forge-its-own-closing-delimiter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. User-influenced text inside a trusted block could forge its own closing delimiter
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-a-three-file-invariant-had-no-structural-owner-and-no-error-on-violation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. A three-file invariant had no structural owner and no error on violation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-the-post-stream-database-write-got-cancelled-when-the-client-hung-up" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. The post-stream database write got cancelled when the client hung up
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-writer-and-reader-used-different-keys-for-the-same-record" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Writer and reader used different keys for the same record
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-the-lock-release-did-not-prove-it-still-owned-the-lock" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. The lock release did not prove it still owned the lock
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-embedding-stateful-context-in-message-records-made-an-explicit-reset-invisible" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Embedding stateful context in message records made an explicit reset invisible
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The pattern
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-note-on-the-approval-code-snippet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A note on the approval code snippet
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#four-more-from-production-post-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Four more from production (post-release)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Four more from production (post-release)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#quadratic-writes-from-replace-semantics-streaming" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quadratic writes from replace-semantics streaming
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#async-client-bound-to-a-per-job-event-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Async client bound to a per-job event loop
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#burned-timeout-retried" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Burned timeout retried
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stale-plan-re-persisted-on-a-follow-up-turn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Stale plan re-persisted on a follow-up turn
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/neeleshsethi/agentic-engineering-patterns/edit/main/articles/10-nine-silent-failures.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="capstone-nine-silent-failures-in-one-langgraph-research-agent">Capstone · Nine Silent Failures In One LangGraph Research Agent<a class="headerlink" href="#capstone-nine-silent-failures-in-one-langgraph-research-agent" title="Permanent link">&para;</a></h1>
+<p>Use this as the final review exercise: a deep agent can look healthy, return <code>200 OK</code>, and still be wrong.</p>
+<blockquote>
+<p><strong>Capstone.</strong> This is where the series lands: the nine bugs below are the failure modes from the build path — state, context, planning, identifiers, streaming, locking, durability, and prompt boundaries — seen together in one real system. It also stands on its own, so a few ideas from earlier articles are re-introduced briefly here.</p>
+</blockquote>
+<p>This article is written for the engineer who has built normal Python APIs and is now trying to understand production agents. If that is you, here is the uncomfortable shift: with agent systems, "the request succeeded" is not the same as "the work was correct."</p>
+<p>We learned this while building a research agent for pharma business questions. The agent takes a question, proposes a multi-step research plan, pauses for human approval, then executes the approved plan and writes a report. On paper, the stack was ordinary enough: LangGraph for orchestration, middleware for context injection, DynamoDB for persistence, and Server-Sent Events for streaming progress to the browser.</p>
+<p>Before one release, code review found nine bugs. None crashed the app. None produced scary logs. None would have paged anyone. They all did something more dangerous: they completed successfully while corrupting the meaning of the run.</p>
+<p>That is the core lesson of this piece:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Transport success means:
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  the HTTP request finished
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>Semantic success means:
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  the right context, state, lock, plan, and persistence rules all held
+</code></pre></div>
+<p>Deep agents fail when those two meanings drift apart.</p>
+<h2 id="the-system-in-plain-english">The system in plain English<a class="headerlink" href="#the-system-in-plain-english" title="Permanent link">&para;</a></h2>
+<p>Imagine a business user asks:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Give me my sales.
+</code></pre></div>
+<p>That sentence is not enough by itself. The system needs to know what "my" means: which country, which product, which time period, and which previous conversation context should carry forward.</p>
+<p>So the agent does four things:</p>
+<ol>
+<li>It adds user-specific context before the model sees the question.</li>
+<li>It asks the model to propose a research plan.</li>
+<li>It pauses and waits for a human to approve or refine that plan.</li>
+<li>It resumes later, runs the research, streams progress, and saves the final answer.</li>
+</ol>
+<p>The hard part is that these steps do not happen inside one neat function call. A single user turn spans multiple HTTP requests, may resume on a different API replica, and depends on checkpointed state in DynamoDB.</p>
+<p>That is why the bugs below are interesting. They are not "the model hallucinated" stories. They are ordinary engineering bugs at the boundaries around the model.</p>
+<h2 id="vocabulary-for-a-new-engineer">Vocabulary for a new engineer<a class="headerlink" href="#vocabulary-for-a-new-engineer" title="Permanent link">&para;</a></h2>
+<p>You only need a handful of terms before the failure list. Each one is also in the <a href="../00-glossary/">glossary</a>, defined once for the whole series.</p>
+<p><code>thread_id</code> is the durable identity of one conversation or run. LangGraph uses it to find the right checkpoint. Same <code>thread_id</code>, same logical graph thread.</p>
+<p><code>state</code> is the dictionary the graph reads and writes. It contains channels such as <code>messages</code>, <code>plan</code>, <code>raw_question</code>, and <code>user_context</code>.</p>
+<p><code>checkpoint</code> is the persisted copy of that state plus LangGraph bookkeeping. In this system it lives in DynamoDB, so a later HTTP request on another API replica can resume the same graph.</p>
+<p><code>interrupt()</code> pauses the graph and stores a pending resume point in the checkpoint. The HTTP request can end while the graph waits for a human decision.</p>
+<p><code>Command(resume=...)</code> is the input used by a later HTTP request to continue from that pending interrupt.</p>
+<p><code>plan_id</code> is an application-level identifier inside the proposed plan. LangGraph does not invent it. We store it inside the plan object that is included in the interrupt payload and checkpointed state.</p>
+<p><code>claim_token</code> is a random ownership token for the distributed resume lock. It proves that the caller releasing a lock is the same caller that acquired it.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>User turn
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  thread_id: "t-123"
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  checkpoint:
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    state.plan.plan_id = "p-456"
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    pending interrupt payload.plan.plan_id = "p-456"
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>  claim:
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    PK = "CLAIM#t-123"
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    claim_token = "random-uuid"
+</code></pre></div>
+<h2 id="the-architecture-one-user-turn-several-http-requests">The architecture: one user turn, several HTTP requests<a class="headerlink" href="#the-architecture-one-user-turn-several-http-requests" title="Permanent link">&para;</a></h2>
+<p>Most backend systems map one user action to one request. Deep mode does not. A single research turn spans at minimum three separate HTTP requests over potentially 30 or more minutes:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>POST /chat/stream?mode=deep        &lt;- proposal: fresh question, starts the graph
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>  -&gt; streams plan as SSE
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  -&gt; closes at "interrupt" frame (graph pauses, no "end" sent)
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>POST /deep/{thread_id}/plan/refine &lt;- optional: user wants changes
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>  -&gt; Command(resume={type: refine, feedback: "..."})
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>  -&gt; streams updated plan, closes at "interrupt" again
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>POST /deep/{thread_id}/approve/async &lt;- user locks the plan
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>  -&gt; validate plan_id + interrupt_id
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>  -&gt; stage resume decision in checkpoint
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>  -&gt; write run-state queued
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>  -&gt; enqueue FIFO message
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>  -&gt; return 202 queued
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>GET /deep/{thread_id}/events       &lt;- browser watches research
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>  -&gt; tail curated event log until run-state completed/failed
+</code></pre></div>
+<p>These are independent HTTP requests, potentially from different browser tabs, different API replicas, and minutes apart. The graph does not know they are related. LangGraph's checkpointer does.</p>
+<h3 id="how-the-checkpoint-ties-them-together">How the checkpoint ties them together<a class="headerlink" href="#how-the-checkpoint-ties-them-together" title="Permanent link">&para;</a></h3>
+<p>Every LangGraph node that runs writes its output to the checkpoint. When <code>submit_plan</code> calls <code>interrupt()</code>, the graph pauses and LangGraph writes the interrupt payload, including the plan, the prompt, and gate metadata, to the checkpoint's pending writes. The HTTP request finishes, the SSE stream closes, but the graph state is frozen in DynamoDB, waiting.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># gate.py - submit_plan tool</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="n">decision</span><span class="p">,</span> <span class="n">feedback</span> <span class="o">=</span> <span class="n">_decision_of</span><span class="p">(</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="n">interrupt</span><span class="p">({</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>        <span class="s2">"kind"</span><span class="p">:</span> <span class="s2">"plan_approval"</span><span class="p">,</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>        <span class="s2">"thread_id"</span><span class="p">:</span> <span class="n">thread_id</span><span class="p">,</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>        <span class="s2">"owner_id"</span><span class="p">:</span> <span class="n">owner_id</span><span class="p">,</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>        <span class="s2">"plan"</span><span class="p">:</span> <span class="n">plan</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(),</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>        <span class="s2">"prompt"</span><span class="p">:</span> <span class="n">prompt</span><span class="p">,</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="p">})</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="p">)</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="c1"># Everything above interrupt() re-runs on every resume.</span>
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a><span class="c1"># Everything below runs only after the human decision arrives.</span>
+</code></pre></div>
+<p>The plan is therefore stored twice for practical purposes:</p>
+<ul>
+<li>As graph state in the <code>plan</code> channel, so later graph nodes can read it.</li>
+<li>As part of the pending interrupt payload, so the HTTP approval endpoint can validate the exact plan before resuming.</li>
+</ul>
+<p>That is why <code>read_pending_gate(thread_id)</code> can see <code>gate["plan"]["plan_id"]</code> before the graph resumes. It is reading the pending interrupt metadata from the checkpoint, not recomputing the plan.</p>
+<p>On the refine or approve request, <code>read_pending_gate(thread_id)</code> reads the interrupt payload directly from the checkpointer, with no graph compile required, to validate preconditions. A refine request may synchronously resume to produce another plan. In the production approve path, the endpoint stages the approval decision into the checkpoint, writes run-state as <code>queued</code>, enqueues a FIFO message, and returns <code>202 queued</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># deep.py router - approve endpoint</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">gate</span> <span class="o">=</span> <span class="n">read_pending_gate</span><span class="p">(</span><span class="n">thread_id</span><span class="p">)</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="k">if</span> <span class="n">gate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="k">if</span> <span class="n">gate</span><span class="p">[</span><span class="s2">"plan"</span><span class="p">][</span><span class="s2">"plan_id"</span><span class="p">]</span> <span class="o">!=</span> <span class="n">payload</span><span class="o">.</span><span class="n">plan_id</span><span class="p">:</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="mi">409</span><span class="p">,</span> <span class="s2">"plan_id_mismatch"</span><span class="p">)</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="n">persist_resume_decision</span><span class="p">(</span><span class="n">thread_id</span><span class="p">,</span> <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="s2">"approve"</span><span class="p">})</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="n">put_run_state</span><span class="p">(</span><span class="n">thread_id</span><span class="p">,</span> <span class="n">run_id</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s2">"queued"</span><span class="p">)</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="n">enqueue_deep_run</span><span class="p">(</span><span class="n">thread_id</span><span class="p">,</span> <span class="n">run_id</span><span class="p">)</span>
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="k">return</span> <span class="p">{</span><span class="s2">"status"</span><span class="p">:</span> <span class="s2">"queued"</span><span class="p">,</span> <span class="s2">"run_id"</span><span class="p">:</span> <span class="n">run_id</span><span class="p">}</span>
+</code></pre></div>
+<p>The <code>plan_id</code> and <code>interrupt_id</code> checks prevent a stale browser tab from approving an older pause after the user has refined it. <code>plan_id</code> may identify the logical plan across refinements; <code>interrupt_id</code> identifies the exact interrupt the user saw.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>Tab A sees plan_id p1
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>Tab B refines plan to p2
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>Tab A clicks approve with p1
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>API reads pending gate p2
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>API returns 409 plan_id_mismatch
+</code></pre></div>
+<p>Later, the worker receives the queue message and calls <code>agent.astream_events(None, config)</code>. The approval is not in the SQS message and not in an ordinary state channel; it is already staged in checkpoint pending writes.</p>
+<h3 id="why-the-checkpoint-and-the-resume-claim-live-in-the-same-dynamodb-table">Why the checkpoint and the resume claim live in the same DynamoDB table<a class="headerlink" href="#why-the-checkpoint-and-the-resume-claim-live-in-the-same-dynamodb-table" title="Permanent link">&para;</a></h3>
+<p>LangGraph does not support concurrent runs on a single thread. Two approve clicks racing, or two browser tabs both hitting approve, would execute the research plan twice and leave the final checkpoint to whichever process finished last. To prevent this, we write a claim item to DynamoDB before every resume:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>DynamoDB table: deep-checkpoints
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>|- Checkpoint items  (LangGraph's own PK/SK scheme per thread + step)
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>\- Claim items       PK = "CLAIM#{thread_id}", SK = "RESUME"
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>                     Fields: claim_token, expires_at, ttl
+</code></pre></div>
+<p>Both live in the same table because the claim needs the same durability and region as the checkpoint. If the checkpoint is in DynamoDB, an in-process claim would be invisible to other API replicas. The conditional write is atomic at the DynamoDB level:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">_dynamodb_client</span><span class="p">()</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="n">TableName</span><span class="o">=</span><span class="n">deep_checkpoints_table_name</span><span class="p">(),</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="n">Item</span><span class="o">=</span><span class="p">{</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>        <span class="s2">"PK"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"CLAIM#</span><span class="si">{</span><span class="n">thread_id</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>        <span class="s2">"SK"</span><span class="p">:</span> <span class="s2">"RESUME"</span><span class="p">,</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>        <span class="s2">"claim_token"</span><span class="p">:</span> <span class="n">token</span><span class="p">,</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>        <span class="s2">"expires_at"</span><span class="p">:</span> <span class="n">now</span> <span class="o">+</span> <span class="mi">1800</span><span class="p">,</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>        <span class="s2">"ttl"</span><span class="p">:</span> <span class="n">now</span> <span class="o">+</span> <span class="mi">3600</span><span class="p">,</span>
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>    <span class="p">},</span>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>    <span class="n">ConditionExpression</span><span class="o">=</span><span class="s2">"attribute_not_exists(PK) OR expires_at &lt; :now"</span><span class="p">,</span>
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>    <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span><span class="s2">":now"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">now</span><span class="p">)},</span>
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="p">)</span>
+</code></pre></div>
+<p><code>attribute_not_exists(PK)</code> is DynamoDB's "only if no current item exists" condition. For this claim item, it means "acquire the resume lock only if another request has not already created one."</p>
+<p><code>OR expires_at &lt; :now</code> lets the system recover if a worker crashes while holding the claim. A new request can acquire the claim after the lease expires.</p>
+<p>Release is token-guarded: the caller holds a UUID token from acquire, and the delete only succeeds if the stored token still matches. A stream that outlives its 30-minute lease can be re-claimed by a new request. When the original stream eventually finishes and tries to release, it gets <code>ConditionalCheckFailedException</code>, logs it at info, and leaves the new holder's lease intact.</p>
+<h3 id="one-langfuse-trace-across-all-three-requests">One Langfuse trace across all three requests<a class="headerlink" href="#one-langfuse-trace-across-all-three-requests" title="Permanent link">&para;</a></h3>
+<p>Each <code>graph.astream_events()</code> call opens a new LangGraph run, which by default opens a new Langfuse trace. Without intervention, a deep turn that goes proposal -&gt; refine -&gt; approve produces three sibling traces with no structural link. We seed the trace ID deterministically from the thread ID:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="n">trace_id</span> <span class="o">=</span> <span class="n">langfuse_client</span><span class="o">.</span><span class="n">create_trace_id</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="sa">f</span><span class="s2">"deep:</span><span class="si">{</span><span class="n">thread_id</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">handler</span> <span class="o">=</span> <span class="n">CallbackHandler</span><span class="p">(</span><span class="n">trace_context</span><span class="o">=</span><span class="p">{</span><span class="s2">"trace_id"</span><span class="p">:</span> <span class="n">trace_id</span><span class="p">})</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="n">handler</span><span class="o">.</span><span class="n">last_trace_id</span> <span class="o">=</span> <span class="n">trace_id</span>
+</code></pre></div>
+<p>Same <code>thread_id</code> means the same seed, which means the same trace ID on every request. All three phases land in one Langfuse trace, one Agent Graph, properly sequenced.</p>
+<p>In Langfuse terms, a trace is the top-level timeline for one logical user task. A run or observation is one child operation inside that timeline, such as a LangGraph invocation, model call, tool call, or chain step.</p>
+<p><code>CallbackHandler</code> is the bridge that receives LangChain/LangGraph callback events and sends them to Langfuse. Passing <code>trace_context={"trace_id": trace_id}</code> tells it to attach this request's events to the existing logical trace.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>Langfuse trace: deep:t-123
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>  run: proposal request
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>    model call
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>    tool call submit_plan
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>  run: refine request
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>    model call
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>    tool call submit_plan
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>  run: approve request
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>    model calls
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>    research tools
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>    report writer
+</code></pre></div>
+<p>Without the seeded trace ID, those three HTTP requests look like unrelated traces. Debugging "why did this approved plan produce that report?" becomes a manual correlation problem.</p>
+<h2 id="the-design-state-channels-and-middleware">The design: state channels and middleware<a class="headerlink" href="#the-design-state-channels-and-middleware" title="Permanent link">&para;</a></h2>
+<h3 id="what-a-langgraph-channel-is">What a LangGraph channel is<a class="headerlink" href="#what-a-langgraph-channel-is" title="Permanent link">&para;</a></h3>
+<p>LangGraph state is a typed dict where each key has explicitly declared update semantics. The default is <code>LastValue</code>: each write replaces the previous value, and a key not written on a given invoke inherits whatever the checkpoint held. There are also reducer channels. <code>messages</code> uses one that appends new messages rather than replacing the list, reducing checkpoint growth from quadratic to linear.</p>
+<p>The channel model matters because "I did not write this key" has a defined, non-obvious meaning: the previous value survives. In a multi-phase pipeline, resume paths only write the channels relevant to their phase. The rest carry over from checkpoint. That is correct behavior for most channels and a footgun for channels that need to be explicitly reset on a new turn.</p>
+<p>Persisted channels in our agent included:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>messages          DeltaChannel    Full transcript: HumanMessage, AIMessage, ToolMessage
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>todos             LastValue       [{content, status}] managed by write_todos tool
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>plan              LastValue       Serialized Plan dict: plan_id, status, steps, modification_count
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>entity_groups     LastValue       [{country, brand, period}] written by submit_plan
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>raw_question      LastValue       User's verbatim question text
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>user_context      LastValue       Rendered context block (defaults + memory)
+</code></pre></div>
+<h3 id="why-we-split-state-across-two-typeddicts-in-two-files">Why we split state across two TypedDicts in two files<a class="headerlink" href="#why-we-split-state-across-two-typeddicts-in-two-files" title="Permanent link">&para;</a></h3>
+<p>LangGraph compiles the graph state schema from <code>state_schema=</code> plus any <code>state_schema</code> fields declared by middleware. We used that to co-locate each channel declaration with its sole writer:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># gate.py</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="k">class</span><span class="w"> </span><span class="nc">DeepState</span><span class="p">(</span><span class="n">DeepAgentState</span><span class="p">):</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>    <span class="n">plan</span><span class="p">:</span> <span class="n">NotRequired</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>    <span class="n">entity_groups</span><span class="p">:</span> <span class="n">NotRequired</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="c1"># proposal_context.py</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="k">class</span><span class="w"> </span><span class="nc">_UserContextState</span><span class="p">(</span><span class="n">AgentState</span><span class="p">):</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>    <span class="n">raw_question</span><span class="p">:</span> <span class="n">NotRequired</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>    <span class="n">user_context</span><span class="p">:</span> <span class="n">NotRequired</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="c1"># graph.py</span>
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="n">graph</span> <span class="o">=</span> <span class="n">create_deep_agent</span><span class="p">(</span>
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>    <span class="o">...</span><span class="p">,</span>
+<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a>    <span class="n">state_schema</span><span class="o">=</span><span class="n">DeepState</span><span class="p">,</span>
+<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a>    <span class="n">middleware</span><span class="o">=</span><span class="p">[</span><span class="n">UserContextMiddleware</span><span class="p">(),</span> <span class="o">...</span><span class="p">],</span>
+<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a><span class="p">)</span>
+</code></pre></div>
+<p>At compile time, LangGraph merges <code>DeepState</code> and <code>_UserContextState</code> into one checkpointed schema. At runtime they are indistinguishable, but in the source each channel declaration sits beside the code that writes it. Dropping <code>UserContextMiddleware</code> from the middleware list still compiles and runs. The channels just disappear from the checkpoint quietly, which is exactly the sort of structural gap Bug 5 exploited.</p>
+<h3 id="why-middleware-for-context-injection">Why middleware for context injection<a class="headerlink" href="#why-middleware-for-context-injection" title="Permanent link">&para;</a></h3>
+<p>We needed to prepend user-specific context, including defaults and prior conversation entities, to the user's question before it hit the model. Four approaches were on the table:</p>
+<ul>
+<li>System prompt injection: rejected because the orchestrator prompt is request-invariant and cached.</li>
+<li>Checkpointed message injection: rejected because the block would accumulate in history across turns.</li>
+<li>Tool call: rejected because it adds an extra model/tool round trip and can be skipped.</li>
+<li>Middleware: inject just before the LLM call, after the checkpoint is read.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">UserContextMiddleware</span><span class="p">(</span><span class="n">AgentMiddleware</span><span class="p">):</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>    <span class="n">state_schema</span> <span class="o">=</span> <span class="n">_UserContextState</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">wrap_model_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">ModelRequest</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>        <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_inject</span><span class="p">(</span><span class="n">request</span><span class="p">))</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">awrap_model_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">ModelRequest</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>        <span class="k">return</span> <span class="k">await</span> <span class="n">handler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_inject</span><span class="p">(</span><span class="n">request</span><span class="p">))</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>
+<a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_inject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">ModelRequest</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModelRequest</span><span class="p">:</span>
+<a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>        <span class="n">context</span> <span class="o">=</span> <span class="nb">str</span><span class="p">((</span><span class="n">request</span><span class="o">.</span><span class="n">state</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"user_context"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span>
+<a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">context</span><span class="p">:</span>
+<a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>            <span class="k">return</span> <span class="n">request</span>
+<a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a>        <span class="o">...</span>
+<a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a>        <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">override</span><span class="p">(</span><span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">)</span>
+</code></pre></div>
+<p><code>request.override(messages=...)</code> returns a new <code>ModelRequest</code>. It does not mutate state. The injected copy vanishes after the model call, the checkpoint stays clean, and the middleware reads its own declared channels directly from <code>request.state</code>.</p>
+<p>The tradeoff is that the injection is invisible in the checkpointed transcript and every assumption the injection code makes about message structure becomes a correctness risk. Bugs 2 and 3 are both examples of those assumptions failing.</p>
+<h2 id="1-injected-context-kept-overriding-a-decision-the-user-already-made">1. Injected context kept overriding a decision the user already made<a class="headerlink" href="#1-injected-context-kept-overriding-a-decision-the-user-already-made" title="Permanent link">&para;</a></h2>
+<p>Before every LLM call, middleware injected a context block with the user's default entities and prior conversation history. That is useful for vague questions like "give me my sales."</p>
+<p>Two names matter here:</p>
+<ul>
+<li><strong>Raw question</strong> means the exact text the user typed, before the system adds anything.</li>
+<li><strong>Model input</strong> means what the LLM actually receives: system prompt, injected user context, conversation history, tool messages, and the raw question.</li>
+</ul>
+<p>So if the user types <code>"Give me my sales for GERMANY"</code>, the raw question contains <code>GERMANY</code>. Middleware then wraps extra context around it before the model sees it.</p>
+<p>Here is the missing moment: <strong>Germany comes from the user's question and then from the human-approved plan.</strong> Australia is only the user's default.</p>
+<div class="scrubber" data-scrubber markdown="0">
+  <div class="scrubber-stage">
+    <div class="scrubber-step">
+      <span class="scrubber-time">1 · Middleware adds defaults</span>
+      <div class="scrubber-caption">Before the model sees the question, the API adds account context. The default country is Australia. This is helpful only when the user did not name a country.</div>
+      <pre class="scrubber-item">[User context]
+default country = AUSTRALIA
+[/User context]</pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">2 · User names Germany</span>
+      <div class="scrubber-caption">The actual question explicitly says Germany. During planning, the model should prefer the user's words over the default.</div>
+      <pre class="scrubber-item">[User context] default country = AUSTRALIA [/User context]
+
+"Give me my sales for GERMANY"
+
+resolved country = GERMANY   <span class="ok">correct</span></pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">3 · Human approves Germany</span>
+      <div class="scrubber-caption">The plan is now locked with Germany as the entity. From this point on, execution should use the locked plan, not re-read defaults.</div>
+      <pre class="scrubber-item">approved plan:
+  step 1: query sales
+  entities.country = GERMANY   <span class="ok">locked</span></pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">4 · The bug: defaults return</span>
+      <div class="scrubber-caption">Middleware injects the Australia default again during execution. Without a prompt rule saying locked plan entities are final, the model may re-resolve and drift back to Australia.</div>
+      <pre class="scrubber-item">top of model input:
+  [User context] default country = AUSTRALIA [/User context]   <span class="warn">high salience</span>
+
+later in history:
+  [tool] Plan approved: GERMANY   <span class="ok">buried</span>
+
+model picks AUSTRALIA   <span class="bad">wrong country, 200 OK</span></pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">5 · The fix</span>
+      <div class="scrubber-caption">The context block and execute-phase prompt both state the priority rule: explicit question entities beat defaults, and locked plan entities beat the context block during execution.</div>
+      <pre class="scrubber-item">priority:
+  question entities > user defaults
+  locked plan entities > user defaults during execution
+
+execution country = GERMANY   <span class="ok">correct</span></pre>
+    </div>
+  </div>
+</div>
+
+<p>The bug was that we injected context on every model call, including execution calls after the user had already approved a plan with specific entities. The approved <code>GERMANY</code> decision lived in plan state and a tool message, while the Australia default kept being reattached near the top of each fresh model input.</p>
+<p>That is why the report could be about the wrong country without any crash: the model did not fail to read Germany during planning. It forgot that Germany was already final during execution.</p>
+<p>The obvious fix was wrong. Gating injection on <code>plan["status"] == "locked"</code> would break multi-turn sessions because the previous question's locked plan still sits in the <code>plan</code> channel while a new question is entering the planning phase.</p>
+<p>The actual fix was to write the rule into the prompt itself:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="s2">"[User context - entities named explicitly in the question always win over these defaults, "</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="s2">"and once a research plan is approved and locked, the locked plan's entities "</span>
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="s2">"win over these defaults]</span><span class="se">\n</span><span class="s2">"</span>
+</code></pre></div>
+<p>We also added one sentence in the orchestrator's execute step: "The [User context] block is for plan-time entity resolution only. Once the plan is locked, never re-resolve entities from it."</p>
+<p>Lesson: when context should only apply at one phase of a multi-phase pipeline, encode that constraint in the context itself. A prompt rule beats a code gate when the code gate has to reason about shared state across turns.</p>
+<h2 id="2-a-framework-dependency-swapped-in-a-synthetic-humanmessage-under-our-feet">2. A framework dependency swapped in a synthetic HumanMessage under our feet<a class="headerlink" href="#2-a-framework-dependency-swapped-in-a-synthetic-humanmessage-under-our-feet" title="Permanent link">&para;</a></h2>
+<p>The injection code was the context middleware's model-call wrapper — the <code>UserContextMiddleware._inject(...)</code> method shown earlier in this article. It runs immediately before each LLM call and rewrites the model request, not the checkpointed state.</p>
+<p>The risky part was this pattern: scan the message list in reverse, find the latest <code>HumanMessage</code>, and attach the context block to it.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">_inject</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">ModelRequest</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModelRequest</span><span class="p">:</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>    <span class="n">messages</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">messages</span><span class="p">)</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>    <span class="n">context</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"user_context"</span><span class="p">)</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">messages</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">HumanMessage</span><span class="p">):</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>            <span class="n">messages</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">HumanMessage</span><span class="p">(</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>                <span class="n">content</span><span class="o">=</span><span class="n">compose_with_context</span><span class="p">(</span><span class="n">messages</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">content</span><span class="p">,</span> <span class="n">context</span><span class="p">),</span>
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>                <span class="n">additional_kwargs</span><span class="o">=</span><span class="n">messages</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">additional_kwargs</span><span class="p">,</span>
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a>            <span class="p">)</span>
+<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a>            <span class="k">break</span>
+<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a>
+<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a>    <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">override</span><span class="p">(</span><span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">)</span>
+</code></pre></div>
+<p>The bug was that <code>deepagents</code> unconditionally installs a summarization middleware that fires near the context window limit. When triggered, it rewrites the message list and inserts a synthetic <code>HumanMessage</code> containing the summary:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">messages</span> <span class="o">=</span> <span class="p">[</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>    <span class="n">HumanMessage</span><span class="p">(</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>        <span class="s2">"Here is a summary of the conversation to date: ..."</span><span class="p">,</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>        <span class="n">additional_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"lc_source"</span><span class="p">:</span> <span class="s2">"summarization"</span><span class="p">},</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>    <span class="p">),</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>    <span class="n">AIMessage</span><span class="p">(</span><span class="s2">"&lt;most recent&gt;"</span><span class="p">),</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="p">]</span>
+</code></pre></div>
+<p>The original user message may already be evicted. Our reverse scan found the synthetic summary as the latest human message and attached the context block to it. The delimiter told the model "everything after <code>[/User context]</code> is the user's own words," so we accidentally labeled summarizer prose as user-authored content.</p>
+<p>The fix was to skip framework-tagged synthetic messages:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="k">if</span> <span class="n">msg</span><span class="o">.</span><span class="n">additional_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"lc_source"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"summarization"</span><span class="p">:</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>    <span class="k">continue</span>
+</code></pre></div>
+<p>This helps because the injection code is not looking for "any human-shaped message." It is looking for the latest real user-authored message.</p>
+<p>The synthetic summary is human-shaped because it is represented as a <code>HumanMessage</code>, but it is framework-authored. The <code>lc_source</code> tag is the only reliable clue in that list that the message came from summarization middleware.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>Before fix
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>  reverse scan finds synthetic HumanMessage
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>  context attaches to summary
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>  model treats summary prose as user words
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>After fix
+<a id="__codelineno-18-7" name="__codelineno-18-7" href="#__codelineno-18-7"></a>  reverse scan skips lc_source=summarization
+<a id="__codelineno-18-8" name="__codelineno-18-8" href="#__codelineno-18-8"></a>  context attaches to real user message, or injection stops
+</code></pre></div>
+<p>Lesson: when your code finds "the latest item of type X in a list," enumerate every party that can insert an X. Framework middleware can insert objects that pass <code>isinstance(msg, HumanMessage)</code> without being genuine user input.</p>
+<h2 id="3-a-search-loop-continued-past-its-target-and-decorated-the-wrong-message">3. A search loop continued past its target and decorated the wrong message<a class="headerlink" href="#3-a-search-loop-continued-past-its-target-and-decorated-the-wrong-message" title="Permanent link">&para;</a></h2>
+<p>The injection code scanned backward through the message list looking for a <code>HumanMessage</code> with string content. The original condition:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">HumanMessage</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">content</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>    <span class="c1"># inject here</span>
+</code></pre></div>
+<p>LangChain messages can carry list-form content for multimodal inputs (images, documents). If the latest human message has list content, the condition fails and the loop <strong>keeps going backward</strong> until it finds an older string message.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>Message list (newest at the bottom):
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>  index 0  HumanMessage  "Give me Germany sales"     ← Turn 1 (string content)
+<a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>  index 1  AIMessage     "Here are the results..."
+<a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>  index 2  HumanMessage  [image, "Compare these"]    ← Turn 2 (LIST content, fails check)
+<a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>
+<a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a>Backward scan starts at index 2:
+<a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a>  index 2 → HumanMessage but content is list → FAIL → keep going
+<a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a>  index 1 → AIMessage → skip
+<a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a>  index 0 → HumanMessage with string → MATCH → inject here ✗ WRONG TURN
+</code></pre></div>
+<p>Turn 2's context ("user defaults: Australia") gets injected into Turn 1's question. Turn 2's message receives no context at all. The model plans for Australia when the user asked about Germany — from a turn that already completed.</p>
+<p>The fix was to separate "not the target" from "the target exists but cannot be processed":</p>
+<p>The fix was to separate "not the target" from "the target exists but cannot be processed":</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>    <span class="n">msg</span> <span class="o">=</span> <span class="n">messages</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">HumanMessage</span><span class="p">):</span>
+<a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>        <span class="k">continue</span>
+<a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>    <span class="k">if</span> <span class="n">msg</span><span class="o">.</span><span class="n">additional_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"lc_source"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"summarization"</span><span class="p">:</span>
+<a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>        <span class="k">continue</span>
+<a id="__codelineno-21-7" name="__codelineno-21-7" href="#__codelineno-21-7"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">content</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+<a id="__codelineno-21-8" name="__codelineno-21-8" href="#__codelineno-21-8"></a>        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+<a id="__codelineno-21-9" name="__codelineno-21-9" href="#__codelineno-21-9"></a>            <span class="s2">"user_context not injected: latest human message has </span><span class="si">%s</span><span class="s2"> content"</span><span class="p">,</span>
+<a id="__codelineno-21-10" name="__codelineno-21-10" href="#__codelineno-21-10"></a>            <span class="nb">type</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">content</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+<a id="__codelineno-21-11" name="__codelineno-21-11" href="#__codelineno-21-11"></a>        <span class="p">)</span>
+<a id="__codelineno-21-12" name="__codelineno-21-12" href="#__codelineno-21-12"></a>        <span class="k">return</span> <span class="n">request</span>
+<a id="__codelineno-21-13" name="__codelineno-21-13" href="#__codelineno-21-13"></a>    <span class="c1"># inject and return</span>
+</code></pre></div>
+<p>Lesson: in a backward search, failing the capability check should not silently retarget the search to an older item. When you find the right item but cannot act on it, stop and log.</p>
+<h2 id="4-user-influenced-text-inside-a-trusted-block-could-forge-its-own-closing-delimiter">4. User-influenced text inside a trusted block could forge its own closing delimiter<a class="headerlink" href="#4-user-influenced-text-inside-a-trusted-block-could-forge-its-own-closing-delimiter" title="Permanent link">&para;</a></h2>
+<p>The context block uses a closing delimiter that tells the model where injected context ends and the user's own words begin. Part of that block comes from session summaries derived from prior conversation text that we do not fully control.</p>
+<p>If session memory ever contained the literal string <code>[/User context]</code>, the composed message would have two closing markers and user-influenced text could escape the trusted block.</p>
+<p>The fix was one line before embedding user-influenced content:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">compose_with_context</span><span class="p">(</span><span class="n">content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">context</span><span class="p">:</span>
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>        <span class="k">return</span> <span class="n">content</span>
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>    <span class="n">context</span> <span class="o">=</span> <span class="n">_PARAGRAPH_BREAK</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>    <span class="n">context</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"[/User context]"</span><span class="p">,</span> <span class="s2">"[/user context]"</span><span class="p">)</span>
+<a id="__codelineno-22-6" name="__codelineno-22-6" href="#__codelineno-22-6"></a>    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">context</span><span class="si">}</span><span class="se">\n</span><span class="s2">[/User context]</span><span class="se">\n\n</span><span class="si">{</span><span class="n">content</span><span class="si">}</span><span class="s2">"</span>
+</code></pre></div>
+<p>Lesson: this is prompt injection. Any time you embed external text inside a structured format that uses delimiters, escape your delimiter before embedding.</p>
+<h2 id="5-a-three-file-invariant-had-no-structural-owner-and-no-error-on-violation">5. A three-file invariant had no structural owner and no error on violation<a class="headerlink" href="#5-a-three-file-invariant-had-no-structural-owner-and-no-error-on-violation" title="Permanent link">&para;</a></h2>
+<p>Our agent state uses <code>LastValue</code> channels, so any key not written on a given invoke inherits the previous checkpoint value. Starting a new conversation turn required writing three channels together: the message, the raw question, and the context block. Even when the context block is empty, it still must be written explicitly to reset the previous turn's value.</p>
+<p>The bug was that this invariant was a hand-assembled dict in one file, the channels were declared in another, and the code that depended on them lived in a third. Nothing enforced the rule structurally.</p>
+<p>That meant a future caller could innocently write:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="n">graph_input</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>    <span class="s2">"messages"</span><span class="p">:</span> <span class="p">[{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">question</span><span class="p">}],</span>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="p">}</span>
+</code></pre></div>
+<p>and the previous turn's <code>raw_question</code> and <code>user_context</code> would silently persist into the new turn.</p>
+<p>The fix was a factory function co-located with the channel declarations:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">build_proposal_graph_input</span><span class="p">(</span>
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>    <span class="n">question</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>    <span class="n">user_info</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>    <span class="n">memory</span><span class="p">:</span> <span class="nb">list</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+<a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="__codelineno-24-6" name="__codelineno-24-6" href="#__codelineno-24-6"></a>    <span class="k">return</span> <span class="p">{</span>
+<a id="__codelineno-24-7" name="__codelineno-24-7" href="#__codelineno-24-7"></a>        <span class="s2">"messages"</span><span class="p">:</span> <span class="p">[{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">question</span><span class="p">}],</span>
+<a id="__codelineno-24-8" name="__codelineno-24-8" href="#__codelineno-24-8"></a>        <span class="s2">"raw_question"</span><span class="p">:</span> <span class="n">question</span><span class="p">,</span>
+<a id="__codelineno-24-9" name="__codelineno-24-9" href="#__codelineno-24-9"></a>        <span class="s2">"user_context"</span><span class="p">:</span> <span class="n">build_proposal_user_context</span><span class="p">(</span><span class="n">user_info</span><span class="p">,</span> <span class="n">memory</span><span class="p">),</span>
+<a id="__codelineno-24-10" name="__codelineno-24-10" href="#__codelineno-24-10"></a>    <span class="p">}</span>
+</code></pre></div>
+<p>Lesson: there is a hierarchy of invariant enforcement: type signature, factory function, documented convention, and tribal knowledge. Critical invariants should sit as high in that hierarchy as practical.</p>
+<h2 id="6-the-post-stream-database-write-got-cancelled-when-the-client-hung-up">6. The post-stream database write got cancelled when the client hung up<a class="headerlink" href="#6-the-post-stream-database-write-got-cancelled-when-the-client-hung-up" title="Permanent link">&para;</a></h2>
+<p>A deep run finishes, we stream an <code>end</code> event, then save the turn to the database.</p>
+<p>The bug was that the frontend correctly closes the SSE connection as soon as it receives the <code>end</code> event. In Python and Starlette, a client disconnect raises <code>CancelledError</code> at the generator's next <code>await</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>BEFORE — the save is after the terminal event:
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>  server                           browser
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>    │  yield end_event  ──────────▶  │
+<a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>    │                                │  receives "end"
+<a id="__codelineno-25-6" name="__codelineno-25-6" href="#__codelineno-25-6"></a>    │                                │  closes connection immediately ✓
+<a id="__codelineno-25-7" name="__codelineno-25-7" href="#__codelineno-25-7"></a>    │  await save_to_database()      │
+<a id="__codelineno-25-8" name="__codelineno-25-8" href="#__codelineno-25-8"></a>    │       ↑                        │
+<a id="__codelineno-25-9" name="__codelineno-25-9" href="#__codelineno-25-9"></a>    │  CANCELLED — the browser       │
+<a id="__codelineno-25-10" name="__codelineno-25-10" href="#__codelineno-25-10"></a>    │  already left; this await      │
+<a id="__codelineno-25-11" name="__codelineno-25-11" href="#__codelineno-25-11"></a>    │  never resolves                │
+<a id="__codelineno-25-12" name="__codelineno-25-12" href="#__codelineno-25-12"></a>    │  no log, no error, turn lost   │
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>AFTER — the save is owned before yielding the terminal event:
+<a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>
+<a id="__codelineno-26-3" name="__codelineno-26-3" href="#__codelineno-26-3"></a>  server                           browser
+<a id="__codelineno-26-4" name="__codelineno-26-4" href="#__codelineno-26-4"></a>    │  task = create_task(save)      │
+<a id="__codelineno-26-5" name="__codelineno-26-5" href="#__codelineno-26-5"></a>    │  (save running in background)  │
+<a id="__codelineno-26-6" name="__codelineno-26-6" href="#__codelineno-26-6"></a>    │  yield end_event  ──────────▶  │
+<a id="__codelineno-26-7" name="__codelineno-26-7" href="#__codelineno-26-7"></a>    │                                │  receives "end"
+<a id="__codelineno-26-8" name="__codelineno-26-8" href="#__codelineno-26-8"></a>    │                                │  closes connection ✓
+<a id="__codelineno-26-9" name="__codelineno-26-9" href="#__codelineno-26-9"></a>    │  (background task still runs)  │
+<a id="__codelineno-26-10" name="__codelineno-26-10" href="#__codelineno-26-10"></a>    │  save completes ✓              │
+</code></pre></div>
+<p><code>CancelledError</code> is a <code>BaseException</code> in Python 3.11+, not an <code>Exception</code>, so ordinary <code>except Exception</code> blocks never saw it.</p>
+<p>The fix was to spawn a detached background task before yielding the terminal event:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"end"</span><span class="p">:</span>
+<a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>    <span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">save_to_database</span><span class="p">(</span><span class="o">...</span><span class="p">))</span>
+<a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>    <span class="n">_ACTIVE_TASKS</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+<a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>    <span class="n">task</span><span class="o">.</span><span class="n">add_done_callback</span><span class="p">(</span><span class="n">_ACTIVE_TASKS</span><span class="o">.</span><span class="n">discard</span><span class="p">)</span>
+<a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a><span class="k">yield</span> <span class="n">end_event</span>
+</code></pre></div>
+<p>Lesson: any <code>await</code> inside an SSE generator that runs after a terminal event is a race against client disconnect. Create the task before yielding the terminal event and hold a strong reference to it.</p>
+<h2 id="7-writer-and-reader-used-different-keys-for-the-same-record">7. Writer and reader used different keys for the same record<a class="headerlink" href="#7-writer-and-reader-used-different-keys-for-the-same-record" title="Permanent link">&para;</a></h2>
+<p>Chat history is stored in DynamoDB under <code>chat_id</code>. The approval payload marked <code>chat_id</code> as optional.</p>
+<p>The writer used a fallback:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="n">key</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">chat_id</span> <span class="ow">or</span> <span class="n">payload</span><span class="o">.</span><span class="n">session_id</span>
+</code></pre></div>
+<p>but every reader used only <code>chat_id</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="n">history</span> <span class="o">=</span> <span class="n">get_history</span><span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">chat_id</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span>
+</code></pre></div>
+<p>When the frontend omitted <code>chat_id</code>, the write succeeded under <code>session_id</code>. The next reader looked up <code>""</code> and found nothing. Deep mode looked stateless for that traffic slice with no error anywhere.</p>
+<p>Quick mode had already solved this correctly by skipping the write entirely when <code>chat_id</code> is absent:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="k">if</span> <span class="ow">not</span> <span class="n">chat_id</span><span class="p">:</span>
+<a id="__codelineno-30-2" name="__codelineno-30-2" href="#__codelineno-30-2"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"skipping persistence: no chat_id"</span><span class="p">)</span>
+<a id="__codelineno-30-3" name="__codelineno-30-3" href="#__codelineno-30-3"></a>    <span class="k">return</span>
+</code></pre></div>
+<p>Lesson: if a field is optional, some callers will omit it. Writer and reader must handle that absence identically. Otherwise you create rows that no reader will ever find.</p>
+<h2 id="8-the-lock-release-did-not-prove-it-still-owned-the-lock">8. The lock release did not prove it still owned the lock<a class="headerlink" href="#8-the-lock-release-did-not-prove-it-still-owned-the-lock" title="Permanent link">&para;</a></h2>
+<p>To prevent double execution on rapid approve clicks, we write a resume claim to DynamoDB when a run starts. Claims expire after 30 minutes. When the run finishes, we delete the claim.</p>
+<p>The bug was that the delete was unconditional:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="n">table</span><span class="o">.</span><span class="n">delete_item</span><span class="p">(</span><span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">"thread_id"</span><span class="p">:</span> <span class="n">thread_id</span><span class="p">})</span>
+</code></pre></div>
+<p>If a long research run outlived the lease, a second request could acquire a new claim. When the first run eventually finished, its unconditional delete would remove the second run's claim and reopen the race window.</p>
+<p>The fix was to store a per-claim UUID on acquire and require that token on release:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="n">token</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>
+<a id="__codelineno-32-2" name="__codelineno-32-2" href="#__codelineno-32-2"></a><span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span><span class="n">Item</span><span class="o">=</span><span class="p">{</span>
+<a id="__codelineno-32-3" name="__codelineno-32-3" href="#__codelineno-32-3"></a>    <span class="s2">"thread_id"</span><span class="p">:</span> <span class="n">thread_id</span><span class="p">,</span>
+<a id="__codelineno-32-4" name="__codelineno-32-4" href="#__codelineno-32-4"></a>    <span class="s2">"claim_token"</span><span class="p">:</span> <span class="n">token</span><span class="p">,</span>
+<a id="__codelineno-32-5" name="__codelineno-32-5" href="#__codelineno-32-5"></a>    <span class="s2">"expires_at"</span><span class="p">:</span> <span class="n">now</span> <span class="o">+</span> <span class="mi">1800</span><span class="p">,</span>
+<a id="__codelineno-32-6" name="__codelineno-32-6" href="#__codelineno-32-6"></a><span class="p">})</span>
+<a id="__codelineno-32-7" name="__codelineno-32-7" href="#__codelineno-32-7"></a>
+<a id="__codelineno-32-8" name="__codelineno-32-8" href="#__codelineno-32-8"></a><span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-32-9" name="__codelineno-32-9" href="#__codelineno-32-9"></a>    <span class="n">table</span><span class="o">.</span><span class="n">delete_item</span><span class="p">(</span>
+<a id="__codelineno-32-10" name="__codelineno-32-10" href="#__codelineno-32-10"></a>        <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">"thread_id"</span><span class="p">:</span> <span class="n">thread_id</span><span class="p">},</span>
+<a id="__codelineno-32-11" name="__codelineno-32-11" href="#__codelineno-32-11"></a>        <span class="n">ConditionExpression</span><span class="o">=</span><span class="s2">"claim_token = :token"</span><span class="p">,</span>
+<a id="__codelineno-32-12" name="__codelineno-32-12" href="#__codelineno-32-12"></a>        <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span><span class="s2">":token"</span><span class="p">:</span> <span class="n">token</span><span class="p">},</span>
+<a id="__codelineno-32-13" name="__codelineno-32-13" href="#__codelineno-32-13"></a>    <span class="p">)</span>
+<a id="__codelineno-32-14" name="__codelineno-32-14" href="#__codelineno-32-14"></a><span class="k">except</span> <span class="n">ConditionalCheckFailedException</span><span class="p">:</span>
+<a id="__codelineno-32-15" name="__codelineno-32-15" href="#__codelineno-32-15"></a>    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"claim release skipped: thread re-claimed after lease expiry"</span><span class="p">)</span>
+</code></pre></div>
+<p>Lesson: "release a lock" and "release your lock" are different operations. Always prove ownership on release.</p>
+<h2 id="9-embedding-stateful-context-in-message-records-made-an-explicit-reset-invisible">9. Embedding stateful context in message records made an explicit reset invisible<a class="headerlink" href="#9-embedding-stateful-context-in-message-records-made-an-explicit-reset-invisible" title="Permanent link">&para;</a></h2>
+<p>After each completed turn, we saved session state, including resolved entities such as country, brand, and time period, as a field on the assistant message record in DynamoDB. The next turn scanned message history in reverse to find the most recent record with that field and injected it as context.</p>
+<p>The bug was a three-step collapse of semantics.</p>
+<p>First, the state field was coerced before storage:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-33-1" name="__codelineno-33-1" href="#__codelineno-33-1"></a><span class="n">entity_groups</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"entity_groups"</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">None</span>
+</code></pre></div>
+<p>An explicit reset to <code>[]</code> became <code>None</code>.</p>
+<p>Second, the persistence layer skipped <code>None</code> fields:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-34-1" name="__codelineno-34-1" href="#__codelineno-34-1"></a><span class="k">if</span> <span class="n">md</span><span class="o">.</span><span class="n">entity_groups</span><span class="p">:</span>
+<a id="__codelineno-34-2" name="__codelineno-34-2" href="#__codelineno-34-2"></a>    <span class="n">item</span><span class="p">[</span><span class="s2">"entity_groups"</span><span class="p">]</span> <span class="o">=</span> <span class="n">md</span><span class="o">.</span><span class="n">entity_groups</span>
+</code></pre></div>
+<p>The reset turn was written with no <code>entity_groups</code> attribute at all.</p>
+<p>Third, the read path scanned backward for the most recent non-empty value:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-35-1" name="__codelineno-35-1" href="#__codelineno-35-1"></a><span class="k">for</span> <span class="n">msg</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">memory</span><span class="p">):</span>
+<a id="__codelineno-35-2" name="__codelineno-35-2" href="#__codelineno-35-2"></a>    <span class="n">groups</span> <span class="o">=</span> <span class="n">msg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"entity_groups"</span><span class="p">,</span> <span class="p">[])</span>
+<a id="__codelineno-35-3" name="__codelineno-35-3" href="#__codelineno-35-3"></a>    <span class="k">if</span> <span class="n">groups</span><span class="p">:</span>
+<a id="__codelineno-35-4" name="__codelineno-35-4" href="#__codelineno-35-4"></a>        <span class="k">return</span> <span class="n">groups</span>
+</code></pre></div>
+<p>So the scan skipped the reset turn and landed on an older populated turn, rehydrating stale state.</p>
+<p>The fix was to move session state out of message records and into a purpose-built store with direct overwrite semantics:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-36-1" name="__codelineno-36-1" href="#__codelineno-36-1"></a><span class="n">state_value</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"session_state"</span><span class="p">)</span>
+<a id="__codelineno-36-2" name="__codelineno-36-2" href="#__codelineno-36-2"></a><span class="k">if</span> <span class="n">state_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-36-3" name="__codelineno-36-3" href="#__codelineno-36-3"></a>    <span class="n">store</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">session_id</span><span class="p">,</span> <span class="n">state_value</span><span class="p">)</span>
+<a id="__codelineno-36-4" name="__codelineno-36-4" href="#__codelineno-36-4"></a>
+<a id="__codelineno-36-5" name="__codelineno-36-5" href="#__codelineno-36-5"></a><span class="n">state_value</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">session_id</span><span class="p">)</span>
+</code></pre></div>
+<p><code>None</code> means the state channel was never set and the previous row remains untouched. <code>[]</code> means explicit reset and should overwrite the previous value.</p>
+<p>Lesson: embedding session state inside event or message records creates two structural problems. It forces readers to scan history instead of doing direct lookup, and it makes empty-vs-absent semantics easy to destroy through convenience coercions like <code>x or None</code>.</p>
+<h2 id="the-pattern">The pattern<a class="headerlink" href="#the-pattern" title="Permanent link">&para;</a></h2>
+<p>All nine bugs shared one property: the code ran to completion and the operation succeeded in the narrow transport sense because nothing threw. What failed was the semantic contract.</p>
+<table>
+<thead>
+<tr>
+<th>Bug</th>
+<th>What "succeeded"</th>
+<th>What actually happened</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Context overrides approved plan</td>
+<td><code>200 OK</code>, report generated</td>
+<td>Report about wrong entities</td>
+</tr>
+<tr>
+<td>Synthetic message targeted</td>
+<td><code>200 OK</code>, context injected</td>
+<td>Context labeled summarizer prose as user words</td>
+</tr>
+<tr>
+<td>Loop retargeted wrong message</td>
+<td><code>200 OK</code>, context injected</td>
+<td>Context attached to a previous turn's message</td>
+</tr>
+<tr>
+<td>Delimiter forged in block</td>
+<td><code>200 OK</code>, plan proposed</td>
+<td>Smuggled text treated as user content</td>
+</tr>
+<tr>
+<td>Convention-only channel write</td>
+<td><code>200 OK</code>, turn started</td>
+<td>Previous context bled into a new turn</td>
+</tr>
+<tr>
+<td>Save cancelled on disconnect</td>
+<td><code>200 OK</code>, end event sent</td>
+<td>Database write never ran</td>
+</tr>
+<tr>
+<td>Wrong key on write</td>
+<td><code>200 OK</code>, row written</td>
+<td>Row written under a key no reader uses</td>
+</tr>
+<tr>
+<td>Unconditional lock release</td>
+<td><code>200 OK</code>, claim deleted</td>
+<td>Another request's claim was deleted</td>
+</tr>
+<tr>
+<td><code>[] or None</code> reset invisible</td>
+<td><code>200 OK</code>, turn answered</td>
+<td>Follow-up planned against prior topic entities</td>
+</tr>
+</tbody>
+</table>
+<p>The review habits that caught these before they shipped were consistent:</p>
+<ul>
+<li>Test the content, not just the return code.</li>
+<li>Read library source, not just the docs.</li>
+<li>For every abstract pattern, such as injection, locking, or persistence, enumerate failure modes phase by phase and ask whether a transport-level success code actually means the semantic work completed.</li>
+</ul>
+<p>Built on LangGraph, Python 3.11, DynamoDB, and Starlette SSE. The stack is incidental. Context injection targeting, lock ownership, async cancellation, and writer-reader key mismatch are universal failure classes.</p>
+<h2 id="a-note-on-the-approval-code-snippet">A note on the approval code snippet<a class="headerlink" href="#a-note-on-the-approval-code-snippet" title="Permanent link">&para;</a></h2>
+<p>One detail to watch in the approval endpoint pattern above: the code shows a <code>plan_id</code> check, but <code>plan_id</code> is stable across refinements by design — it names the logical plan, not the exact interrupt. To reject a stale browser tab that approved an older revision, also validate <code>interrupt_id</code>, which is minted fresh for each pause:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="n">gate</span> <span class="o">=</span> <span class="n">read_pending_gate</span><span class="p">(</span><span class="n">thread_id</span><span class="p">)</span>
+<a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a><span class="k">if</span> <span class="n">gate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a>    <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
+<a id="__codelineno-37-4" name="__codelineno-37-4" href="#__codelineno-37-4"></a><span class="k">if</span> <span class="n">gate</span><span class="p">[</span><span class="s2">"plan"</span><span class="p">][</span><span class="s2">"plan_id"</span><span class="p">]</span> <span class="o">!=</span> <span class="n">payload</span><span class="o">.</span><span class="n">plan_id</span><span class="p">:</span>
+<a id="__codelineno-37-5" name="__codelineno-37-5" href="#__codelineno-37-5"></a>    <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="mi">409</span><span class="p">,</span> <span class="s2">"plan_id_mismatch"</span><span class="p">)</span>
+<a id="__codelineno-37-6" name="__codelineno-37-6" href="#__codelineno-37-6"></a><span class="k">if</span> <span class="n">gate</span><span class="p">[</span><span class="s2">"interrupt_id"</span><span class="p">]</span> <span class="o">!=</span> <span class="n">payload</span><span class="o">.</span><span class="n">interrupt_id</span><span class="p">:</span>
+<a id="__codelineno-37-7" name="__codelineno-37-7" href="#__codelineno-37-7"></a>    <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="mi">409</span><span class="p">,</span> <span class="s2">"interrupt_id_mismatch"</span><span class="p">)</span>
+<a id="__codelineno-37-8" name="__codelineno-37-8" href="#__codelineno-37-8"></a><span class="c1"># only now stage the decision</span>
+<a id="__codelineno-37-9" name="__codelineno-37-9" href="#__codelineno-37-9"></a><span class="n">persist_resume_decision</span><span class="p">(</span><span class="n">thread_id</span><span class="p">,</span> <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="s2">"approve"</span><span class="p">})</span>
+<a id="__codelineno-37-10" name="__codelineno-37-10" href="#__codelineno-37-10"></a><span class="n">put_run_state</span><span class="p">(</span><span class="n">thread_id</span><span class="p">,</span> <span class="n">run_id</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s2">"queued"</span><span class="p">)</span>
+<a id="__codelineno-37-11" name="__codelineno-37-11" href="#__codelineno-37-11"></a><span class="n">enqueue_deep_run</span><span class="p">(</span><span class="n">thread_id</span><span class="p">,</span> <span class="n">run_id</span><span class="p">)</span>
+<a id="__codelineno-37-12" name="__codelineno-37-12" href="#__codelineno-37-12"></a><span class="k">return</span> <span class="p">{</span><span class="s2">"status"</span><span class="p">:</span> <span class="s2">"queued"</span><span class="p">,</span> <span class="s2">"run_id"</span><span class="p">:</span> <span class="n">run_id</span><span class="p">}</span>
+</code></pre></div>
+<p><code>plan_id</code> catches a plan-content mismatch. <code>interrupt_id</code> catches the more common case: the user refined and re-interrupted, but an old tab still has the original interrupt open.</p>
+<hr />
+<div class="admonition check">
+<p class="admonition-title">You should now understand</p>
+<ul>
+<li>How the same <code>200 OK</code> shape appears across state, context, streaming, locking, and persistence bugs</li>
+<li>Why the useful review question is semantic: "did the right invariant hold?", not only "did the request finish?"</li>
+<li>Why stale state, stale browser tabs, stale lock holders, and stale memory records are the same family of production problem</li>
+<li>Why each earlier chapter exists: every build step prevents one class of silent failure in this case study</li>
+</ul>
+</div>
+<details class="question">
+<summary>Final review</summary>
+<p><strong>Pick any one bug in the table above. Name the chapter that should have taught you to catch it, the invariant that failed, and the smallest test or review question that would expose it.</strong></p>
+<details class="success">
+<summary>Example answer</summary>
+<p>For "unconditional lock release," the chapter is <a href="../07-distributed-locks/">Step 6 · Distributed Locks</a>. The failed invariant is: a process may only release the claim it still owns. The review question is: "Does release prove ownership with the current claim token, or does it delete by thread id alone?" The test is a takeover scenario: A acquires, A's lease expires, B acquires, A attempts release, and B's claim must remain.</p>
+</details>
+</details>
+<h2 id="four-more-from-production-post-release">Four more from production (post-release)<a class="headerlink" href="#four-more-from-production-post-release" title="Permanent link">&para;</a></h2>
+<p>The nine above came from a single pre-release review. These four arrived as production PRs in the following weeks. They follow the same pattern: the system reported success, and something semantic was wrong.</p>
+<h3 id="quadratic-writes-from-replace-semantics-streaming">Quadratic writes from replace-semantics streaming<a class="headerlink" href="#quadratic-writes-from-replace-semantics-streaming" title="Permanent link">&para;</a></h3>
+<p>A model that emits reasoning tokens sends many <code>thinking.delta</code> events, each carrying the <em>full accumulated</em> reasoning text to that point (replace semantics). Persisting each delta naively means N deltas write O(N²) bytes into one DynamoDB partition key, which hit the per-partition write-capacity ceiling (~1,000 WCU/s) mid-run.</p>
+<p>The fix: time-coalesce live frames in the curator — flush at most once per 2 seconds per step. The SSE path to the browser stays byte-identical; only the durable-log write is coalesced.</p>
+<p>The lesson: replace-semantics streaming plus per-delta persistence is quadratic. Identify the semantics (append vs. replace) before deciding whether to persist every frame or the last.</p>
+<h3 id="async-client-bound-to-a-per-job-event-loop">Async client bound to a per-job event loop<a class="headerlink" href="#async-client-bound-to-a-per-job-event-loop" title="Permanent link">&para;</a></h3>
+<p>Each worker job called <code>asyncio.run()</code>, which creates and closes a new event loop per job. A cached <code>httpx.AsyncClient</code> is bound to the event loop that created it; on the second job, the first client's loop is already closed, and the first Cortex call dies with <code>Event loop is closed</code>.</p>
+<p>The fix: one process-lifetime <code>asyncio.Runner</code>, with pooled clients drained at shutdown. A weakref guard converts any reintroduced per-job <code>asyncio.run()</code> into a named error at startup.</p>
+<p>The lesson: an async client must never cross event loops. In a worker process that runs many jobs, one process-lifetime runner is the only safe design.</p>
+<h3 id="burned-timeout-retried">Burned timeout retried<a class="headerlink" href="#burned-timeout-retried" title="Permanent link">&para;</a></h3>
+<p><code>ReadTimeout</code> was classified as a retryable error, so a call that already spent its entire 300-second timeout budget was replayed for another 300 seconds. Two exhausted attempts burned 600 seconds on work that had no chance of succeeding faster.</p>
+<p>The fix: only retry errors that fail <em>before the request was sent</em> — <code>ConnectError</code>, <code>ConnectTimeout</code> — plus rate-limit and gateway responses (<code>429</code>, <code>502</code>, <code>503</code>). Use jittered exponential backoff. A <code>ReadTimeout</code> means the server acknowledged the request and timed out during processing; retrying it from the start sends a duplicate with no guarantee the first copy was not processed.</p>
+<p>The lesson: a burned timeout is spent budget, not a transient blip. Classify retryable errors at the transport layer, not at the exception class.</p>
+<h3 id="stale-plan-re-persisted-on-a-follow-up-turn">Stale plan re-persisted on a follow-up turn<a class="headerlink" href="#stale-plan-re-persisted-on-a-follow-up-turn" title="Permanent link">&para;</a></h3>
+<p>The <code>plan</code> channel is <code>LastValue</code>. The exit path persisted the plan onto every completed turn's DynamoDB record — including follow-up turns that never called <code>submit_plan</code>. This caused a stale prior-turn plan to be stamped onto a follow-up row and resurface later as the current plan.</p>
+<p>The fix: stamp <code>plan.minted_run_id = deep_run_id</code> at plan creation and persist only when <code>plan.minted_run_id</code> matches the current turn's <code>deep_run_id</code>. Fail open when either is absent.</p>
+<p>The lesson: a sticky <code>LastValue</code> channel written only at plan time, combined with end-of-run persistence on every turn, silently re-persists the old value. The per-turn reset signal — the turn's own run id — is the only safe discriminator.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../lessons/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Interactive lessons">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Interactive lessons
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../00-glossary/" class="md-footer__link md-footer__link--next" aria-label="Next: Glossary">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Glossary
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/neeleshsethi/agentic-engineering-patterns" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.action.edit"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../assets/scrubber.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 04 · Clarifications, Middleware, and Budgets</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="lesson-shell">
+  <header class="topbar">
+    <div class="brand"><span>Lesson 04</span><small>Clarifications, Middleware, and Budgets</small></div>
+    <nav class="nav-actions">
+      <a class="primary-link" href="index.html">Index</a>
+      <button class="icon-btn" data-prev>Prev</button>
+      <span class="progress" data-progress></span>
+      <button class="icon-btn" data-next>Next</button>
+    </nav>
+  </header>
+
+  <main class="deck">
+    <section class="slide">
+      <p class="eyebrow">Production Deep Agent Engineering</p>
+      <h1>Asking back is a control-flow event</h1>
+      <p class="lead">Clarifications are not chat garnish. They decide whether a plan exists, whether a report is allowed, which source gets retried, and which evidence is carried forward.</p>
+      <div class="meta"><span class="pill">8 slides</span><span class="pill">Clarifications</span><span class="pill">Middleware order</span><span class="pill">Budgets</span></div>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">Four clarification shapes</p>
+      <h2>Same user experience, different machinery</h2>
+      <table>
+        <thead><tr><th>Type</th><th>When</th><th>Detector</th><th>User sees</th></tr></thead>
+        <tbody>
+          <tr><td>Plan-gate</td><td>At plan time</td><td><code>submit_plan(clarification=...)</code></td><td>Plan card plus one-liner.</td></tr>
+          <tr><td>Terminal</td><td>Before planning</td><td>Non-report turn detection</td><td>One question, no plan.</td></tr>
+          <tr><td>Source elicitation</td><td>Mid-retrieval</td><td><code>is_elicitation</code> then <code>pending_elicitation()</code></td><td>The source's question, relayed.</td></tr>
+          <tr><td>Zero-retrieval guard</td><td>At exit</td><td>No current-cycle results or already-reported stamp</td><td>No report over nothing.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">Source elicitation</p>
+      <h2>Detection is deterministic and shared</h2>
+      <div class="grid">
+        <div class="panel accent"><span class="label">Cortex</span>The source marks a text item with <code>is_elicitation: true</code>. Deep trusts the flag.</div>
+        <div class="panel warn"><span class="label">IQVIA/GMI</span>A deterministic outcome ladder catches native <code>input-required</code>, clarification phrases, and question-shaped no-table replies.</div>
+      </div>
+      <p class="lead">The legacy quick graph had an LLM-based classifier. The reactive and deep paths do not depend on that classifier.</p>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">Acting on the flag</p>
+      <h2>Reactive trusts the prompt. Deep adds a code backstop.</h2>
+      <table>
+        <thead><tr><th>Mode</th><th>What stops the answer</th><th>Bookkeeping</th></tr></thead>
+        <tbody>
+          <tr><td>Reactive</td><td>Prompt rules tell the one-pass router to relay the source question.</td><td>Results stay in state; the next turn reuses carried data.</td></tr>
+          <tr><td>Deep</td><td>The prompt relays, and exit middleware skips report generation if <code>pending_elicitation()</code> is true.</td><td>The step stays open; only that step is re-queried after the user answers.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">Partial clarification</p>
+      <h2>One source asks back, the whole report waits</h2>
+      <div class="timeline">
+        <div class="step"><span class="num">1</span><div><strong>Two sources run.</strong> IQVIA returns data. Cortex asks for retail versus non-retail.</div></div>
+        <div class="step"><span class="num">2</span><div><strong>The report is blocked.</strong> <code>pending_elicitation</code> is whole-cycle, so deep does not ship a partial report.</div></div>
+        <div class="step"><span class="num">3</span><div><strong>Data is not lost.</strong> The IQVIA result remains in accumulating <code>source_results</code>.</div></div>
+        <div class="step"><span class="num">4</span><div><strong>The reply re-queries only Cortex.</strong> The user's answer is folded into the open step's sub-question.</div></div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">Resume or new turn?</p>
+      <h2>Mid-retrieval elicitation is not <code>Command(resume=...)</code></h2>
+      <div class="grid">
+        <div class="panel accent"><span class="label">Plan approval</span>Leaves a pending <code>interrupt()</code>. Approval enters through the approve endpoint, SQS, worker, and graph resume.</div>
+        <div class="panel warn"><span class="label">Elicitation reply</span>The elicitation turn completed normally. The user's answer is a fresh graph invocation on the same <code>thread_id</code>.</div>
+      </div>
+      <p class="lead">It does not re-plan. The plan remains locked, the cycle remains the same, and carried evidence stays attached.</p>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">Middleware order</p>
+      <h2>Seven middlewares, with one ordering trick</h2>
+      <table>
+        <thead><tr><th>#</th><th>Middleware</th><th>Job</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>UserContextMiddleware</code></td><td>Injects profile and persona context.</td></tr>
+          <tr><td>2</td><td><code>DataManifestMiddleware</code></td><td>Shows held data to the orchestrator.</td></tr>
+          <tr><td>3</td><td><code>AllowedToolsMiddleware</code></td><td>Restricts available tools.</td></tr>
+          <tr><td>4</td><td><code>PlaybookReadGuard</code></td><td>Guards <code>read_file</code>.</td></tr>
+          <tr><td>5</td><td><code>DeepExitPathMiddleware</code></td><td>Generates the report and assembly outputs.</td></tr>
+          <tr><td>6</td><td><code>SufficiencyGateMiddleware</code></td><td>Checks completeness and may bounce one gap-fill round.</td></tr>
+          <tr><td>7</td><td><code>RetrievalBudgetMiddleware</code></td><td>Meters retrieval rounds.</td></tr>
+        </tbody>
+      </table>
+      <p class="lead">LangChain runs <code>after_agent</code> hooks in reverse registration order, so the sufficiency gate runs before the report writer.</p>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">Budgets</p>
+      <h2>Meter depth, not breadth</h2>
+      <div class="grid three">
+        <div class="panel accent"><span class="label">Retrieval rounds</span>Default 6. A model turn with one or many retrieval calls counts as one round.</div>
+        <div class="panel warn"><span class="label">Recursion limit</span>Default 50. This is a backstop, not the primary loop control.</div>
+        <div class="panel danger"><span class="label">SQS receives</span>Attempt 3 is poison-pill territory: fail, delete, and stop retrying.</div>
+      </div>
+      <p class="lead">Parallel fan-out is free because it reduces wall-clock time without making the reasoning loop deeper.</p>
+    </section>
+
+    <section class="slide quiz" data-right="Exactly. The user's answer starts a fresh deep turn on the same thread and under the same locked plan." data-wrong="The trap is thinking every user answer resumes an interrupt. Only the approval gate leaves a pending interrupt.">
+      <p class="eyebrow">Check yourself</p>
+      <h2>After a source elicitation, how does the user's answer enter deep?</h2>
+      <div class="quiz-options">
+        <button class="choice" data-correct="false">Through <code>Command(resume=...)</code> from the approve endpoint</button>
+        <button class="choice" data-correct="true">As a fresh graph invocation on the same <code>thread_id</code></button>
+        <button class="choice" data-correct="false">By reopening the plan gate for a second approval</button>
+        <button class="choice" data-correct="false">By discarding old source results and starting a new cycle</button>
+      </div>
+      <div class="feedback"></div>
+    </section>
+  </main>
+
+  <footer class="footer">Source notes: <code>data/raw/iCloud Photos/1492026/extracted/combined.md</code></footer>
+</div>
+<script src="lesson.js"></script>
+</body>
+</html>

@@ -1,0 +1,1978 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A learning series on building production agent systems that fail loudly, not silently — state, streaming, locking, durable runs, and prompt design.">
+      
+      
+        <meta name="author" content="Neelesh Sethi">
+      
+      
+      
+        <link rel="prev" href="../08-queue-and-worker-execution/">
+      
+      
+        <link rel="next" href="../09a-clarifications/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Step 8 · Orchestrator prompt - Agentic Engineering Patterns</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/scrubber.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#step-8-orchestrator-prompt" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Agentic Engineering Patterns" class="md-header__button md-logo" aria-label="Agentic Engineering Patterns" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Agentic Engineering Patterns
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Step 8 · Orchestrator prompt
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/neeleshsethi/agentic-engineering-patterns" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    neeleshsethi/agentic-engineering-patterns
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Agentic Engineering Patterns" class="md-nav__button md-logo" aria-label="Agentic Engineering Patterns" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Agentic Engineering Patterns
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/neeleshsethi/agentic-engineering-patterns" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    neeleshsethi/agentic-engineering-patterns
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01-problem-design-implementation-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chapter 1 · Problem, design, and implementation plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02-end-to-end-architecture-and-orchestrator-flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chapter 2 · End-to-end architecture and orchestrator flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02-state-and-checkpoints/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 1 · State and checkpoints
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03-context-injection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 2 · Context injection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04-planning-and-human-approval/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 3 · Planning and human approval
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05-identifiers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 4 · Identifiers that hold a run together
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06-streaming-and-background-work/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 5 · Streaming and background work
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07-distributed-locks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 6 · Distributed locks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08-queue-and-worker-execution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 7 · Queue and worker execution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 8 · Orchestrator prompt
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 8 · Orchestrator prompt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-test-prompt-or-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Test: Prompt Or Structure?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-code-enforces-not-the-prompt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What The Code Enforces (Not The Prompt)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-prompt-shapes-not-the-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What The Prompt Shapes (Not The Code)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What The Prompt Shapes (Not The Code)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-phase-machine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The phase machine
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ordering-the-models-reasoning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ordering the model's reasoning
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-priority-stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The priority stack
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-case-that-has-to-be-both" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Case That Has To Be Both
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clarification-is-a-control-flow-event" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Clarification Is A Control-Flow Event
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#budgets-meter-depth-not-breadth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Budgets Meter Depth, Not Breadth
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grounding-the-purely-prompt-invariant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Grounding: The Purely-Prompt Invariant
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deliver-the-next-instruction-as-a-tool-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deliver The Next Instruction As A Tool Result
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-versioning-note" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A Versioning Note
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guardrails" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guardrails
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09a-clarifications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Clarifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09b-code-components-and-organization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Code components and organization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09c-plan-lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Plan lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09d-reactive-mode-prompt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Reactive mode prompt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lessons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interactive lessons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10-nine-silent-failures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone · Nine silent failures in one agent
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18" >
+        
+          
+          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00-glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Glossary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_18_2" id="__nav_18_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source Notes (advanced)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_18_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Source Notes (advanced)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/before-resume/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Before Resume
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/orchestrator-prompt-annotated/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Orchestrator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/life-of-a-deep-run/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Life of a Deep Run
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-test-prompt-or-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Test: Prompt Or Structure?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-code-enforces-not-the-prompt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What The Code Enforces (Not The Prompt)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-the-prompt-shapes-not-the-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What The Prompt Shapes (Not The Code)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What The Prompt Shapes (Not The Code)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-phase-machine" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The phase machine
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ordering-the-models-reasoning" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ordering the model's reasoning
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-priority-stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The priority stack
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-case-that-has-to-be-both" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Case That Has To Be Both
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#clarification-is-a-control-flow-event" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Clarification Is A Control-Flow Event
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#budgets-meter-depth-not-breadth" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Budgets Meter Depth, Not Breadth
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grounding-the-purely-prompt-invariant" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Grounding: The Purely-Prompt Invariant
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deliver-the-next-instruction-as-a-tool-result" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deliver The Next Instruction As A Tool Result
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-versioning-note" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        A Versioning Note
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guardrails" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guardrails
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/neeleshsethi/agentic-engineering-patterns/edit/main/articles/09-orchestrator-prompt.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="step-8-orchestrator-prompt">Step 8 · Orchestrator Prompt<a class="headerlink" href="#step-8-orchestrator-prompt" title="Permanent link">&para;</a></h1>
+<p>Once an agent's control flow lives in code — a gate, a state machine, a set of endpoints — a question sharpens: what is the prompt still <em>for</em>? The answer is a dividing line worth stating up front.</p>
+<blockquote>
+<p>The prompt shapes judgment. The code enforces boundaries.</p>
+</blockquote>
+<p>The prompt decides what the model should <em>think about</em> — how to break a question into steps, how to interpret feedback, what counts as evidence. The code decides what the model is <em>allowed to do</em> — which tools exist, when execution may start, who may approve. Every time you find yourself writing a prompt sentence that tries to guarantee a boundary, you have found something that belongs in code instead.</p>
+<p>The running example is a pharmaceutical commercial-analytics orchestrator. Identifiers are generic (<code>BRAND_A</code>, <code>SOURCE_A..D</code>, <code>query_source</code>), but the domain matters here: in regulated analytics, some of these rules are law, not style, and that changes where they have to live.</p>
+<blockquote>
+<p>Terms used below — <a href="../00-glossary/#gate">gate</a>, <a href="../00-glossary/#middleware">middleware</a>, <a href="../00-glossary/#toolmessage">ToolMessage</a>, <a href="../00-glossary/#grounding">grounding</a>, <a href="../00-glossary/#entity-resolution">entity resolution</a> — are in the <a href="../00-glossary/">glossary</a>. This article builds on <a href="../04-planning-and-human-approval/">Human-in-the-Loop Approval</a>.</p>
+</blockquote>
+<h2 id="the-test-prompt-or-structure">The Test: Prompt Or Structure?<a class="headerlink" href="#the-test-prompt-or-structure" title="Permanent link">&para;</a></h2>
+<p>For any rule the agent must follow, ask one question: <strong>can code enforce it deterministically?</strong></p>
+<ul>
+<li>If yes, put it in code and spend zero prompt tokens on it. Prompt instructions compete with the model's other instincts and occasionally lose. Structure does not.</li>
+<li>If no — because enforcement would require reading the model's mind — the prompt is the only surface available, and the sentence has to be exact.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>                    ┌─────────────────────────────────────┐
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>                    │  Can code enforce this deterministically?  │
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>                    └──────────────┬──────────────────────┘
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>                                   │
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>               ┌───────────────────┴────────────────────┐
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>               │ YES                                     │ NO
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>               ▼                                         ▼
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>  ┌─────────────────────────┐             ┌─────────────────────────┐
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>  │       USE CODE          │             │      USE THE PROMPT      │
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>  │                         │             │                         │
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>  │  Tool allow-list        │             │  Phase machine          │
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>  │  Gate (interrupt())     │             │  Evaluation order       │
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>  │  Plan status machine    │             │  Priority stack         │
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>  │  Concurrency claim      │             │  Grounding invariant    │
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>  │  Owner validation       │             │  What counts as done    │
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>  └─────────────────────────┘             └─────────────────────────┘
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>  Code never lies. It either                Prompt shapes judgment.
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>  runs or it doesn't.                       It can be overridden.
+</code></pre></div>
+<p>The rest of this article is that test applied to a real orchestrator, in both directions.</p>
+<h2 id="what-the-code-enforces-not-the-prompt">What The Code Enforces (Not The Prompt)<a class="headerlink" href="#what-the-code-enforces-not-the-prompt" title="Permanent link">&para;</a></h2>
+<p>Start with the boundaries, because they are the easy calls. None of these appear in the prompt at all.</p>
+<p><strong>Tool availability.</strong> The agent framework injects several built-in tools by default, including one that spawns sub-agents. A sub-agent would run its retrievals <em>outside</em> the approval gate — exactly the thing the whole design exists to prevent.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>❌ WRONG — using the prompt to forbid a tool:
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  System prompt: "Do not use the spawn_subagent tool."
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  Model sees tools: [write_todos, submit_plan, query_source, spawn_subagent, ...]
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>                                                              ↑
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>                                                    tool is visible
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>                                                    model sometimes calls it anyway
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>                                                    (prompts compete with instincts)
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>✅ RIGHT — removing the tool before the model sees it:
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  Middleware filters request:
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    IN:  [write_todos, submit_plan, query_source, spawn_subagent, read_filesystem, ...]
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    OUT: [write_todos, submit_plan, query_source]
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>                                                  ↑
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>                                        spawn_subagent is gone
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>                                        model cannot call what it cannot see
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>                                        this is a guarantee, not a request
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">AllowedToolsMiddleware</span><span class="p">(</span><span class="n">AgentMiddleware</span><span class="p">):</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>        <span class="n">tools</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">tools</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_allowed</span><span class="p">]</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>        <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">override</span><span class="p">(</span><span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">)</span>   <span class="c1"># the model never sees the rest</span>
+</code></pre></div>
+<p>The production orchestrator allowed exactly seven tools — the rest were invisible:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>write_todos      ← planning only (before approval)
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>submit_plan      ← the gate tool
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>query_cortex     ← retrieval (plan-gated, only after approval)
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>query_iqvia_gmi  ← retrieval (plan-gated, only after approval)
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>run_analysis     ← synthesis over already-held data
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>rebuild_artifacts← re-render charts from existing evidence
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>read_file        ← playbooks only, path-guarded by middleware
+</code></pre></div>
+<p>The framework can inject any number of others; the middleware makes them invisible.</p>
+<p>In the production deep graph, seven middlewares formed the runtime contract around those tools:</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">Order</th>
+<th>Middleware</th>
+<th>Job</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">1</td>
+<td><code>UserContextMiddleware</code></td>
+<td>Inject profile, persona, and prior entity context into model calls.</td>
+</tr>
+<tr>
+<td style="text-align: right;">2</td>
+<td><code>DataManifestMiddleware</code></td>
+<td>Render the held-data inventory so the model can see reusable evidence.</td>
+</tr>
+<tr>
+<td style="text-align: right;">3</td>
+<td><code>AllowedToolsMiddleware</code></td>
+<td>Restrict the visible tools to the contract set.</td>
+</tr>
+<tr>
+<td style="text-align: right;">4</td>
+<td><code>PlaybookReadGuard</code></td>
+<td>Refuse <code>read_file</code> outside the approved playbook area before the backend sees it.</td>
+</tr>
+<tr>
+<td style="text-align: right;">5</td>
+<td><code>DeepExitPathMiddleware</code></td>
+<td>Generate the report and assembly outputs when there is unreported evidence.</td>
+</tr>
+<tr>
+<td style="text-align: right;">6</td>
+<td><code>SufficiencyGateMiddleware</code></td>
+<td>Check completeness and allow one bounded gap-fill round before reporting.</td>
+</tr>
+<tr>
+<td style="text-align: right;">7</td>
+<td><code>RetrievalBudgetMiddleware</code></td>
+<td>Meter retrieval rounds and route to exit when the budget is spent.</td>
+</tr>
+</tbody>
+</table>
+<p>The order is not decorative. LangChain runs <code>after_agent</code> hooks in reverse registration order, so the sufficiency gate must run before the exit path writes the report. The retrieval budget uses model-call hooks, so it can meter loop depth without perturbing that exit ordering.</p>
+<p><strong>Gate sequencing, status, concurrency.</strong> Whether the plan is approved, when it locks, how many times it was refined, whether two requests raced — all of that is code (the gate's <code>interrupt()</code>, <code>model_copy</code> on the plan status, a DynamoDB claim). See <a href="../04-planning-and-human-approval/">Human-in-the-Loop Plan Approval</a> for the mechanism. Here the point is only that these were <em>not</em> delegated to the prompt.</p>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Where it lives</th>
+<th>Why not the prompt</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>"Don't call the sub-agent / unguarded filesystem tools"</td>
+<td>Allow-list middleware + read guard</td>
+<td>Removed from the request, or fenced before execution</td>
+</tr>
+<tr>
+<td>"Only proceed if the plan is approved"</td>
+<td>The gate's <code>interrupt()</code></td>
+<td>Structural pause; the model cannot continue past it</td>
+</tr>
+<tr>
+<td>Plan status transitions, modification count</td>
+<td>Gate-owned fields (<code>model_copy</code>)</td>
+<td>Not in the todos, so the projection cannot produce them from model output</td>
+</tr>
+<tr>
+<td><code>plan_id</code> / owner validation, one-resume-at-a-time</td>
+<td>Endpoint preconditions + DynamoDB claim</td>
+<td>Concurrency is not observable to a single model call</td>
+</tr>
+</tbody>
+</table>
+<h2 id="what-the-prompt-shapes-not-the-code">What The Prompt Shapes (Not The Code)<a class="headerlink" href="#what-the-prompt-shapes-not-the-code" title="Permanent link">&para;</a></h2>
+<p>Now the other side: the judgments no code can make. These are where prompt wording is load-bearing, and where a wrong word ships a bug.</p>
+<h3 id="the-phase-machine">The phase machine<a class="headerlink" href="#the-phase-machine" title="Permanent link">&para;</a></h3>
+<p>The workflow is written as five numbered, labeled steps — PLAN, SUBMIT, REFINE, EXECUTE, FOLLOW-UP — not as prose. The numbering is not decoration. It gives the model a phase machine it can locate itself in: at any point in a long conversation it matches its situation ("I just received refine feedback") to a step and reads off what to do.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>┌──────────────────────────────────────────────────────────┐
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>│           ORCHESTRATOR PHASE MACHINE                     │
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>│                                                          │
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>│  ① PLAN      User asks a question                        │
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>│      │       Model breaks it into steps with write_todos  │
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>│      ▼                                                   │
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>│  ② SUBMIT    Model calls submit_plan                     │
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>│      │       Graph pauses — human sees the plan          │
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>│      ▼                                                   │
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>│  ③ REFINE   Human says "add X" → feedback arrives        │
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>│  (loop)      Model updates todos, calls submit_plan again │
+<a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>│      │       ↑ repeats until human approves              │
+<a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>│      ▼                                                   │
+<a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>│  ④ EXECUTE   Plan is LOCKED — entities are FINAL         │
+<a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>│              Model runs retrieval tools, writes report   │
+<a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>│      ▼                                                   │
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>│  ⑤ FOLLOW-UP New question → back to ① (fresh cycle)     │
+<a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>└──────────────────────────────────────────────────────────┘
+<a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>
+<a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>⚠ Without numbered phases, the model loses track:
+<a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>   - calls query_source at ② instead of waiting for ④
+<a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a>   - re-runs old plan at ③ instead of updating todos first
+</code></pre></div>
+<p>Unnumbered prose loses this — models skip phases when the phases have no names.</p>
+<h3 id="ordering-the-models-reasoning">Ordering the model's reasoning<a class="headerlink" href="#ordering-the-models-reasoning" title="Permanent link">&para;</a></h3>
+<p>Some rules the code physically cannot impose because there is no code between the model's thoughts. Evaluation order is one.</p>
+<blockquote>
+<p>Resolve the entities FIRST — fill any missing country or brand from context — BEFORE deciding routing and BEFORE asking any clarification.</p>
+</blockquote>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>❌ WRONG ORDER — route first, resolve entities later:
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  Question: "Give me my sales"
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>  Step 1: Pick source
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    Model picks SOURCE_A (handles "sales" questions)
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>  Step 2: Resolve entities
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>    "my" → user default is JAPAN
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>    SOURCE_A does not cover JAPAN
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>  Result: plan routes to a source that cannot serve the entity
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>          → retrieval fails, or wrong data returned
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>──────────────────────────────────────────────────────────────
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>✅ RIGHT ORDER — resolve entities first, then route:
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>
+<a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>  Question: "Give me my sales"
+<a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a>
+<a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a>  Step 1: Resolve entities
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a>    "my" → user default is JAPAN, brand = PAXLOVID
+<a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a>
+<a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a>  Step 2: Pick source
+<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a>    JAPAN + PAXLOVID → SOURCE_B handles this combination
+<a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a>
+<a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a>  Result: correct source chosen for the correct entity ✓
+</code></pre></div>
+<p>No code sits between "the model reads the question" and "the model picks a source." The prompt is the only place to fix this ordering.</p>
+<h3 id="the-priority-stack">The priority stack<a class="headerlink" href="#the-priority-stack" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>Entities named explicitly in the question always win over the defaults in the context block.</p>
+</blockquote>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>What the model actually sees (one flat prompt):
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  ┌─────────────────────────────────────────┐  ← HIGH salience (top of prompt)
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  │  [User context]                         │
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>  │  User defaults: AUSTRALIA / BRAND_A     │  ← injected by middleware
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>  │  [/User context]                        │
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>  │                                         │
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>  │  Give me GERMANY sales for BRAND_B      │  ← user's actual question
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>  └─────────────────────────────────────────┘  ← LOWER salience (bottom)
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>❌ WITHOUT priority rule:
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>   Model sees AUSTRALIA at high salience → plans for AUSTRALIA
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>   User asked for GERMANY → wrong country, 200 OK
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>✅ WITH priority rule in prompt:
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>   "Entities named in the question always override defaults"
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>   Model reads GERMANY in the question → applies priority rule → plans for GERMANY
+</code></pre></div>
+<p>The code never sees the defaults — the context block is injected into the model request by middleware and never checkpointed — so only the model can apply the precedence, and only if told to.</p>
+<h2 id="the-case-that-has-to-be-both">The Case That Has To Be Both<a class="headerlink" href="#the-case-that-has-to-be-both" title="Permanent link">&para;</a></h2>
+<p>The sharpest example is a rule that is enforced by <em>neither</em> side cleanly. During execution, middleware still injects defaults on every model call — it does not know what phase the run is in. But the human already approved a plan with specific entities.</p>
+<p>Quick vocabulary check:</p>
+<ul>
+<li><strong>Raw question</strong> is only what the user typed.</li>
+<li><strong>Model input</strong> is the full bundle the LLM receives after code adds context, history, tool results, and the raw question.</li>
+</ul>
+<div class="scrubber" data-scrubber markdown="0">
+  <div class="scrubber-stage">
+    <div class="scrubber-step">
+      <span class="scrubber-time">Planning · default is only a fallback</span>
+      <div class="scrubber-caption">Middleware adds the user's default country, Australia. The user's question explicitly asks for Germany, so the model should resolve Germany.</div>
+      <pre class="scrubber-item">[User context] defaults: AUSTRALIA [/User context]
+"Give me GERMANY sales"
+
+resolved entity = GERMANY   <span class="ok">question wins</span></pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">Approval · Germany becomes final</span>
+      <div class="scrubber-caption">The human approves the plan. Execution should now follow the locked plan's entities, not re-run entity resolution from scratch.</div>
+      <pre class="scrubber-item">locked plan:
+  country = GERMANY
+  status = approved   <span class="ok">final for this run</span></pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">Execution · middleware injects again</span>
+      <div class="scrubber-caption">On a later model call, the same context middleware adds Australia again. That default is now stale for this run, but it appears near the top of the prompt.</div>
+      <pre class="scrubber-item">top of prompt:
+  [User context] defaults: AUSTRALIA [/User context]   <span class="warn">freshly injected</span>
+
+conversation history:
+  [tool] Plan approved: GERMANY   <span class="ok">older message</span></pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">Without invariant · wrong report</span>
+      <div class="scrubber-caption">If the prompt lets the model re-resolve during execution, it may pick the high-salience Australia default and produce a normal-looking report for the wrong country.</div>
+      <pre class="scrubber-item">model re-resolves from context
+country = AUSTRALIA
+
+report country = AUSTRALIA   <span class="bad">silent failure</span></pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">With invariant · correct report</span>
+      <div class="scrubber-caption">The prompt line is load-bearing: once the plan is locked, its entities are final. The context block may still be present, but it cannot override the approved plan.</div>
+      <pre class="scrubber-item">prompt invariant:
+  locked plan entities are FINAL
+  never re-resolve from context during execution
+
+report country = GERMANY   <span class="ok">correct</span></pre>
+    </div>
+  </div>
+</div>
+
+<p>Germany did not appear randomly. It entered the run when the user explicitly asked for Germany, then became durable when the human approved a plan whose entities said Germany. The bug is that Australia kept re-entering later as injected default context.</p>
+<p>There is no code that can detect "the model re-resolved an entity mid-execution." The prompt is the only thing holding this invariant. When this line was missing, the model produced a confident, well-formatted report for the wrong country.</p>
+<p>The lesson: <strong>know which invariants have no structural enforcement, and treat those prompt lines as load-bearing — nothing else is holding the weight.</strong></p>
+<h2 id="clarification-is-a-control-flow-event">Clarification Is A Control-Flow Event<a class="headerlink" href="#clarification-is-a-control-flow-event" title="Permanent link">&para;</a></h2>
+<p>A clarification is any turn where the system asks the user something instead of answering. The prompt shapes the wording, but the source of the pause decides the machinery:</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>When</th>
+<th>Detector</th>
+<th>User sees</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Plan-gate clarification</td>
+<td>At plan time</td>
+<td><code>submit_plan(clarification=...)</code> on the gate interrupt</td>
+<td>Plan card plus one question or assumption</td>
+</tr>
+<tr>
+<td>Terminal clarification</td>
+<td>Before planning</td>
+<td>The turn is classified as non-reportable</td>
+<td>One question, no plan</td>
+</tr>
+<tr>
+<td>Source elicitation</td>
+<td>Mid-retrieval</td>
+<td>A source result is marked <code>is_elicitation</code></td>
+<td>The source's question relayed to the user</td>
+</tr>
+<tr>
+<td>Zero-retrieval guard</td>
+<td>At exit</td>
+<td>No current-cycle results, or the evidence set was already reported</td>
+<td>No report over nothing</td>
+</tr>
+</tbody>
+</table>
+<p>The confusing case is source elicitation. Suppose one source returns promo ROI data while another asks, "retail or non-retail?" Deep does not ship a partial report. <code>pending_elicitation</code> is a whole-cycle gate: if any open step is waiting on the user, the report writer skips report generation. The completed source result stays in <code>source_results</code>, and the next user reply re-queries only the asking step.</p>
+<p>That reply is <strong>not</strong> <code>Command(resume=...)</code>. Only the plan approval gate leaves a pending <code>interrupt()</code>. A source elicitation turn completes normally after relaying the question. The user's answer enters as a fresh graph invocation on the same <code>thread_id</code>, under the same locked <code>plan_id</code>; the carried result is reused, the clarified step gets a new <code>provenance_id</code>, and the changed evidence set can now report.</p>
+<p>This is the boundary between prompt and code again:</p>
+<ul>
+<li>The prompt tells the model to relay the source's question and mention what data is already held.</li>
+<li>The exit middleware enforces "elicitation present means no report" even if the model tries to synthesize.</li>
+<li>The locked plan prevents a second approval loop and keeps carried evidence attached to the same cycle.</li>
+</ul>
+<h2 id="budgets-meter-depth-not-breadth">Budgets Meter Depth, Not Breadth<a class="headerlink" href="#budgets-meter-depth-not-breadth" title="Permanent link">&para;</a></h2>
+<p>A deep agent needs a real loop bound that fits its execution shape. Counting individual tool calls punishes parallel fan-out, which is exactly what a research agent should use to reduce wall-clock time. The production design instead meters retrieval rounds:</p>
+<table>
+<thead>
+<tr>
+<th>Bound</th>
+<th style="text-align: right;">Default</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Retrieval rounds per plan cycle</td>
+<td style="text-align: right;">6</td>
+<td>Gracefully route to the exit path; sufficiency and reporting still run.</td>
+</tr>
+<tr>
+<td>Graph recursion limit</td>
+<td style="text-align: right;">50</td>
+<td>Backstop only; hitting it is a terminal graph failure.</td>
+</tr>
+<tr>
+<td>SQS receives</td>
+<td style="text-align: right;">3</td>
+<td>Attempts 1-2 can redeliver; attempt 3 is poison-pill handling.</td>
+</tr>
+</tbody>
+</table>
+<p>A round is one model turn that issued one or more retrieval calls. A turn that queries three sources in parallel spends one round, not three. Gap-fill turns from the sufficiency gate spend the same budget, and the budget resets when a genuinely new question opens a new plan cycle.</p>
+<h2 id="grounding-the-purely-prompt-invariant">Grounding: The Purely-Prompt Invariant<a class="headerlink" href="#grounding-the-purely-prompt-invariant" title="Permanent link">&para;</a></h2>
+<p>The clearest case of a prompt-only rule is grounding — making sure every number in the report came from a real tool call, not from the model's memory.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>❌ WITHOUT grounding rule:
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>  Step 2: query IQVIA for PAXLOVID market share
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>    → API timeout, retrieval fails
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>  Base prompt says: "keep iterating until the task is done"
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>  Model reads this as: "find another way to get the number"
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>  Model's other way: its training data
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>  Report includes:
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>  "PAXLOVID market share in Q3 2024: approximately 34%"
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>                                      ↑
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>                              fabricated from training data
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>                              looks identical to real data
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>                              in a regulated domain = compliance violation
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>──────────────────────────────────────────────────────────────
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a>
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a>✅ WITH grounding rule:
+<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a>
+<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a>  "Ground the report ONLY in approved tool results.
+<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a>   If retrieval fails, mark the step completed and state
+<a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a>   that retrieval failed. Never estimate or approximate."
+<a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a>
+<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a>  Step 2: query IQVIA → fails
+<a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a>
+<a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a>  Report includes:
+<a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a>  "PAXLOVID market share: retrieval failed for this step.
+<a id="__codelineno-8-29" name="__codelineno-8-29" href="#__codelineno-8-29"></a>   Data not available in this report."
+<a id="__codelineno-8-30" name="__codelineno-8-30" href="#__codelineno-8-30"></a>                          ↑
+<a id="__codelineno-8-31" name="__codelineno-8-31" href="#__codelineno-8-31"></a>                    honest, auditable, compliant
+</code></pre></div>
+<p>Why this cannot be code: there is no way to detect at inference time whether a specific sentence in the model's output came from a tool result or from its training data. The enforcement surface is the prompt only.</p>
+<p>Two wording details, each scar tissue from a real failure:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>"Never state, estimate, OR approximate"
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>         ↑        ↑           ↑
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>   Three verbs because the model negotiates one verb at a time:
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>   - told not to STATE → it estimates ("approximately 34%")
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>   - told not to estimate → it gives a range ("between 30-40%")
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>   - all three blocked → it stops
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>"Mark the step COMPLETED" (not "failed")
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>         ↑
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>   The model invented a "failed" status the status map didn't recognize
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>   → silently coerced back to "pending"
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>   → finished-and-failed step looked un-started
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>   → executor retried it forever
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>   A failed retrieval IS a completed step. The outcome is prose, not data.
+</code></pre></div>
+<h2 id="deliver-the-next-instruction-as-a-tool-result">Deliver The Next Instruction As A Tool Result<a class="headerlink" href="#deliver-the-next-instruction-as-a-tool-result" title="Permanent link">&para;</a></h2>
+<p>After the human approves or refines, the model needs to know what to do next. There are two places to put that instruction:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>OPTION A — system prompt only:
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>  System prompt: "Step 4: once locked, execute the research steps."
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>                          ↑
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>                  written at the TOP of context,
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>                  far from the model's current position
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>                  (the model just finished a tool call)
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>  Model's attention is on the most recent messages.
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>  System prompt instruction gets "forgotten" in long conversations.
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>  Model sometimes re-enters planning instead of executing. ✗
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>──────────────────────────────────────────────────────────────
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>OPTION B — ToolMessage (RIGHT next to where the model is):
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>  [system prompt] "Step 4: once locked, execute..."  ← pre-explains the concept
+<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>
+<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>  ... many tool messages and model turns later ...
+<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>
+<a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a>  [ToolMessage from submit_plan]
+<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a>  "Plan approved and locked. Execute the research steps now,
+<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a>   exactly as planned."                              ← immediate, high salience ✓
+<a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a>
+<a id="__codelineno-11-25" name="__codelineno-11-25" href="#__codelineno-11-25"></a>  Model is deciding what to call next.
+<a id="__codelineno-11-26" name="__codelineno-11-26" href="#__codelineno-11-26"></a>  The ToolMessage return value is the last thing it read.
+<a id="__codelineno-11-27" name="__codelineno-11-27" href="#__codelineno-11-27"></a>  It executes. ✓
+</code></pre></div>
+<p>System prompt and ToolMessage work together: the system prompt <em>teaches</em> the model what each message means ("step 4 = execute"), and the ToolMessage <em>triggers</em> it at the right moment with high salience.</p>
+<h2 id="a-versioning-note">A Versioning Note<a class="headerlink" href="#a-versioning-note" title="Permanent link">&para;</a></h2>
+<p>Ship the prompt with a version string (<code>PROMPT_VERSION = "2.2"</code>) carried as trace metadata, so you can tell which prompt produced a given run. The convention: bump once per shipped change, never per edit inside an unmerged branch. The version answers "which prompt produced this trace," not "which local draft."</p>
+<h2 id="guardrails">Guardrails<a class="headerlink" href="#guardrails" title="Permanent link">&para;</a></h2>
+<ul>
+<li>For every rule, ask whether code can enforce it deterministically; if yes, it is not a prompt's job</li>
+<li>Remove forbidden tools from the request instead of forbidding them in prose</li>
+<li>Keep gate sequencing, status transitions, and concurrency entirely in code</li>
+<li>Reserve the prompt for judgment and for invariants with no structural enforcement</li>
+<li>Treat those unenforceable prompt lines as load-bearing — they are the only thing holding the invariant</li>
+<li>Enumerate the exact misbehaviors when the model negotiates around a rule</li>
+<li>Number and name workflow phases so the model can locate itself</li>
+<li>Deliver post-decision instructions as tool results, not only as system-prompt text</li>
+</ul>
+<hr />
+<div class="admonition check">
+<p class="admonition-title">You should now understand</p>
+<ul>
+<li>Why prompts should shape judgment but not enforce deterministic boundaries</li>
+<li>Why forbidden tools should be removed from the request instead of prohibited in prose</li>
+<li>Why a public <code>query_source</code> example may stand for several production retrieval tools</li>
+<li>Why workflow phases should be numbered and named</li>
+<li>Why grounding is a prompt-only invariant unless you add provenance and audit</li>
+<li>Why post-approval instructions are more salient as tool results than buried prompt text</li>
+</ul>
+</div>
+<details class="question">
+<summary>Try this</summary>
+<p><strong>You need the agent to never call retrieval tools before plan approval. Should that rule live in the prompt or code?</strong></p>
+<details class="success">
+<summary>Answer</summary>
+<p>Code. The approval gate should structurally pause execution, and middleware should remove tools that are not allowed in the current phase. The prompt can explain the workflow, but it should not be the only thing preventing an expensive or unauthorized tool call.</p>
+</details>
+</details>
+<p><em>Next: <a href="../10-nine-silent-failures/">Capstone · Nine Silent Failures</a> — now use the real case study as a review exam for the whole system.</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../08-queue-and-worker-execution/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Step 7 · Queue and worker execution">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Step 7 · Queue and worker execution
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../09a-clarifications/" class="md-footer__link md-footer__link--next" aria-label="Next: Deep dive · Clarifications">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Deep dive · Clarifications
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/neeleshsethi/agentic-engineering-patterns" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.action.edit"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../assets/scrubber.js"></script>
+      
+    
+  </body>
+</html>

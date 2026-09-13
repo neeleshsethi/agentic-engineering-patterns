@@ -1,0 +1,1839 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A learning series on building production agent systems that fail loudly, not silently — state, streaming, locking, durable runs, and prompt design.">
+      
+      
+        <meta name="author" content="Neelesh Sethi">
+      
+      
+      
+        <link rel="prev" href="../03-context-injection/">
+      
+      
+        <link rel="next" href="../05-identifiers/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Step 3 · Planning and human approval - Agentic Engineering Patterns</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/scrubber.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#step-3-planning-and-human-approval" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Agentic Engineering Patterns" class="md-header__button md-logo" aria-label="Agentic Engineering Patterns" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Agentic Engineering Patterns
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Step 3 · Planning and human approval
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/neeleshsethi/agentic-engineering-patterns" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    neeleshsethi/agentic-engineering-patterns
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Agentic Engineering Patterns" class="md-nav__button md-logo" aria-label="Agentic Engineering Patterns" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Agentic Engineering Patterns
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/neeleshsethi/agentic-engineering-patterns" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    neeleshsethi/agentic-engineering-patterns
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01-problem-design-implementation-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chapter 1 · Problem, design, and implementation plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02-end-to-end-architecture-and-orchestrator-flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chapter 2 · End-to-end architecture and orchestrator flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02-state-and-checkpoints/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 1 · State and checkpoints
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03-context-injection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 2 · Context injection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 3 · Planning and human approval
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 3 · Planning and human approval
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-big-picture-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Big Picture First
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#start-with-the-naive-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start With The Naive Version
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-one-primitive-interrupt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The One Primitive: interrupt()
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-idempotency-rule-you-cannot-ignore" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Idempotency Rule You Cannot Ignore
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#designing-the-interrupt-payload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Designing The Interrupt Payload
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-refine-loop-the-design-that-does-not-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Refine Loop: The Design That Does Not Work
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#refine-is-the-agent-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Refine Is The Agent Loop
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-plan-is-a-read-only-projection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Plan Is A Read-Only Projection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-gate-does-not-run-on-every-turn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Gate Does Not Run On Every Turn
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-state-machine-lives-in-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The State Machine Lives In Code
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#concurrency-one-resume-at-a-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concurrency: One Resume At A Time
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#an-implementation-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        An Implementation Path
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guardrails" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guardrails
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05-identifiers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 4 · Identifiers that hold a run together
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06-streaming-and-background-work/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 5 · Streaming and background work
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07-distributed-locks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 6 · Distributed locks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08-queue-and-worker-execution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 7 · Queue and worker execution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09-orchestrator-prompt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 8 · Orchestrator prompt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09a-clarifications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Clarifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09b-code-components-and-organization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Code components and organization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09c-plan-lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Plan lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09d-reactive-mode-prompt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Reactive mode prompt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lessons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interactive lessons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10-nine-silent-failures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone · Nine silent failures in one agent
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18" >
+        
+          
+          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00-glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Glossary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_18_2" id="__nav_18_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source Notes (advanced)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_18_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Source Notes (advanced)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/before-resume/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Before Resume
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/orchestrator-prompt-annotated/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Orchestrator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/life-of-a-deep-run/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Life of a Deep Run
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-big-picture-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Big Picture First
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#start-with-the-naive-version" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Start With The Naive Version
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-one-primitive-interrupt" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The One Primitive: interrupt()
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-idempotency-rule-you-cannot-ignore" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Idempotency Rule You Cannot Ignore
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#designing-the-interrupt-payload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Designing The Interrupt Payload
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-refine-loop-the-design-that-does-not-work" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Refine Loop: The Design That Does Not Work
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#refine-is-the-agent-loop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Refine Is The Agent Loop
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-plan-is-a-read-only-projection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Plan Is A Read-Only Projection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-gate-does-not-run-on-every-turn" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Gate Does Not Run On Every Turn
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-state-machine-lives-in-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The State Machine Lives In Code
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#concurrency-one-resume-at-a-time" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Concurrency: One Resume At A Time
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#an-implementation-path" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        An Implementation Path
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#guardrails" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Guardrails
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/neeleshsethi/agentic-engineering-patterns/edit/main/articles/04-planning-and-human-approval.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="step-3-planning-and-human-approval">Step 3 · Planning and Human Approval<a class="headerlink" href="#step-3-planning-and-human-approval" title="Permanent link">&para;</a></h1>
+<p>The agent now has durable state and the right context at the model boundary. The next job is to stop it from doing expensive work too early.</p>
+<p>This chapter builds the planning gate: the model drafts a plan, the human approves or refines it, and only then does execution begin. That one design choice changes the topology of the system. The run can no longer live inside one HTTP request.</p>
+<blockquote>
+<p>Terms below — <a href="../00-glossary/#interrupt"><code>interrupt()</code></a>, <a href="../00-glossary/#checkpoint">checkpoint</a>, <a href="../00-glossary/#gate">gate</a>, <a href="../00-glossary/#lease">lease</a>, <a href="../00-glossary/#replica">replica</a> — are defined once in the <a href="../00-glossary/">glossary</a>.</p>
+</blockquote>
+<p>Some agent actions are expensive, slow, or irreversible. A research plan that hits external APIs, runs database queries, or spends real money should be shown to a human <em>before</em> it executes, not after. This article builds that approval gate from the ground up.</p>
+<p>The running example is a pharmaceutical commercial-analytics agent: it plans a set of data-retrieval steps, a human approves or refines the plan, and only then does it query anything. The identifiers are generic (<code>BRAND_A</code>, <code>SOURCE_A</code>, <code>query_source</code>), but the shape applies to any agent with a costly execute phase.</p>
+<h2 id="the-big-picture-first">The Big Picture First<a class="headerlink" href="#the-big-picture-first" title="Permanent link">&para;</a></h2>
+<p>Before diving into code, here is the shape of the whole system this chapter builds:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a> WITHOUT approval gate          WITH approval gate
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a> ───────────────────            ──────────────────
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a> question                       question
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    │                              │
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    ▼                              ▼
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a> Agent plans              Agent calls submit_plan tool
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a> (internally,                      │
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>  never shown)            Tool calls interrupt()
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    │                     Graph PAUSES — plan shown to human
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    ▼                              │
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a> Agent executes           Human: APPROVE or REFINE?
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a> (you can't stop it)               │
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    │                    ┌─────────┴──────────┐
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    ▼                    │ APPROVE            │ REFINE
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a> Answer                  │                   │
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>                         ▼                   ▼
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>                  Tool tells agent:   Tool tells agent:
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>                  "Execute now."      "Update todos, ask
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>                         │             me again."
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>                         ▼                   │
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>                  Agent executes       Agent edits plan
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>                         │             calls tool again ↑
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>                         ▼
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>                       Answer
+</code></pre></div>
+<p>The key idea: the <code>submit_plan</code> <strong>tool</strong> is the bridge between the agent and the human. The agent calls the tool. The tool pauses everything and shows the human the plan. When the human decides, the tool gets the decision back and <strong>tells the agent what to do next</strong> via a ToolMessage. The agent never talks to the human directly.</p>
+<h2 id="start-with-the-naive-version">Start With The Naive Version<a class="headerlink" href="#start-with-the-naive-version" title="Permanent link">&para;</a></h2>
+<p>Before any approval machinery, the baseline agent is one straight line:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>user question -&gt; LLM plans (internal, never shown) -&gt; agent executes -&gt; answer
+</code></pre></div>
+<p>Everything happens in one HTTP request, one graph invocation, one stream. The problem is not correctness — the LLM might plan correctly. The problem is trust and cost. If the model misread the question, you want to catch it before three source calls run, not after. So you want to show the plan first, and wait.</p>
+<h2 id="the-one-primitive-interrupt">The One Primitive: <code>interrupt()</code><a class="headerlink" href="#the-one-primitive-interrupt" title="Permanent link">&para;</a></h2>
+<p>LangGraph gives you exactly one primitive for pausing a graph and waiting for a human: <code>interrupt()</code>. It serializes the current graph state to the checkpointer and raises a special exception the runner catches. The HTTP response returns with whatever has streamed so far. The graph is frozen in durable storage, waiting.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">langgraph.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">interrupt</span><span class="p">,</span> <span class="n">Command</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">submit_plan</span><span class="p">(</span><span class="n">plan</span><span class="p">:</span> <span class="n">Plan</span><span class="p">,</span> <span class="n">thread_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="c1"># Pause here. The graph suspends, the HTTP request finishes.</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">human_decision</span> <span class="o">=</span> <span class="n">interrupt</span><span class="p">({</span><span class="s2">"kind"</span><span class="p">:</span> <span class="s2">"plan_approval"</span><span class="p">,</span> <span class="s2">"plan"</span><span class="p">:</span> <span class="n">plan</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()})</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="c1"># Everything above re-runs on every resume (see below).</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="c1"># Everything below runs only after the human responds.</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="k">return</span> <span class="n">human_decision</span>
+</code></pre></div>
+<p>The frontend renders the plan, the user clicks approve or asks for a change, and the frontend sends a <em>second</em> HTTP request carrying the decision:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="s2">"approve"</span><span class="p">}</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="c1"># or</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="s2">"refine"</span><span class="p">,</span> <span class="s2">"feedback"</span><span class="p">:</span> <span class="s2">"add a competitive analysis step"</span><span class="p">}</span>
+</code></pre></div>
+<p>LangGraph finds the paused graph in the <a href="../00-glossary/#checkpoint">checkpoint</a>, re-runs the node, and delivers the decision as the return value of <code>interrupt()</code>. In tests or an interim synchronous path, you may see this as <code>Command(resume=...)</code>. In the production approve path, the API writes the resume decision into the checkpoint first, queues work, and a worker later resumes with no graph input. Everything else in this article is built on top of that same pause/resume primitive.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    participant U as Browser
+    participant A as API
+    participant C as Checkpoint (DynamoDB)
+    U-&gt;&gt;A: POST (propose)
+    A-&gt;&gt;C: run graph, saver.put() each step
+    A-&gt;&gt;C: interrupt() freezes state
+    A--&gt;&gt;U: stream plan, close (no "end")
+    Note over U,C: minutes or days pass; no process is running
+    U-&gt;&gt;A: POST /approve/async  (second request)
+    A-&gt;&gt;C: read pending interrupt, validate
+    A-&gt;&gt;C: saver.put_writes() stages resume decision
+    A--&gt;&gt;U: 202 queued
+    Note over C: Worker later reloads and resumes with input=None</code></pre>
+<p>The dashed pause is the whole point: between the two requests, <strong>nothing is running</strong>. The plan lives in the checkpoint, and any <a href="../00-glossary/#replica">replica</a> can pick it up.</p>
+<h2 id="the-idempotency-rule-you-cannot-ignore">The Idempotency Rule You Cannot Ignore<a class="headerlink" href="#the-idempotency-rule-you-cannot-ignore" title="Permanent link">&para;</a></h2>
+<p>When a graph resumes, LangGraph re-runs the current node <strong>from the beginning</strong> — not from the <code>interrupt()</code> line. Everything before <code>interrupt()</code> runs again, on every resume.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">submit_plan</span><span class="p">(</span><span class="n">plan</span><span class="p">,</span> <span class="n">thread_id</span><span class="p">):</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="n">send_slack_notification</span><span class="p">(</span><span class="n">thread_id</span><span class="p">,</span> <span class="n">plan</span><span class="p">)</span>   <span class="c1"># runs on EVERY resume</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="k">return</span> <span class="n">interrupt</span><span class="p">({</span><span class="o">...</span><span class="p">})</span>
+</code></pre></div>
+<p>Refine the plan twice and that notification fires three times: once on the initial proposal, once per resume. This is the single most common bug in resumable graphs. The fix is one of two things: move side effects to <em>after</em> <code>interrupt()</code>, or make them idempotent (check whether the work was already done before doing it).</p>
+<p>The deeper consequence: all code before <code>interrupt()</code> must be a pure, deterministic function of durable state. If it computes the plan, that computation has to produce the identical plan every time it re-runs — which drives the design in the rest of this article.</p>
+<h2 id="designing-the-interrupt-payload">Designing The Interrupt Payload<a class="headerlink" href="#designing-the-interrupt-payload" title="Permanent link">&para;</a></h2>
+<p>The payload is the contract between backend and frontend. Changing it later is a frontend migration, so design it deliberately. It needs to carry two different kinds of thing:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">interrupt</span><span class="p">({</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="s2">"kind"</span><span class="p">:</span> <span class="s2">"plan_approval"</span><span class="p">,</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="c1"># 1. What the human needs to decide:</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="s2">"plan"</span><span class="p">:</span> <span class="n">plan</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(),</span>           <span class="c1"># the human-readable steps, scope, entities</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="c1"># 2. What the code needs to validate the decision on resume:</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="s2">"plan_id"</span><span class="p">:</span> <span class="n">plan</span><span class="o">.</span><span class="n">plan_id</span><span class="p">,</span>             <span class="c1"># which logical plan</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    <span class="s2">"thread_id"</span><span class="p">:</span> <span class="n">thread_id</span><span class="p">,</span>              <span class="c1"># which thread</span>
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>    <span class="s2">"owner_id"</span><span class="p">:</span> <span class="n">owner_id</span><span class="p">,</span>                <span class="c1"># who proposed it</span>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    <span class="s2">"interrupt_id"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()),</span>   <span class="c1"># which exact interrupt</span>
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="p">})</span>
+</code></pre></div>
+<p>If the human cannot make an informed decision from the payload, they approve blindly. And if the code cannot identify <em>which exact pause</em> the human approved, a stale browser tab can approve a revision that no longer exists.</p>
+<p><code>plan_id</code> and <code>interrupt_id</code> do different jobs. <code>plan_id</code> names the logical plan and may stay stable across refinements. <code>interrupt_id</code> is minted for each pause, so it is the stronger stale-tab guard.</p>
+<p>On the approve endpoint, read the payload back from the checkpointer and validate it <em>before</em> resuming:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">gate</span> <span class="o">=</span> <span class="n">read_pending_interrupt</span><span class="p">(</span><span class="n">thread_id</span><span class="p">)</span>   <span class="c1"># LangGraph exposes the pending writes</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="k">if</span> <span class="n">gate</span><span class="p">[</span><span class="s2">"plan_id"</span><span class="p">]</span>      <span class="o">!=</span> <span class="n">request</span><span class="o">.</span><span class="n">plan_id</span><span class="p">:</span>      <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="mi">409</span><span class="p">)</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="k">if</span> <span class="n">gate</span><span class="p">[</span><span class="s2">"interrupt_id"</span><span class="p">]</span> <span class="o">!=</span> <span class="n">request</span><span class="o">.</span><span class="n">interrupt_id</span><span class="p">:</span> <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="mi">409</span><span class="p">)</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="k">if</span> <span class="n">gate</span><span class="p">[</span><span class="s2">"owner_id"</span><span class="p">]</span>     <span class="o">!=</span> <span class="n">request</span><span class="o">.</span><span class="n">user_id</span><span class="p">:</span>      <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="mi">403</span><span class="p">)</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="c1"># only now, in the async production path:</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="n">persist_resume_decision</span><span class="p">(</span><span class="n">thread_id</span><span class="p">,</span> <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="s2">"approve"</span><span class="p">})</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="n">put_run_state</span><span class="p">(</span><span class="n">thread_id</span><span class="p">,</span> <span class="n">run_id</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s2">"queued"</span><span class="p">)</span>
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a><span class="n">enqueue_deep_run</span><span class="p">(</span><span class="n">thread_id</span><span class="p">,</span> <span class="n">run_id</span><span class="p">)</span>
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">status_code</span><span class="o">=</span><span class="mi">202</span><span class="p">)</span>
+</code></pre></div>
+<p>If validation fails, the graph stays paused. No state change, no double execution. If validation succeeds, execution still does not run in the approval request; the API has only made the approval durable and queued the worker.</p>
+<h2 id="the-refine-loop-the-design-that-does-not-work">The Refine Loop: The Design That Does Not Work<a class="headerlink" href="#the-refine-loop-the-design-that-does-not-work" title="Permanent link">&para;</a></h2>
+<p>With approve/reject the human can only say yes or no. Refine is more useful: the human describes a change, the agent revises the plan and re-presents it. The tempting implementation is a loop inside the tool:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="c1"># DON'T do this</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">submit_plan</span><span class="p">(</span><span class="n">plan</span><span class="p">:</span> <span class="n">Plan</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>        <span class="n">decision</span> <span class="o">=</span> <span class="n">interrupt</span><span class="p">({</span><span class="s2">"plan"</span><span class="p">:</span> <span class="n">plan</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()})</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>        <span class="k">if</span> <span class="n">decision</span><span class="p">[</span><span class="s2">"type"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"approve"</span><span class="p">:</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>            <span class="n">plan</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s2">"locked"</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>            <span class="k">return</span> <span class="s2">"approved"</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>        <span class="n">plan</span> <span class="o">=</span> <span class="n">call_llm_to_update_plan</span><span class="p">(</span><span class="n">plan</span><span class="p">,</span> <span class="n">decision</span><span class="p">[</span><span class="s2">"feedback"</span><span class="p">])</span>   <span class="c1"># the problem</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>        <span class="k">continue</span>
+</code></pre></div>
+<p>The problem is the marked line. Applying "add a competitive analysis step" means interpreting prose and rewriting research steps — that is LLM work. But you are inside a tool: plain Python, mid-way through the agent's own graph. To regenerate the plan you would make a <em>separate, out-of-band</em> LLM call — a second model that does not share the agent's system prompt, tools, or conversation. Now two different models author the plan. Formats drift, context is lost, and the plan the human finally approves was never seen whole by the agent that will execute it.</p>
+<h2 id="refine-is-the-agent-loop">Refine Is The Agent Loop<a class="headerlink" href="#refine-is-the-agent-loop" title="Permanent link">&para;</a></h2>
+<p>The structural fix: the tool never applies feedback. It hands the feedback back to the agent as its tool result, and the "loop" becomes the agent's own loop. Each <code>submit_plan</code> call interrupts exactly once and returns.</p>
+<p>Here is who does what at each step of a refine round:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>┌─────────┐         ┌──────────┐         ┌──────────┐         ┌──────────┐
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>│ Browser │         │   API    │         │  Agent   │         │  Tool    │
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>│ (Human) │         │          │         │  (LLM)   │         │submit_plan│
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>└────┬────┘         └────┬─────┘         └────┬─────┘         └────┬─────┘
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>     │                   │                    │                    │
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>     │  "Add a competitor │                    │                    │
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>     │   analysis step"  │                    │                    │
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>     │──────────────────▶│                    │                    │
+<a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>     │                   │  resume graph      │                    │
+<a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>     │                   │  with feedback ───▶│                    │
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>     │                   │                    │  calls submit_plan │
+<a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>     │                   │                    │───────────────────▶│
+<a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>     │                   │                    │                    │
+<a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>     │                   │                    │  ToolMessage:      │
+<a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a>     │                   │                    │  "user wants       │
+<a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>     │                   │                    │   changes — update │
+<a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a>     │                   │                    │   todos, then call │
+<a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a>     │                   │                    │   submit_plan"     │
+<a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a>     │                   │                    │◀───────────────────│
+<a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a>     │                   │                    │                    │
+<a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a>     │                   │                    │  edits its own     │
+<a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a>     │                   │                    │  todo steps  ◀─── │ (Agent work)
+<a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a>     │                   │                    │                    │
+<a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a>     │                   │                    │  calls submit_plan │
+<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a>     │                   │                    │  again ───────────▶│
+<a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a>     │                   │                    │                    │
+<a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a>     │                   │  interrupt() ◀─────────────────────────│
+<a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a>     │  new plan + gate  │                    │                    │
+<a id="__codelineno-8-29" name="__codelineno-8-29" href="#__codelineno-8-29"></a>     │◀──────────────────│                    │                    │
+<a id="__codelineno-8-30" name="__codelineno-8-30" href="#__codelineno-8-30"></a>     │                   │                    │                    │
+</code></pre></div>
+<p><strong>The key insight:</strong> the <code>submit_plan</code> tool is a messenger, not an editor. It passes the human's feedback to the agent as a tool result and pauses again. The agent is the one that reads the feedback and rewrites the plan steps. The tool never touches the plan content itself.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">submit_plan</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">runtime</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Command</span><span class="p">:</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>    <span class="n">plan</span> <span class="o">=</span> <span class="n">project_plan</span><span class="p">(</span><span class="n">runtime</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"todos"</span><span class="p">))</span>   <span class="c1"># from the agent's own todos</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    <span class="n">decision</span> <span class="o">=</span> <span class="n">interrupt</span><span class="p">({</span><span class="s2">"plan"</span><span class="p">:</span> <span class="n">plan</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()})</span>  <span class="c1"># ONE interrupt, no loop</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>    <span class="k">if</span> <span class="n">decision</span><span class="p">[</span><span class="s2">"type"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"approve"</span><span class="p">:</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>        <span class="n">locked</span> <span class="o">=</span> <span class="n">plan</span><span class="o">.</span><span class="n">model_copy</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="p">{</span><span class="s2">"status"</span><span class="p">:</span> <span class="s2">"locked"</span><span class="p">})</span>
+<a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>        <span class="k">return</span> <span class="n">Command</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="p">{</span>
+<a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>            <span class="s2">"plan"</span><span class="p">:</span> <span class="n">locked</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(),</span>
+<a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>            <span class="c1"># Production approval was staged before the worker resumed.</span>
+<a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>            <span class="c1"># This update runs when the worker drains that pending resume value.</span>
+<a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>            <span class="s2">"messages"</span><span class="p">:</span> <span class="p">[</span><span class="n">ToolMessage</span><span class="p">(</span><span class="s2">"Plan approved and locked. Execute the steps now."</span><span class="p">)],</span>
+<a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>        <span class="p">})</span>
+<a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>
+<a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>    <span class="c1"># refine: DON'T touch the plan — route the feedback back to the agent</span>
+<a id="__codelineno-9-15" name="__codelineno-9-15" href="#__codelineno-9-15"></a>    <span class="n">bumped</span> <span class="o">=</span> <span class="n">plan</span><span class="o">.</span><span class="n">model_copy</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="p">{</span><span class="s2">"modification_count"</span><span class="p">:</span> <span class="n">plan</span><span class="o">.</span><span class="n">modification_count</span> <span class="o">+</span> <span class="mi">1</span><span class="p">})</span>
+<a id="__codelineno-9-16" name="__codelineno-9-16" href="#__codelineno-9-16"></a>    <span class="k">return</span> <span class="n">Command</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="p">{</span>
+<a id="__codelineno-9-17" name="__codelineno-9-17" href="#__codelineno-9-17"></a>        <span class="s2">"plan"</span><span class="p">:</span> <span class="n">bumped</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(),</span>
+<a id="__codelineno-9-18" name="__codelineno-9-18" href="#__codelineno-9-18"></a>        <span class="s2">"messages"</span><span class="p">:</span> <span class="p">[</span><span class="n">ToolMessage</span><span class="p">(</span>
+<a id="__codelineno-9-19" name="__codelineno-9-19" href="#__codelineno-9-19"></a>            <span class="sa">f</span><span class="s2">"The user requested changes: </span><span class="si">{</span><span class="n">decision</span><span class="p">[</span><span class="s1">'feedback'</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+<a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a>            <span class="s2">"Update the todo list, then call submit_plan again. Do not retrieve anything yet."</span><span class="p">)],</span>
+<a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a>    <span class="p">})</span>
+</code></pre></div>
+<p>Here is the complete picture of both outcomes — approve and refine — showing exactly what the tool returns to the agent each time:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>                    AGENT calls submit_plan tool
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>                              │
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>                              ▼
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>                    Tool builds plan from todos
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>                    Tool calls interrupt()
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>                    ┌─────────────────────────────┐
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>                    │  GRAPH PAUSES               │
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>                    │  HTTP request ends          │
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>                    │  Plan shown in browser      │
+<a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>                    └─────────────────────────────┘
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>                              │
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>              ┌───────────────┴────────────────────┐
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>              │ Human clicks APPROVE                │ Human sends REFINE feedback
+<a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a>              ▼                                     ▼
+<a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>    Worker resumes graph                  API resumes graph
+<a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a>    interrupt() returns:                  interrupt() returns:
+<a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a>    {"type": "approve"}                   {"type": "refine",
+<a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a>                                           "feedback": "add X step"}
+<a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a>              │                                     │
+<a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a>              ▼                                     ▼
+<a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a>    Tool returns ToolMessage:             Tool returns ToolMessage:
+<a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a>    ┌────────────────────────┐            ┌────────────────────────────────┐
+<a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a>    │ "Plan approved and     │            │ "User requested changes: add X │
+<a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a>    │  locked. Execute the   │            │  step. Update the todo list,   │
+<a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a>    │  research steps now."  │            │  then call submit_plan again." │
+<a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a>    └────────────────────────┘            └────────────────────────────────┘
+<a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a>              │                                     │
+<a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a>              ▼                                     ▼
+<a id="__codelineno-10-29" name="__codelineno-10-29" href="#__codelineno-10-29"></a>    AGENT reads ToolMessage               AGENT reads ToolMessage
+<a id="__codelineno-10-30" name="__codelineno-10-30" href="#__codelineno-10-30"></a>    → runs query_cortex,                  → edits its own todo steps
+<a id="__codelineno-10-31" name="__codelineno-10-31" href="#__codelineno-10-31"></a>      query_iqvia_gmi, etc.               → calls submit_plan again
+<a id="__codelineno-10-32" name="__codelineno-10-32" href="#__codelineno-10-32"></a>    → writes report                       → back to interrupt() ↑
+</code></pre></div>
+<p><strong>The tool is the messenger in both directions.</strong> Going in: it carries the plan to the human via <code>interrupt()</code>. Coming back: it tells the agent what the human decided. The agent never talks to the human directly — it only ever reads a ToolMessage.</p>
+<p>Each refine round is one full trip: a new tool call, a new <code>interrupt()</code>, a new HTTP request. The tool stays dumb; the agent stays the sole author of the plan. The human's feedback reaches the agent as conversational input, never as a direct edit the code performs.</p>
+<h2 id="the-plan-is-a-read-only-projection">The Plan Is A Read-Only Projection<a class="headerlink" href="#the-plan-is-a-read-only-projection" title="Permanent link">&para;</a></h2>
+<p>The refine design has a prerequisite that also solves the idempotency problem: the agent never writes a <code>Plan</code> object directly. It writes plain todo items — natural-language steps with routing tags in their text — and the typed <code>Plan</code> is <em>derived</em> from those todos by a pure function every time it is needed.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">submit_plan</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">runtime</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Command</span><span class="p">:</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>    <span class="n">todos</span> <span class="o">=</span> <span class="n">runtime</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"todos"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>    <span class="n">plan</span> <span class="o">=</span> <span class="n">project_plan</span><span class="p">(</span><span class="n">todos</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="n">thread_id</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="n">prior</span><span class="p">)</span>   <span class="c1"># pure: same in, same out</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>    <span class="o">...</span>
+</code></pre></div>
+<p>Two payoffs:</p>
+<ul>
+<li><strong>The agent cannot corrupt the plan.</strong> It can only write inconsistent todos; the projection is a sanitizing layer between raw model output and the typed structure the frontend receives. A malformed routing tag fails soft — the raw text stays visible in the step title, and the routing field is left unset for the executor to skip.</li>
+<li><strong>Resume is safe by construction.</strong> Because <code>project_plan</code> is pure and the plan id is derived deterministically from the thread, re-running <code>submit_plan</code> on every resume rebuilds the bit-for-bit identical plan. A random id or a timestamp here would fork a different plan on each resume and break the <code>plan_id</code> validation above.</li>
+</ul>
+<p>Refine, then, is just: the agent edits its todos, calls <code>submit_plan</code> again, and the projection produces the revised plan automatically. There is no plan object being mutated in place.</p>
+<h2 id="the-gate-does-not-run-on-every-turn">The Gate Does Not Run On Every Turn<a class="headerlink" href="#the-gate-does-not-run-on-every-turn" title="Permanent link">&para;</a></h2>
+<p>The full plan workflow is expensive and state-changing:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>write_todos -&gt; submit_plan -&gt; interrupt() -&gt; approve/refine -&gt; execute
+</code></pre></div>
+<p>That workflow should run only when the conversation needs a new approved plan. In the production agent, only two of the common turn shapes opened the gate:</p>
+<table>
+<thead>
+<tr>
+<th>Turn type</th>
+<th style="text-align: right;">Plan workflow?</th>
+<th>What happens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>First question on a thread</td>
+<td style="text-align: right;">Yes</td>
+<td>Draft todos, submit the plan, pause for approval.</td>
+</tr>
+<tr>
+<td>Follow-up that is a genuinely new topic</td>
+<td style="text-align: right;">Yes</td>
+<td>Advance <code>cycle</code>, mint a new <code>plan_id</code>, and approve a fresh plan.</td>
+</tr>
+<tr>
+<td>Entity or metric gap with no safe default</td>
+<td style="text-align: right;">No</td>
+<td>Ask one terminal clarification before any todos exist.</td>
+</tr>
+<tr>
+<td>Mid-retrieval source elicitation reply</td>
+<td style="text-align: right;">No</td>
+<td>Keep the locked plan; re-query only the step that asked back.</td>
+</tr>
+<tr>
+<td>Extension, such as "also pull New Zealand"</td>
+<td style="text-align: right;">No</td>
+<td>Retrieve directly under the current locked plan.</td>
+</tr>
+<tr>
+<td>Evidence reply or presentation change</td>
+<td style="text-align: right;">No</td>
+<td>Answer from held evidence or rebuild artifacts once.</td>
+</tr>
+</tbody>
+</table>
+<p>This is why the plan's lifetime matters. A locked plan keeps its <code>plan_id</code>, step ids, and carried evidence attached to the same cycle. Re-opening the gate for a source-elicitation reply would mint a new <code>plan_id</code>, orphan already-fetched results from the current cycle, and ask the human to approve the same question twice.</p>
+<p>The rule is simple enough to review: clarification about the user's intended entity or metric happens before planning; source ambiguity can ride the plan gate; once a plan is locked, only a genuinely new question reopens planning.</p>
+<h2 id="the-state-machine-lives-in-code">The State Machine Lives In Code<a class="headerlink" href="#the-state-machine-lives-in-code" title="Permanent link">&para;</a></h2>
+<p>The plan has a lifecycle, and the code — not the model — owns every transition:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>DRAFT --(interrupt: human sees plan)--&gt; DRAFT (modification_count++)   [refine]
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>      --(approve)--&gt; LOCKED --&gt; EXECUTING --&gt; COMPLETE
+</code></pre></div>
+<ul>
+<li><strong>DRAFT</strong> can be modified, cannot be executed.</li>
+<li><strong>LOCKED</strong> cannot be modified, can be executed.</li>
+<li><strong>EXECUTING</strong> is guarded against a second concurrent run.</li>
+<li><strong>COMPLETE</strong> is terminal.</li>
+</ul>
+<p>The model only ever writes plan <em>content</em>, and only in DRAFT. The <code>locked</code> transition happens in code on approve, via <code>model_copy</code>. The model cannot accidentally lock or unlock a plan, and it cannot execute an unlocked one — because the gate structurally blocks continuation until the human resumes. If you try to prompt the model into enforcing this ("only proceed if the plan is approved"), you have put a state decision in the one place that cannot guarantee it.</p>
+<h2 id="concurrency-one-resume-at-a-time">Concurrency: One Resume At A Time<a class="headerlink" href="#concurrency-one-resume-at-a-time" title="Permanent link">&para;</a></h2>
+<p>Imagine a user opens the plan approval screen in two browser tabs. Both show the same plan. Both have an "Approve" button. If they click approve in tab A and then again in tab B half a second later, two HTTP requests hit your server at almost the same moment — both trying to resume the same graph thread.</p>
+<p>LangGraph does not support two runs on the same thread at once. If both requests succeed, the graph executes the research plan twice in parallel, each writing to the same checkpoint. Whichever finishes last wins and overwrites the other's work. The user gets one result, one run's state is silently lost, and nothing logs an error.</p>
+<p>The fix is a <strong>claim</strong>: before resuming, write a small record to the database that says "I own this thread right now." The write is conditional — it only succeeds if no one else already holds the claim. The second request races to write the same record, loses the race, and gets a <code>409 Conflict</code> back. Exactly one resume proceeds.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>Tab A clicks approve:
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>  → try to write CLAIM#thread-123 to database
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>  → nobody holds it yet, write succeeds
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>  → Tab A resumes the graph ✓
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>Tab B clicks approve (50ms later):
+<a id="__codelineno-14-7" name="__codelineno-14-7" href="#__codelineno-14-7"></a>  → try to write CLAIM#thread-123 to database
+<a id="__codelineno-14-8" name="__codelineno-14-8" href="#__codelineno-14-8"></a>  → record already exists, write fails
+<a id="__codelineno-14-9" name="__codelineno-14-9" href="#__codelineno-14-9"></a>  → Tab B gets 409 Conflict ✓
+</code></pre></div>
+<p>In code, the conditional write looks like this:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>    <span class="n">Item</span><span class="o">=</span><span class="p">{</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>        <span class="s2">"PK"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"CLAIM#</span><span class="si">{</span><span class="n">thread_id</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>   <span class="c1"># one record per thread</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>        <span class="s2">"claim_token"</span><span class="p">:</span> <span class="n">token</span><span class="p">,</span>          <span class="c1"># a unique ID so only the holder can release it</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>        <span class="s2">"expires_at"</span><span class="p">:</span> <span class="n">now</span> <span class="o">+</span> <span class="mi">1800</span><span class="p">,</span>      <span class="c1"># auto-expire after 30 min in case of crash</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>    <span class="p">},</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>    <span class="c1"># only succeed if the record does not exist yet, or if it expired</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>    <span class="n">ConditionExpression</span><span class="o">=</span><span class="s2">"attribute_not_exists(PK) OR expires_at &lt; :now"</span><span class="p">,</span>
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>    <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span><span class="s2">":now"</span><span class="p">:</span> <span class="n">now</span><span class="p">},</span>
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="p">)</span>
+</code></pre></div>
+<p>The <code>expires_at</code> is the crash-recovery handle: if the first request crashes mid-run, its claim expires after 30 minutes and a retry can acquire it again. The <code>claim_token</code> UUID prevents a slow stream that outlived its lease from deleting a newer holder's claim when it eventually finishes.</p>
+<p>This is the same pattern at a smaller scale as the worker lock in <a href="../07-distributed-locks/">Distributed Locks</a>.</p>
+<h2 id="an-implementation-path">An Implementation Path<a class="headerlink" href="#an-implementation-path" title="Permanent link">&para;</a></h2>
+<p>Each step is runnable and testable before the next:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>1. Plan generation only. submit_plan takes a Plan and returns it. No interrupt. Validate content.
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>2. Add interrupt(). Resume from a test with Command(resume={"type": "approve"}).
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>3. Add the approve endpoint. Read the pending interrupt, validate, resume. Two real requests.
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>4. Add the refine path. Return feedback as a ToolMessage; let the agent edit and resubmit.
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>   Do NOT loop inside the tool or call an LLM from it.
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>5. Add validation. Put plan_id and interrupt_id in the payload; test the stale-tab case.
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>6. Add the async approve path. Persist resume decision, write `queued`, enqueue FIFO, return `202`.
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>7. Add the concurrency claim or worker lock. Two simultaneous approves -&gt; one queued run, one conflict or safe duplicate.
+</code></pre></div>
+<p>The hardest step is 5: idempotency and stale-state bugs both surface there. Run the approve endpoint twice on the same payload and confirm the second call is a 409 or a safe no-op.</p>
+<p>Once a plan is locked, the run itself has to survive worker crashes and reconnects — that is <a href="../08-queue-and-worker-execution/">Durable Async Agent Runs</a>.</p>
+<h2 id="guardrails">Guardrails<a class="headerlink" href="#guardrails" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Treat everything before <code>interrupt()</code> as code that re-runs on every resume</li>
+<li>Put side effects after the interrupt, or make them idempotent</li>
+<li>Design the interrupt payload to carry both the human's decision inputs and the code's validation inputs</li>
+<li>Never loop inside the gate tool; refine is the agent's own loop</li>
+<li>Derive the plan from the agent's working state with a pure function; never let the model write typed plan fields directly</li>
+<li>Keep every status transition and concurrency check in code, not in the prompt</li>
+<li>Validate <code>plan_id</code> and <code>interrupt_id</code> before staging the resume decision, to reject stale-tab approvals</li>
+<li>In the production path, stage approval in the checkpoint, queue work, and let the worker resume with no input</li>
+</ul>
+<hr />
+<div class="admonition check">
+<p class="admonition-title">You should now understand</p>
+<ul>
+<li>Why planning should happen before expensive execution</li>
+<li>How <code>interrupt()</code> turns one user task into multiple HTTP requests</li>
+<li>Why everything before <code>interrupt()</code> must be deterministic or idempotent</li>
+<li>Why the interrupt payload must contain both human-readable plan data and machine-checkable validation data</li>
+<li>Why refine belongs in the agent loop, not inside the tool function</li>
+</ul>
+</div>
+<details class="question">
+<summary>Try this</summary>
+<p><strong>A teammate wants to call the LLM from inside <code>submit_plan()</code> when the human asks for a refinement. Why is that the wrong boundary?</strong></p>
+<details class="success">
+<summary>Answer</summary>
+<p>The plan would now be authored by a separate out-of-band model call that does not share the agent's full prompt, tools, state, or conversation context. The gate tool should pause exactly once and return the human's feedback as a tool result. The agent loop should read that feedback, update the plan, and call <code>submit_plan()</code> again.</p>
+</details>
+</details>
+<p><em>Next: <a href="../05-identifiers/">Step 4 · Identifiers</a> — once a plan can pause, refine, and queue, you need to name the thread, plan, pause, attempt, stream events, and ownership token precisely.</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../03-context-injection/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Step 2 · Context injection">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Step 2 · Context injection
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../05-identifiers/" class="md-footer__link md-footer__link--next" aria-label="Next: Step 4 · Identifiers that hold a run together">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Step 4 · Identifiers that hold a run together
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/neeleshsethi/agentic-engineering-patterns" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.action.edit"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../assets/scrubber.js"></script>
+      
+    
+  </body>
+</html>

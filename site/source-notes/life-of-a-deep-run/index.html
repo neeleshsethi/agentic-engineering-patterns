@@ -1,0 +1,2794 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A learning series on building production agent systems that fail loudly, not silently — state, streaming, locking, durable runs, and prompt design.">
+      
+      
+        <meta name="author" content="Neelesh Sethi">
+      
+      
+      
+        <link rel="prev" href="../orchestrator-prompt-annotated/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Life of a Deep Run - Agentic Engineering Patterns</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/scrubber.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#life-of-a-deep-run" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Agentic Engineering Patterns" class="md-header__button md-logo" aria-label="Agentic Engineering Patterns" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Agentic Engineering Patterns
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Life of a Deep Run
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/neeleshsethi/agentic-engineering-patterns" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    neeleshsethi/agentic-engineering-patterns
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Agentic Engineering Patterns" class="md-nav__button md-logo" aria-label="Agentic Engineering Patterns" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Agentic Engineering Patterns
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/neeleshsethi/agentic-engineering-patterns" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    neeleshsethi/agentic-engineering-patterns
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../01-problem-design-implementation-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chapter 1 · Problem, design, and implementation plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../02-end-to-end-architecture-and-orchestrator-flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chapter 2 · End-to-end architecture and orchestrator flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../02-state-and-checkpoints/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 1 · State and checkpoints
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../03-context-injection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 2 · Context injection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../04-planning-and-human-approval/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 3 · Planning and human approval
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../05-identifiers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 4 · Identifiers that hold a run together
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../06-streaming-and-background-work/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 5 · Streaming and background work
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../07-distributed-locks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 6 · Distributed locks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../08-queue-and-worker-execution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 7 · Queue and worker execution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../09-orchestrator-prompt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 8 · Orchestrator prompt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../09a-clarifications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Clarifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../09b-code-components-and-organization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Code components and organization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../09c-plan-lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Plan lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../09d-reactive-mode-prompt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · Reactive mode prompt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../lessons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interactive lessons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../10-nine-silent-failures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone · Nine silent failures in one agent
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_18">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../00-glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Glossary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_18_2" id="__nav_18_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source Notes (advanced)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_18_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_18_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Source Notes (advanced)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../before-resume/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Before Resume
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../orchestrator-prompt-annotated/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Orchestrator
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Life of a Deep Run
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Life of a Deep Run
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#part-0-the-big-picture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 0 — The big picture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-1-the-cast-of-characters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 1 — The cast of characters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 1 — The cast of characters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-four-stores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The four stores
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-full-layout-of-deep-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The full layout of deep-events
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The full layout of deep-events">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-event-row-many-per-thread-the-only-rows-where-seq-is-a-real-counter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Event row — many per thread; the only rows where seq is a real counter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-run-state-row-exactly-one-per-thread-the-sse-tails-termination-signal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Run-state row — exactly one per thread; the SSE tail's termination signal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-lock-row-at-most-one-per-thread-only-touched-with-token-guarded-writes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Lock row — at most one per thread; only touched with token-guarded writes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-ids-where-each-one-is-born-and-what-its-for" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The IDs — where each one is born and what it's for
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-2-the-happy-path-end-to-end" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 2 — The happy path, end to end
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 2 — The happy path, end to end">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-0-approve-checkpoint-enqueue-api-side" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 0: Approve → checkpoint → enqueue (API side)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-1-worker-pickup-the-full-ritual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: Worker pickup — the full ritual
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-two-write-streams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The two write streams
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-how-seq-and-idem_key-are-derived-precisely" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: How seq and idem_key are derived — precisely
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 3: How seq and idem_key are derived — precisely">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#where-checkpoint_id-comes-from-verified-against-the-venv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where checkpoint_id comes from (verified against the venv)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-to-actually-get-the-task_id-verified-on-the-pinned-langgraph" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to actually get the task_id (verified on the pinned LangGraph)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-fence-every-event-write-carries-a-condition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The fence — every event write carries a condition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-the-reader-sse-tail-api-side" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4: The reader — SSE tail (API side)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-5-completion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5: Completion
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-3-the-lock-in-complete-detail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 3 — The lock, in complete detail
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 3 — The lock, in complete detail">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#plain-words-version-one-continuous-story" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plain-words version — one continuous story
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#formal-reference-four-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Formal reference — four operations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-4-zombie-fencing-the-three-way-branch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 4 — Zombie fencing: the three-way branch
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-5-edge-case-catalog" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 5 — Edge case catalog
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-6-faq-in-the-order-people-ask-them" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 6 — FAQ (in the order people ask them)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendix-a-parallel-tool-execution-support-handoff" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Appendix A — Parallel tool execution (support handoff)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendix-b-state-persistence-and-stores-quick-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Appendix B — State, persistence, and stores (quick reference)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendix-c-api-sse-support-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Appendix C — API &amp; SSE support contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#part-0-the-big-picture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 0 — The big picture
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-1-the-cast-of-characters" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 1 — The cast of characters
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 1 — The cast of characters">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-four-stores" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The four stores
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-full-layout-of-deep-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The full layout of deep-events
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The full layout of deep-events">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-event-row-many-per-thread-the-only-rows-where-seq-is-a-real-counter" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Event row — many per thread; the only rows where seq is a real counter
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-run-state-row-exactly-one-per-thread-the-sse-tails-termination-signal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Run-state row — exactly one per thread; the SSE tail's termination signal
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-lock-row-at-most-one-per-thread-only-touched-with-token-guarded-writes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Lock row — at most one per thread; only touched with token-guarded writes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-ids-where-each-one-is-born-and-what-its-for" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The IDs — where each one is born and what it's for
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-2-the-happy-path-end-to-end" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 2 — The happy path, end to end
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 2 — The happy path, end to end">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-0-approve-checkpoint-enqueue-api-side" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 0: Approve → checkpoint → enqueue (API side)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-1-worker-pickup-the-full-ritual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 1: Worker pickup — the full ritual
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-two-write-streams" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The two write streams
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-3-how-seq-and-idem_key-are-derived-precisely" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 3: How seq and idem_key are derived — precisely
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Step 3: How seq and idem_key are derived — precisely">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#where-checkpoint_id-comes-from-verified-against-the-venv" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where checkpoint_id comes from (verified against the venv)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-to-actually-get-the-task_id-verified-on-the-pinned-langgraph" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How to actually get the task_id (verified on the pinned LangGraph)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-fence-every-event-write-carries-a-condition" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The fence — every event write carries a condition
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-4-the-reader-sse-tail-api-side" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 4: The reader — SSE tail (API side)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#step-5-completion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Step 5: Completion
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-3-the-lock-in-complete-detail" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 3 — The lock, in complete detail
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part 3 — The lock, in complete detail">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#plain-words-version-one-continuous-story" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Plain-words version — one continuous story
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#formal-reference-four-operations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Formal reference — four operations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-4-zombie-fencing-the-three-way-branch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 4 — Zombie fencing: the three-way branch
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-5-edge-case-catalog" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 5 — Edge case catalog
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-6-faq-in-the-order-people-ask-them" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Part 6 — FAQ (in the order people ask them)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendix-a-parallel-tool-execution-support-handoff" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Appendix A — Parallel tool execution (support handoff)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendix-b-state-persistence-and-stores-quick-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Appendix B — State, persistence, and stores (quick reference)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendix-c-api-sse-support-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Appendix C — API &amp; SSE support contract
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/neeleshsethi/agentic-engineering-patterns/edit/main/articles/source-notes/life-of-a-deep-run.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="life-of-a-deep-run">Life of a Deep Run<a class="headerlink" href="#life-of-a-deep-run" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>Reconstructed from source notes. Genericized: product → "the platform"; brand → <code>BRAND_A</code>;
+data sources → <code>SOURCE_A</code>/<code>SOURCE_B</code>/…; tables → <code>app-{env}-deep-*</code>; the retrieval tool →
+<code>query_source</code>. Framework names (LangGraph, deepagents, DynamoDB, SQS) are real.</p>
+</blockquote>
+<p>This is the after-approval half of a deep agent: everything that happens once a human has
+approved a research plan and the run executes asynchronously on a worker fleet. Its companion,
+<a href="../before-resume/"><code>before-resume.md</code></a>, covers the proposal/plan phase that leads up to the
+approve click.</p>
+<hr />
+<h2 id="part-0-the-big-picture">Part 0 — The big picture<a class="headerlink" href="#part-0-the-big-picture" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>                         approve
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  Browser  ───────────────────────────────►  API (ECS)
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  │EventSource│                                 │  approve:
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  │           │                                 │   1. checkpoint approval (durable)
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  │  SSE      │                                 │   2. put_run_state(queued)   → deep-events
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>  │  frames   │◄──── id: seq  data: event       │   3. send_message           → SQS
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>  │  tail     │                                 │
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>  └───────────┘                                 ▼
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        ▲                          SQS: app-{env}-deep-run.fifo
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>        │  Query(seq &gt; cursor)     MessageGroupId = thread_id
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>        │  + read run# status                   │  receive / redeliver
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>        │  every ~250 ms                         ▼
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>        │                          Worker (ECS, S3)
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>        └──────── reads only ──────  pickup ritual: stamp · lock · seed · wrap
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>                  deep-events                     │
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>                                                  │  LangGraph astream()
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>                                    ┌─────────────┴──────────────┐
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>                                    ▼                            ▼
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>                    emitter: PutItem seq++ (fenced)   LeaseExtendingSaver:
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>                    → deep-events                     saver.put() → snapshot + heartbeat
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>                    (events + run# + lock#)           → deep-checkpoints
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>                                                      (LangGraph state = source of truth)
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>  3 strikes → SQS moves msg → app-{env}-deep-run-dlq.fifo → CloudWatch depth alarm → SNS → ops
+</code></pre></div>
+<p><strong>Read it left to right:</strong> the <code>approve</code> call persists intent (checkpoint + run-state) <em>before</em>
+enqueuing; the queue serializes per thread; the worker produces two independent write streams
+(snapshots to <code>deep-checkpoints</code>, feed events to <code>deep-events</code>); the API reads only
+<code>deep-events</code>; the DLQ is the only path that pages a human.</p>
+<hr />
+<h2 id="part-1-the-cast-of-characters">Part 1 — The cast of characters<a class="headerlink" href="#part-1-the-cast-of-characters" title="Permanent link">&para;</a></h2>
+<h3 id="the-four-stores">The four stores<a class="headerlink" href="#the-four-stores" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Store</th>
+<th>Physical name (per env)</th>
+<th>What lives there</th>
+<th>Who writes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Job queue + DLQ</strong></td>
+<td><code>app-{env}-deep-run.fifo</code> / <code>app-{env}-deep-run-dlq.fifo</code> (SQS)</td>
+<td>One message per approved run; poison pills end up in the DLQ</td>
+<td>API enqueues; worker receives/deletes; SQS moves to DLQ</td>
+</tr>
+<tr>
+<td><strong>Checkpoint table</strong></td>
+<td><code>app-{env}-deep-checkpoints</code> (DynamoDB)</td>
+<td>LangGraph state snapshots — the source of truth for resume</td>
+<td>LangGraph's saver (automatically)</td>
+</tr>
+<tr>
+<td><strong>Event table</strong></td>
+<td><code>app-{env}-deep-events</code> (DynamoDB)</td>
+<td>The user-facing activity feed. <code>PK=thread_id</code>, <code>SK=seq</code>, TTL ~24h</td>
+<td>The worker's event emitter (our app code)</td>
+</tr>
+<tr>
+<td><strong>Run-state + lock</strong></td>
+<td>Same <code>deep-events</code> table, different PK prefix (<code>run#</code>, <code>lock#</code>) — <strong>not</strong> a separate table</td>
+<td><code>{status, reason, receive_count}</code> and <code>{owner, expires_at}</code></td>
+<td>Worker (+ failure detectors)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where the names come from:</strong> the DynamoDB stack derives every table name as
+<code>app-{env}-dynamodb-{config-name}</code> and publishes it to SSM at
+<code>/app/{env}/dynamodb/{name}/name</code>, which is how app code discovers the physical name at runtime
+instead of hardcoding it.</p>
+<p>Two principles govern the checkpoint/event split:</p>
+<ol>
+<li><strong>The checkpoint is the source of truth; the event log is a projection.</strong> An event-table
+   outage never kills a run — the feed goes quiet, the work continues.</li>
+<li><strong>The event partition contains only events.</strong> Run-state and lock live under a different PK
+   (<code>run#abc</code>, <code>lock#abc</code>) so the reader's <code>Query(thread_id = tid AND seq &gt; cursor)</code> never needs
+   a skip rule.</li>
+</ol>
+<h3 id="the-full-layout-of-deep-events">The full layout of <code>deep-events</code><a class="headerlink" href="#the-full-layout-of-deep-events" title="Permanent link">&para;</a></h3>
+<p>One table, <strong>three item kinds</strong> (DynamoDB is schemaless beyond the key, so they coexist for free):</p>
+<table>
+<thead>
+<tr>
+<th>PK</th>
+<th>SK</th>
+<th>Kind</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>"abc"</code></td>
+<td><code>&lt;seq&gt;</code></td>
+<td>events — the partition the SSE tail queries</td>
+</tr>
+<tr>
+<td><code>"run#abc"</code></td>
+<td><code>0</code></td>
+<td>run-state record <code>{status, reason, receive_count, run_id}</code></td>
+</tr>
+<tr>
+<td><code>"lock#abc"</code></td>
+<td><code>0</code></td>
+<td>lock <code>{owner, expires_at, ttl}</code></td>
+</tr>
+</tbody>
+</table>
+<p>The key schema is fixed for every item (<code>partition_key: thread_id String</code>, <code>sort_key: seq
+Number</code>), and DynamoDB requires every item to supply the sort key. That single fact explains
+<code>SK=0</code> on the singleton rows: on event rows <code>seq</code> is meaningful data (the feed counter); on
+run-state and lock rows it's a mandatory placeholder — those partitions hold exactly one item
+each, so a constant fills the slot. The payoff: the full key <code>("run#abc", 0)</code> is one exact
+address — reads are <code>GetItem</code>, never <code>Query</code>.</p>
+<h4 id="1-event-row-many-per-thread-the-only-rows-where-seq-is-a-real-counter">1. Event row — many per thread; the only rows where <code>seq</code> is a real counter<a class="headerlink" href="#1-event-row-many-per-thread-the-only-rows-where-seq-is-a-real-counter" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Attr</th>
+<th>Type</th>
+<th>Value / meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>thread_id</code></td>
+<td>S (PK)</td>
+<td><code>"abc"</code> — bare thread id; the partition the SSE tail queries, <strong>nothing else may use it</strong></td>
+</tr>
+<tr>
+<td><code>seq</code></td>
+<td>N (SK)</td>
+<td>worker-allocated order (seeded from max, +1 per curated event); <strong>gaps allowed</strong></td>
+</tr>
+<tr>
+<td><code>idem_key</code></td>
+<td>S</td>
+<td><code>task_id + intra-node index</code> → read-side dedup of crash-replayed events</td>
+</tr>
+<tr>
+<td><code>event</code></td>
+<td>M</td>
+<td><code>{type, label, phase, step_id, …}</code> — the curated payload the browser renders</td>
+</tr>
+<tr>
+<td><code>s3_key</code>, <code>content_type</code></td>
+<td>S</td>
+<td>payloads &gt; 400 KB become an S3 pointer</td>
+</tr>
+<tr>
+<td><code>ts</code></td>
+<td>N</td>
+<td>display timestamp (epoch ms) — <strong>never</strong> used for ordering (that's <code>seq</code>'s job)</td>
+</tr>
+<tr>
+<td><code>ttl</code></td>
+<td>N</td>
+<td>now + 24h — janitorial expiry, no correctness logic may depend on it (deletion lags ~48h)</td>
+</tr>
+</tbody>
+</table>
+<h4 id="2-run-state-row-exactly-one-per-thread-the-sse-tails-termination-signal">2. Run-state row — exactly one per thread; the SSE tail's termination signal<a class="headerlink" href="#2-run-state-row-exactly-one-per-thread-the-sse-tails-termination-signal" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Attr</th>
+<th>Type</th>
+<th>Value / meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>thread_id</code></td>
+<td>S (PK)</td>
+<td><code>"run#abc"</code> — prefix keeps it out of the event query</td>
+</tr>
+<tr>
+<td><code>seq</code></td>
+<td>N (SK)</td>
+<td><code>0</code> — constant, singleton partition</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td>S</td>
+<td><code>queued \| running \| retrying \| failed \| completed</code> — written by API (queued) then worker; the tail loop ends the stream on <code>failed</code>/<code>completed</code></td>
+</tr>
+<tr>
+<td><code>reason</code></td>
+<td>S?</td>
+<td>user-visible; only on <code>failed</code> (<code>"Run failed after 3 attempts"</code>)</td>
+</tr>
+<tr>
+<td><code>receive_count</code></td>
+<td>N</td>
+<td>stamped from <code>ApproximateReceiveCount</code> at every pickup — durable strike history</td>
+</tr>
+<tr>
+<td><code>run_id</code></td>
+<td>S</td>
+<td><code>"run-42"</code> — which run this record describes</td>
+</tr>
+<tr>
+<td><code>updated_at</code></td>
+<td>N</td>
+<td>epoch ms — debugging/staleness checks</td>
+</tr>
+</tbody>
+</table>
+<p>TTL: none, or <strong>&gt;</strong> event TTL — the status must outlive the events it terminates.</p>
+<h4 id="3-lock-row-at-most-one-per-thread-only-touched-with-token-guarded-writes">3. Lock row — at most one per thread; only touched with token-guarded writes<a class="headerlink" href="#3-lock-row-at-most-one-per-thread-only-touched-with-token-guarded-writes" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Attr</th>
+<th>Type</th>
+<th>Value / meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>thread_id</code></td>
+<td>S (PK)</td>
+<td><code>"lock#abc"</code> — prefix isolates it from both other kinds</td>
+</tr>
+<tr>
+<td><code>seq</code></td>
+<td>N (SK)</td>
+<td><code>0</code> — constant, singleton partition</td>
+</tr>
+<tr>
+<td><code>owner</code></td>
+<td>S</td>
+<td><code>uuid4</code> minted at <strong>this</strong> acquisition — tenure identity, not worker identity; every renew/release conditions on it</td>
+</tr>
+<tr>
+<td><code>expires_at</code></td>
+<td>N</td>
+<td>the <strong>enforced</strong> expiry, checked in the acquire condition (<code>… OR expires_at &lt; now</code>) — app-compared, clock-skew tolerant</td>
+</tr>
+<tr>
+<td><code>ttl</code></td>
+<td>N</td>
+<td>now + 24h — garbage collection of abandoned rows <strong>only</strong>, never consulted by lock logic</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>"So which rows does <code>seq</code> exist on?" The <em>attribute</em> exists on all rows (the schema demands
+it); the <em>counter</em> exists only on event rows. The two expiry-like fields on the lock differ:
+<code>expires_at</code> is load-bearing (evaluated inside the conditional put), <code>ttl</code> is a janitor.</p>
+</blockquote>
+<h3 id="the-ids-where-each-one-is-born-and-what-its-for">The IDs — where each one is born and what it's for<a class="headerlink" href="#the-ids-where-each-one-is-born-and-what-its-for" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Born where</th>
+<th>Lifetime</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>thread_id</code></td>
+<td>Frontend/session, before the run</td>
+<td>Whole conversation</td>
+<td>Partition key everywhere; SQS <code>MessageGroupId</code></td>
+</tr>
+<tr>
+<td><code>run_id</code></td>
+<td>API, at approve time</td>
+<td>One run</td>
+<td>Distinguishes run N from N+1 on the same thread; part of the SQS body</td>
+</tr>
+<tr>
+<td><code>MessageGroupId</code></td>
+<td>= <code>thread_id</code>, on <code>send_message</code></td>
+<td>—</td>
+<td>SQS serializes deliveries per group → one worker per thread</td>
+</tr>
+<tr>
+<td><code>ApproximateReceiveCount</code></td>
+<td>SQS, per receive</td>
+<td>One receive</td>
+<td>Drives 3-strikes behavior</td>
+</tr>
+<tr>
+<td>Receipt handle</td>
+<td>SQS, per receive</td>
+<td>One receive</td>
+<td>Capability to delete/extend <em>this</em> delivery</td>
+</tr>
+<tr>
+<td><code>checkpoint_id</code></td>
+<td>LangGraph, per super-step</td>
+<td>Durable</td>
+<td>Addresses one snapshot; ingredient of <code>idem_key</code></td>
+</tr>
+<tr>
+<td><code>seq</code></td>
+<td>Worker's in-memory counter</td>
+<td>Durable (one event)</td>
+<td>Total order of the feed; SSE <code>id:</code>; becomes the reader cursor</td>
+</tr>
+<tr>
+<td><code>idem_key</code></td>
+<td>Worker's emitter, from execution position</td>
+<td>Durable</td>
+<td>Read-side dedup of replays; write-side own-retry detection</td>
+</tr>
+<tr>
+<td>Lock owner token</td>
+<td>Worker mints <code>uuid4()</code> at acquisition</td>
+<td>One lock tenure</td>
+<td>Proves this process holds the thread; guards renew/release</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="part-2-the-happy-path-end-to-end">Part 2 — The happy path, end to end<a class="headerlink" href="#part-2-the-happy-path-end-to-end" title="Permanent link">&para;</a></h2>
+<h3 id="step-0-approve-checkpoint-enqueue-api-side">Step 0: Approve → checkpoint → enqueue (API side)<a class="headerlink" href="#step-0-approve-checkpoint-enqueue-api-side" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># 1. Persist the approval INTO the checkpoint first (approval is durable before anything is</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1">#    queued: a lost message can be re-enqueued, a lost approval cannot be reconstructed).</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">graph</span><span class="o">.</span><span class="n">update_state</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="p">{</span><span class="s2">"plan"</span><span class="p">:</span> <span class="n">approved_plan</span><span class="p">})</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># 2. Write the run-state record: the run now exists, even if no worker has touched it yet.</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="c1">#    This is an item in the EVENT table at PK=f"run#{thread_id}", SK=0.</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">put_run_state</span><span class="p">(</span><span class="n">thread_id</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s2">"queued"</span><span class="p">,</span> <span class="n">run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">)</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="c1"># 3. Enqueue. Body is small and deterministic — the checkpoint holds the real state; the</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="c1">#    message is just a pointer + intent.</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="n">sqs</span><span class="o">.</span><span class="n">send_message</span><span class="p">(</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="n">QueueUrl</span><span class="o">=</span><span class="n">queue_url</span><span class="p">,</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="n">MessageBody</span><span class="o">=</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">"thread_id"</span><span class="p">:</span> <span class="n">thread_id</span><span class="p">,</span> <span class="s2">"run_id"</span><span class="p">:</span> <span class="n">run_id</span><span class="p">}),</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    <span class="n">MessageGroupId</span><span class="o">=</span><span class="n">thread_id</span><span class="p">,</span>   <span class="c1"># serialize per thread</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>    <span class="c1"># No MessageDeduplicationId: content-based dedup hashes the body.</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="p">)</span>
+</code></pre></div>
+<p><strong>Why FIFO + <code>MessageGroupId = thread_id</code>:</strong> SQS will not deliver a second message of the same
+group while one is in flight. "One worker per thread" becomes a <em>transport</em> guarantee.
+Different threads (groups) run in parallel — correctness needs serialization only per thread,
+parallelism everywhere else.</p>
+<p><strong>Why content-based dedup:</strong> a double-clicked Approve, a frontend retry, or an SDK retry of
+<code>send_message</code> produces a byte-identical body within seconds. SQS hashes the body (SHA-256) and
+silently drops the duplicate.</p>
+<h3 id="step-1-worker-pickup-the-full-ritual">Step 1: Worker pickup — the full ritual<a class="headerlink" href="#step-1-worker-pickup-the-full-ritual" title="Permanent link">&para;</a></h3>
+<p>The worker long-polls. When a message arrives, six things happen in strict order <strong>before the
+graph runs</strong>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">msg</span> <span class="o">=</span> <span class="n">sqs</span><span class="o">.</span><span class="n">receive_message</span><span class="p">(</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">QueueUrl</span><span class="o">=</span><span class="n">queue_url</span><span class="p">,</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">MessageSystemAttributeNames</span><span class="o">=</span><span class="p">[</span><span class="s2">"ApproximateReceiveCount"</span><span class="p">],</span>  <span class="c1"># ask for it explicitly</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">WaitTimeSeconds</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="p">)[</span><span class="s2">"Messages"</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="n">body</span>    <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="s2">"Body"</span><span class="p">])</span>            <span class="c1"># {"thread_id": "abc", "run_id": "run-42"}</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="n">receipt</span> <span class="o">=</span> <span class="n">msg</span><span class="p">[</span><span class="s2">"ReceiptHandle"</span><span class="p">]</span>               <span class="c1"># capability for delete/extend</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="n">attempt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="s2">"Attributes"</span><span class="p">][</span><span class="s2">"ApproximateReceiveCount"</span><span class="p">])</span>
+</code></pre></div>
+<ol>
+<li><strong>Stamp</strong> — copy <code>ApproximateReceiveCount</code> onto the run-state record (durable strike history).</li>
+<li><strong>Lock</strong> — conditional-put a fresh lease token (see Part 3).</li>
+<li><strong>Seed</strong> — <code>ConsistentRead</code> query for <code>max(seq)</code> on the event partition.</li>
+<li><strong>Wrap</strong> — compile the graph with <code>LeaseExtendingSaver</code> around the DynamoDB saver.</li>
+<li>Renew lock expiry.</li>
+<li>Run <code>LangGraph astream()</code>.</li>
+</ol>
+<h3 id="the-two-write-streams">The two write streams<a class="headerlink" href="#the-two-write-streams" title="Permanent link">&para;</a></h3>
+<p><strong>Stream 1 — checkpoints — is fully out of the box.</strong> LangGraph calls <code>saver.put()</code> after each
+node completes; we never write checkpoint code. Our only involvement is one wrapper class:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">LeaseExtendingSaver</span><span class="p">(</span><span class="n">BaseCheckpointSaver</span><span class="p">):</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="sd">"""Every checkpoint write also proves liveness in the same breath. Pure delegation</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="sd">    otherwise."""</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inner</span><span class="p">,</span> <span class="n">on_put</span><span class="p">):</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_inner</span> <span class="o">=</span> <span class="n">inner</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_on_put</span> <span class="o">=</span> <span class="n">on_put</span>   <span class="c1"># extend lease + renew lock</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">checkpoint</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">new_versions</span><span class="p">):</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inner</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">checkpoint</span><span class="p">,</span> <span class="n">metadata</span><span class="p">,</span> <span class="n">new_versions</span><span class="p">)</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>        <span class="k">try</span><span class="p">:</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_on_put</span><span class="p">()</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"lease/lock heartbeat failed; will retry next checkpoint"</span><span class="p">)</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>        <span class="k">return</span> <span class="n">result</span>   <span class="c1"># fire-and-forget: see edge case E8</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>    <span class="c1"># get_tuple / list / put_writes: delegate unchanged</span>
+</code></pre></div>
+<p><strong>Why hook <code>put()</code> and not a timer:</strong> the checkpoint is simultaneously the <em>liveness</em> signal (a
+dead worker stops checkpointing) and the <em>progress</em> signal (state just became durable). A
+wall-clock heartbeat would keep renewing the lease of a worker that's alive but stuck; a
+checkpoint-tied one lets SQS reclaim the job from zombies and hangs alike. <strong>Sizing rule that
+falls out:</strong> the visibility timeout (~30 min) must exceed the longest <em>single</em> node (one LLM
+call or one tool execution), never the whole run.</p>
+<blockquote>
+<p><code>ChangeMessageVisibility</code> semantics — a common misconception: it is <strong>not additive</strong> and has
+nothing to do with how long the last node took. It <em>overwrites</em> the remaining countdown with a
+fixed value counted from the moment of the call ("N seconds from NOW"). We never measure node
+durations.</p>
+</blockquote>
+<p><strong>Stream 2 — events — is entirely our code.</strong> The emitter watches the LangGraph stream and
+<em>curates</em>: friendly labels only (never raw SQL or tool args), phase and plan-step status, tool
+activity, identified data sources, report tokens. One node might produce one or many events —
+the counts are unrelated to checkpoint counts because the audiences differ.</p>
+<h3 id="step-3-how-seq-and-idem_key-are-derived-precisely">Step 3: How <code>seq</code> and <code>idem_key</code> are derived — precisely<a class="headerlink" href="#step-3-how-seq-and-idem_key-are-derived-precisely" title="Permanent link">&para;</a></h3>
+<p><strong><code>seq</code> is a plain in-process integer:</strong></p>
+<ul>
+<li><strong>Seeded once per receive</strong> from the table max (the <code>ConsistentRead</code> query in pickup step 3).
+  DynamoDB has no auto-increment — sort-key values are always writer-supplied.</li>
+<li><strong>Incremented by the emitter</strong> each time it decides a stream update deserves a feed line. Not
+  per node, not per checkpoint — per curated user-visible event.</li>
+<li><strong>Safe as a local variable</strong> only because of the single-writer-per-thread invariant (FIFO
+  group + lock). The conditional put is the fence for the rare violations.</li>
+<li><strong>Gaps allowed by contract; ordering guaranteed.</strong> A dead worker's straggler or a re-seed can
+  leave holes. The reader only ever asks <code>seq &gt; cursor</code>, so holes cost nothing.</li>
+</ul>
+<p><strong><code>idem_key</code> identifies the <em>logical</em> event, independent of which attempt wrote it:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">idem_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">checkpoint_id_the_node_was_launched_from</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">node_name</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">intra_node_index</span><span class="si">}</span><span class="s2">"</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="c1">#            └─ stable across crash-replay ─┘             └─ 0,1,2… within this node run ─┘</span>
+</code></pre></div>
+<p>The defining property, and how each ingredient earns its place:</p>
+<ul>
+<li><strong>Must be identical when a node is crash-replayed</strong> → derived from execution position, never
+  from <code>seq</code> (which changes on replay) and never random.</li>
+<li><strong>Must differ across legitimate re-runs</strong> → our agent node runs many times on purpose (ReAct
+  loop). <code>checkpoint_id</code> disambiguates: iteration 7 is launched from a different checkpoint than
+  iteration 2 (<code>ckpt_0031</code> vs <code>ckpt_0007</code>). Replay of iteration 7 resumes from the <em>same</em>
+  <code>ckpt_0031</code> → same key. <code>checkpoint_id</code> is the one identifier that naturally distinguishes
+  "running again on purpose" from "running again because we crashed."</li>
+<li><strong><code>intra_node_index</code></strong> is the emitter counting emissions within the current node execution:
+  first feed line → <code>#0</code>, second → <code>#1</code>.</li>
+</ul>
+<p><strong>Worked example — node emits two events, worker dies, node replays:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>Attempt 1 (worker A): (seq  9, "ckpt_0031#tools#0")  (seq 10, "ckpt_0031#tools#1")
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>                       A dies before the post-node checkpoint.
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>B resumes FROM ckpt_0031 → node re-runs:
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>Attempt 2 (worker B): (seq 11, "ckpt_0031#tools#0")  (seq 12, "ckpt_0031#tools#1")
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>                       same keys, new seqs.
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>Reader dedups on idem_key → the user sees each line exactly once.
+</code></pre></div>
+<p>Exactly one of the two must change on replay (<code>seq</code>); the other must not (<code>idem_key</code>).</p>
+<h4 id="where-checkpoint_id-comes-from-verified-against-the-venv">Where <code>checkpoint_id</code> comes from (verified against the venv)<a class="headerlink" href="#where-checkpoint_id-comes-from-verified-against-the-venv" title="Permanent link">&para;</a></h4>
+<p>Minted by LangGraph core — checkpoint creation in <code>langgraph.checkpoint.base</code> (ships in the
+separate <code>langgraph-checkpoint</code> package). The id is <code>str(uuid6(clock_seq=-2))</code>; checkpoint ids
+sort chronologically (the <code>Checkpoint</code> TypedDict docstring guarantees "unique and monotonically
+increasing"). Our DynamoDB saver just persists it with every snapshot — we never generate or
+manage it.</p>
+<p><strong>Even better: LangGraph already computes our exact recipe — the <code>task_id</code>.</strong> In
+<code>langgraph/pregel/_algo.py</code>, every node execution is assigned a deterministic task id:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">task_id</span> <span class="o">=</span> <span class="n">task_id_func</span><span class="p">(</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    <span class="n">checkpoint_id_bytes</span><span class="p">,</span>   <span class="c1"># the checkpoint the task was launched from</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="n">checkpoint_ns</span><span class="p">,</span>         <span class="c1"># subgraph namespace (sub-agents isolated for free)</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="nb">str</span><span class="p">(</span><span class="n">step</span><span class="p">),</span>             <span class="c1"># super-step number</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="n">name</span><span class="p">,</span>                  <span class="c1"># node name</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="n">PULL</span><span class="p">,</span> <span class="o">*</span><span class="n">triggers</span><span class="p">,</span>       <span class="c1"># or PUSH + index for Send()-spawned parallel tasks</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="p">)</span>   <span class="c1"># xxhash (ckpt v&gt;1) or uuid5 — both deterministic</span>
+</code></pre></div>
+<p>That is literally the recipe — "checkpoint the node was launched from + node + disambiguator" —
+computed and maintained by the framework itself. It's what makes <code>put_writes</code> idempotent
+internally: a crash-replay from the same checkpoint gets the same <code>task_id</code>, while a legitimate
+next loop iteration (new checkpoint, new step) gets a different one. So the emitter shouldn't
+hand-assemble the prefix at all:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">idem_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">task_id</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">intra_node_index</span><span class="si">}</span><span class="s2">"</span>   <span class="c1"># task_id from the debug stream event</span>
+</code></pre></div>
+<p>Same guarantees, zero assembly logic to get wrong.</p>
+<h4 id="how-to-actually-get-the-task_id-verified-on-the-pinned-langgraph">How to actually get the <code>task_id</code> (verified on the pinned LangGraph)<a class="headerlink" href="#how-to-actually-get-the-task_id-verified-on-the-pinned-langgraph" title="Permanent link">&para;</a></h4>
+<p><strong>From the emitter (outside the graph) — the debug stream. This is the primary path:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="k">async</span> <span class="k">for</span> <span class="n">ev</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">astream</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">stream_mode</span><span class="o">=</span><span class="s2">"debug"</span><span class="p">):</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="k">if</span> <span class="n">ev</span><span class="p">[</span><span class="s2">"type"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"task"</span><span class="p">:</span>            <span class="c1"># node execution STARTING</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>        <span class="n">task_id</span> <span class="o">=</span> <span class="n">ev</span><span class="p">[</span><span class="s2">"payload"</span><span class="p">][</span><span class="s2">"id"</span><span class="p">]</span>   <span class="c1"># e.g. "3970197c-fd2e-2115-a675-7cb3c7088e44"</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>        <span class="n">node</span>    <span class="o">=</span> <span class="n">ev</span><span class="p">[</span><span class="s2">"payload"</span><span class="p">][</span><span class="s2">"name"</span><span class="p">]</span> <span class="c1"># (payload keys: id, input, name, triggers)</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>    <span class="k">elif</span> <span class="n">ev</span><span class="p">[</span><span class="s2">"type"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"task_result"</span><span class="p">:</span>   <span class="c1"># node execution FINISHED</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>        <span class="n">task_id</span> <span class="o">=</span> <span class="n">ev</span><span class="p">[</span><span class="s2">"payload"</span><span class="p">][</span><span class="s2">"id"</span><span class="p">]</span>   <span class="c1"># same id (payload: id, name, result, error, interrupts)</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>    <span class="k">elif</span> <span class="n">ev</span><span class="p">[</span><span class="s2">"type"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"checkpoint"</span><span class="p">:</span>    <span class="c1"># super-step committed</span>
+<a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>        <span class="n">ckpt_id</span> <span class="o">=</span> <span class="n">ev</span><span class="p">[</span><span class="s2">"payload"</span><span class="p">][</span><span class="s2">"config"</span><span class="p">][</span><span class="s2">"configurable"</span><span class="p">][</span><span class="s2">"checkpoint_id"</span><span class="p">]</span>
+</code></pre></div>
+<blockquote>
+<p><code>stream_mode</code> accepts a list — <code>stream_mode=["debug", "updates"]</code> — and each yielded item is
+tagged with its mode, if you need feed content <em>and</em> task ids.</p>
+</blockquote>
+<p><strong>Inside a node/tool — from its own config.</strong> The runtime embeds the task id in the
+<code>checkpoint_ns</code> it hands every task:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">my_node</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>    <span class="n">ns</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">"configurable"</span><span class="p">][</span><span class="s2">"checkpoint_ns"</span><span class="p">]</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    <span class="n">task_id</span> <span class="o">=</span> <span class="n">ns</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">":"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>   <span class="c1"># "a:3970197c-fd2e-…" — LangGraph builds ns as</span>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>                                       <span class="c1"># f"{node_name}:{task_id}" (_algo.py)</span>
+</code></pre></div>
+<p><strong>Which to use?</strong> The debug stream, as default and primary: the emitter already lives on the
+stream, so the whole event-identity contract (<code>task_id</code> + <code>intra_node_index</code> + <code>seq</code>) is
+assembled in one component, the run behaves identically whether anyone watches (projection
+principle), and the intra-node counter gets clean lifecycle brackets (<code>task</code> start → count →
+<code>task_result</code> end, per id, safe under parallel tasks). The in-node surface matters only for a
+long-running tool that streams mid-execution progress via a custom stream writer — the debug
+stream only brackets a node, it can't see inside.</p>
+<blockquote>
+<p><strong>One caveat:</strong> <code>stream_mode="debug"</code> payload shapes and the <code>checkpoint_ns</code> encoding are
+internals, not a stable public contract across LangGraph versions. Pin the version, and add a
+small contract test (a line graph run in CI) that fails loudly on any upgrade that moves them.</p>
+</blockquote>
+<h3 id="the-fence-every-event-write-carries-a-condition">The fence — every event write carries a condition<a class="headerlink" href="#the-fence-every-event-write-carries-a-condition" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">event_table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>    <span class="n">Item</span><span class="o">=</span><span class="p">{</span><span class="s2">"thread_id"</span><span class="p">:</span> <span class="n">tid</span><span class="p">,</span> <span class="s2">"seq"</span><span class="p">:</span> <span class="n">seq</span><span class="p">,</span> <span class="s2">"idem_key"</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span> <span class="s2">"event"</span><span class="p">:</span> <span class="n">payload</span><span class="p">,</span> <span class="s2">"ttl"</span><span class="p">:</span> <span class="n">ttl</span><span class="p">},</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>    <span class="n">ConditionExpression</span><span class="o">=</span><span class="s2">"attribute_not_exists(thread_id)"</span><span class="p">,</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>    <span class="n">ReturnValuesOnConditionCheckFailure</span><span class="o">=</span><span class="s2">"ALL_OLD"</span><span class="p">,</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="p">)</span>
+</code></pre></div>
+<p><strong>The subtlety that trips everyone:</strong> DynamoDB first addresses the exact slot <code>(thread_id, seq)</code>
+from the item's full primary key, then evaluates the condition against whatever single item
+sits at that slot. Empty slot → condition trivially true → write. Occupied slot → the occupant
+necessarily carries its own <code>thread_id</code> → condition fails. So testing one key attribute means
+exactly "is this slot empty?" — it does not scan. Adding <code>attribute_not_exists(seq)</code> would be
+redundant, not stronger. Condition + write are atomic server-side — no check-then-act gap.
+(Python analogy: <code>INSERT</code> relying on a primary-key constraint, not <code>SELECT</code>-then-<code>INSERT</code>.)</p>
+<h3 id="step-4-the-reader-sse-tail-api-side">Step 4: The reader — SSE tail (API side)<a class="headerlink" href="#step-4-the-reader-sse-tail-api-side" title="Permanent link">&para;</a></h3>
+<p>The API container knows nothing of SQS, locks, or workers — it reads exactly one table:
+<code>app-{env}-deep-events</code> (both the event partition and the <code>run#</code> status item).
+<code>GET /deep/{thread_id}/stream</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">cursor</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Last-Event-ID"</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>   <span class="c1"># reconnect replays from here</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="n">first_pass</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>    <span class="n">items</span> <span class="o">=</span> <span class="n">event_table</span><span class="o">.</span><span class="n">query</span><span class="p">(</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>        <span class="n">KeyConditionExpression</span><span class="o">=</span><span class="n">Key</span><span class="p">(</span><span class="s2">"thread_id"</span><span class="p">)</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">tid</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">Key</span><span class="p">(</span><span class="s2">"seq"</span><span class="p">)</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span><span class="n">cursor</span><span class="p">),</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>        <span class="n">ConsistentRead</span><span class="o">=</span><span class="n">first_pass</span><span class="p">,</span>   <span class="c1"># strong on catch-up (must not miss a fresh write);</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>    <span class="p">)</span>                                <span class="c1"># eventual on the steady tail (halves RCU)</span>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>    <span class="n">first_pass</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">dedup_by_idem_key</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>        <span class="k">yield</span> <span class="sa">f</span><span class="s1">'id: </span><span class="si">{</span><span class="n">item</span><span class="p">[</span><span class="s2">"seq"</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s1">data: </span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">"event"</span><span class="p">])</span><span class="si">}</span><span class="se">\n\n</span><span class="s1">'</span>
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>        <span class="n">cursor</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">"seq"</span><span class="p">]</span>
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>    <span class="n">run</span> <span class="o">=</span> <span class="n">get_run_state</span><span class="p">(</span><span class="n">tid</span><span class="p">)</span>         <span class="c1"># termination on STATUS, not a sentinel</span>
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>    <span class="k">if</span> <span class="n">run</span><span class="o">.</span><span class="n">status</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"failed"</span><span class="p">,</span> <span class="s2">"completed"</span><span class="p">):</span>
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>        <span class="k">yield</span> <span class="n">terminal_frame</span><span class="p">(</span><span class="n">run</span><span class="o">.</span><span class="n">status</span><span class="p">,</span> <span class="n">run</span><span class="o">.</span><span class="n">reason</span><span class="p">)</span>
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>        <span class="k">return</span>
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.25</span><span class="p">)</span>
+</code></pre></div>
+<p>Three design points:</p>
+<ul>
+<li><strong>Replay and live tail are the same query.</strong> The browser's native <code>EventSource</code> resends the
+  last <code>id:</code> it saw as <code>Last-Event-ID</code> on reconnect; it becomes the cursor. No separate history
+  endpoint, no server state.</li>
+<li><strong>Termination on run status.</strong> A crashed worker never writes a "done" event — if the only exit
+  were a sentinel, the user would watch a spinner forever. The run-state record can be flipped by
+  someone other than the worker (a detector), so it's the reliable terminator.</li>
+<li><strong><code>dedup_by_idem_key</code></strong> makes at-least-once writes look exactly-once to the user.</li>
+</ul>
+<h3 id="step-5-completion">Step 5: Completion<a class="headerlink" href="#step-5-completion" title="Permanent link">&para;</a></h3>
+<p>Final report lands as events (large payloads → S3 object with a pointer in the event item;
+DynamoDB caps items at 400 KB). Worker writes <code>status=completed</code>, releases the lock, deletes the
+SQS message (delete-last ordering). The tail loop sees <code>completed</code>, emits the terminal frame,
+closes.</p>
+<hr />
+<h2 id="part-3-the-lock-in-complete-detail">Part 3 — The lock, in complete detail<a class="headerlink" href="#part-3-the-lock-in-complete-detail" title="Permanent link">&para;</a></h2>
+<h3 id="plain-words-version-one-continuous-story">Plain-words version — one continuous story<a class="headerlink" href="#plain-words-version-one-continuous-story" title="Permanent link">&para;</a></h3>
+<p>The lock answers one question: <em>"which process is allowed to write for thread <code>abc</code> right now?"</em>
+It's a parking permit for a single spot — one item, at <code>PK="lock#abc"</code>, <code>SK=0</code>. The subtlety: it
+identifies a specific <strong>tenure</strong>, not a specific worker. Every acquisition mints a brand-new
+random string (<code>uuid4()</code>). Think of a hotel key card: check in, the desk programs a new card for
+room 12; your name isn't on it. When the next guest checks in, the door is reprogrammed for
+their card and your old card simply stops opening the door. Nobody has to find you and take it
+away.</p>
+<p><strong>t=0 — Worker A acquires.</strong> A mints token <code>"aaa-111"</code> and does a conditional put whose
+condition reads: <em>"write this only if no lock item exists at this slot, OR the one that exists
+has already expired."</em> DynamoDB checks and writes in one atomic step, so exactly one winner:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>PK="lock#abc"  SK=0  {owner: "aaa-111", expires_at: t+600}   ← A's tenure
+</code></pre></div>
+<p><strong>Why the lock must expire at all — the entire reason Renew exists.</strong> Imagine no expiry: A
+crashes at t=50 holding the lock forever. Every future worker finds a "live" lock and backs off
+— the thread is wedged permanently until a human deletes a DynamoDB item. So the lease is
+deliberately short (minutes) — but our runs take 45+ minutes, so a healthy holder must keep
+pushing the expiry forward. That's Renew.</p>
+<p><strong>t=0…40 — A renews on every checkpoint</strong> (piggybacked on the <code>LeaseExtendingSaver.put()</code>
+heartbeat, because a checkpoint proves both life and progress):</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">update_item</span><span class="p">(</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>    <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">"thread_id"</span><span class="p">:</span> <span class="s2">"lock#abc"</span><span class="p">,</span> <span class="s2">"seq"</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>    <span class="n">UpdateExpression</span><span class="o">=</span><span class="s2">"SET expires_at = :new"</span><span class="p">,</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>    <span class="n">ConditionExpression</span><span class="o">=</span><span class="s2">"owner = :me"</span><span class="p">,</span>                       <span class="c1"># the token guard</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>    <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span><span class="s2">":new"</span><span class="p">:</span> <span class="n">now</span><span class="o">+</span><span class="mi">600</span><span class="p">,</span> <span class="s2">":me"</span><span class="p">:</span> <span class="s2">"aaa-111"</span><span class="p">},</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="p">)</span>
+</code></pre></div>
+<p><strong>"Token-guarded"</strong> means exactly that one condition line: every write to the lock says "only if
+the lock still contains MY token." Not <em>"extend the lock for abc"</em> but <em>"extend it if it's still
+my card in the door."</em></p>
+<p><strong>t=45 — A freezes</strong> (GC pause, network partition — doesn't matter). No checkpoints → no renews.
+<code>expires_at</code> quietly passes at t=55. <strong>Nothing happens in the table at expiry</strong> — no deletion,
+no notification. Expiry only means the next acquirer's <code>expires_at &lt; now</code> will now evaluate true.</p>
+<p><strong>t=60 — Worker B takes over.</strong> SQS redelivered (the visibility lease lapsed from the same
+silence). B mints <code>"bbb-222"</code> and runs the same acquire put — the "already expired" half of the
+condition is now true, so the put succeeds and overwrites the whole item:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>PK="lock#abc"  SK=0  {owner: "bbb-222", expires_at: t+600}   ← B's tenure
+</code></pre></div>
+<p>That overwrite <strong>is</strong> the takeover. There is no separate "break A's lock" step, and A was not
+consulted. Token <code>"aaa-111"</code> was never revoked anywhere — it just no longer matches the door.</p>
+<p><strong>t=75 — the zombie wakes.</strong> A unfreezes mid-run believing it still holds everything. The token
+guard catches it at every possible move:</p>
+<ol>
+<li>Its next checkpoint fires the renew → condition <code>owner = "aaa-111"</code> vs item <code>"bbb-222"</code> →
+   <code>ConditionalCheckFailedException</code>. That failure is <em>information</em>: "your card no longer opens
+   this door." A well-behaved worker aborts right here.</li>
+<li>Suppose it ignores that and writes an event → <strong>Part 4's fence.</strong> A's counter says <code>seq 9</code>; B
+   already wrote 9. The put on <code>(PK="abc", SK=9, "slot must be empty")</code> fails and returns the
+   occupant → the three-way branch.</li>
+<li>Suppose it instead finishes and tries to clean up → <strong>release is also token-guarded.</strong> Imagine
+   release were an unconditional <code>delete_item</code>: the item it deletes is B's. The door is now
+   unlocked while B is still mid-run; worker C acquires on the next redelivery, and B and C are
+   both writing the same thread — the exact double-writer disaster the lock exists to prevent.
+   The guard turns that into a harmless failed delete: you can only remove <em>your own</em> card.</li>
+</ol>
+<h3 id="formal-reference-four-operations">Formal reference — four operations<a class="headerlink" href="#formal-reference-four-operations" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="c1"># ACQUIRE (pickup step 2). Mint a fresh token, then a conditional put.</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="n">owner_token</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">uuid</span><span class="o">.</span><span class="n">uuid4</span><span class="p">())</span>    <span class="c1"># identity for THIS TENURE, not this worker</span>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="n">now</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="n">event_table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span>
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>    <span class="n">Item</span><span class="o">=</span><span class="p">{</span><span class="s2">"thread_id"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"lock#</span><span class="si">{</span><span class="n">tid</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"seq"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"owner"</span><span class="p">:</span> <span class="n">owner_token</span><span class="p">,</span>
+<a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>          <span class="s2">"expires_at"</span><span class="p">:</span> <span class="n">now</span> <span class="o">+</span> <span class="n">LEASE_SECONDS</span><span class="p">,</span>   <span class="c1"># app-checked expiry</span>
+<a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>          <span class="s2">"ttl"</span><span class="p">:</span> <span class="n">now</span> <span class="o">+</span> <span class="mi">86400</span><span class="p">},</span>                 <span class="c1"># janitorial only (see E11)</span>
+<a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>    <span class="n">ConditionExpression</span><span class="o">=</span><span class="s2">"attribute_not_exists(thread_id) OR expires_at &lt; :now"</span><span class="p">,</span>
+<a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>    <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span><span class="s2">":now"</span><span class="p">:</span> <span class="n">now</span><span class="p">},</span>
+<a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="p">)</span>
+<a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="c1"># Success → I hold the thread. Overwriting an expired lock IS the takeover; there is no separate</span>
+<a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="c1"># "break the lock" step and the old holder's token dies with it.</span>
+<a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="c1"># ConditionalCheckFailedException → a LIVE holder exists. Under FIFO this "should" never happen</span>
+<a id="__codelineno-15-14" name="__codelineno-15-14" href="#__codelineno-15-14"></a><span class="c1"># (one in-flight message per group), so treat it as a real anomaly: do NOT process; let the</span>
+<a id="__codelineno-15-15" name="__codelineno-15-15" href="#__codelineno-15-15"></a><span class="c1"># message return to the queue via visibility lapse.</span>
+<a id="__codelineno-15-16" name="__codelineno-15-16" href="#__codelineno-15-16"></a>
+<a id="__codelineno-15-17" name="__codelineno-15-17" href="#__codelineno-15-17"></a><span class="c1"># RENEW — piggybacked on every checkpoint, token-guarded so a zombie can't refresh a lost lock.</span>
+<a id="__codelineno-15-18" name="__codelineno-15-18" href="#__codelineno-15-18"></a><span class="n">event_table</span><span class="o">.</span><span class="n">update_item</span><span class="p">(</span>
+<a id="__codelineno-15-19" name="__codelineno-15-19" href="#__codelineno-15-19"></a>    <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">"thread_id"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"lock#</span><span class="si">{</span><span class="n">tid</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"seq"</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+<a id="__codelineno-15-20" name="__codelineno-15-20" href="#__codelineno-15-20"></a>    <span class="n">UpdateExpression</span><span class="o">=</span><span class="s2">"SET expires_at = :new"</span><span class="p">,</span>
+<a id="__codelineno-15-21" name="__codelineno-15-21" href="#__codelineno-15-21"></a>    <span class="n">ConditionExpression</span><span class="o">=</span><span class="s2">"owner = :me"</span><span class="p">,</span>         <span class="c1"># only MY lock</span>
+<a id="__codelineno-15-22" name="__codelineno-15-22" href="#__codelineno-15-22"></a>    <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span><span class="s2">":new"</span><span class="p">:</span> <span class="n">now</span> <span class="o">+</span> <span class="n">LEASE_SECONDS</span><span class="p">,</span> <span class="s2">":me"</span><span class="p">:</span> <span class="n">owner_token</span><span class="p">},</span>
+<a id="__codelineno-15-23" name="__codelineno-15-23" href="#__codelineno-15-23"></a><span class="p">)</span>
+<a id="__codelineno-15-24" name="__codelineno-15-24" href="#__codelineno-15-24"></a>
+<a id="__codelineno-15-25" name="__codelineno-15-25" href="#__codelineno-15-25"></a><span class="c1"># CHECK — done lazily, only on the failure path of an event write (Part 4). Healthy workers</span>
+<a id="__codelineno-15-26" name="__codelineno-15-26" href="#__codelineno-15-26"></a><span class="c1"># never poll the lock.</span>
+<a id="__codelineno-15-27" name="__codelineno-15-27" href="#__codelineno-15-27"></a>
+<a id="__codelineno-15-28" name="__codelineno-15-28" href="#__codelineno-15-28"></a><span class="c1"># RELEASE — token-guarded delete.</span>
+<a id="__codelineno-15-29" name="__codelineno-15-29" href="#__codelineno-15-29"></a><span class="n">event_table</span><span class="o">.</span><span class="n">delete_item</span><span class="p">(</span>
+<a id="__codelineno-15-30" name="__codelineno-15-30" href="#__codelineno-15-30"></a>    <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">"thread_id"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"lock#</span><span class="si">{</span><span class="n">tid</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"seq"</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+<a id="__codelineno-15-31" name="__codelineno-15-31" href="#__codelineno-15-31"></a>    <span class="n">ConditionExpression</span><span class="o">=</span><span class="s2">"owner = :me"</span><span class="p">,</span>
+<a id="__codelineno-15-32" name="__codelineno-15-32" href="#__codelineno-15-32"></a>    <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span><span class="s2">":me"</span><span class="p">:</span> <span class="n">owner_token</span><span class="p">},</span>
+<a id="__codelineno-15-33" name="__codelineno-15-33" href="#__codelineno-15-33"></a><span class="p">)</span>
+<a id="__codelineno-15-34" name="__codelineno-15-34" href="#__codelineno-15-34"></a><span class="c1"># Without the guard: a process that outlives its own lease would unconditionally delete the NEXT</span>
+<a id="__codelineno-15-35" name="__codelineno-15-35" href="#__codelineno-15-35"></a><span class="c1"># holder's lock on teardown — re-opening the exact double-writer window the lock exists to close.</span>
+</code></pre></div>
+<p><strong>Why a lock at all when FIFO already serializes delivery:</strong> FIFO stops <em>deliveries</em>, but after a
+visibility lapse the message is no longer "in flight" — SQS happily delivers it to B while a
+stalled A is still executing. The lock is the arbiter for that window, and the write fence
+(Part 4) is the backstop when even the lock check races.</p>
+<hr />
+<h2 id="part-4-zombie-fencing-the-three-way-branch">Part 4 — Zombie fencing: the three-way branch<a class="headerlink" href="#part-4-zombie-fencing-the-three-way-branch" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>Worker A ── writes seq 9 … then FREEZES (no checkpoints, no extends, no lock renews)
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>SQS      ── lease lapses (30 min, no extension) → redeliver (ApproximateReceiveCount=2)
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>Worker B ── stamp run# receive_count=2
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>            lock# conditional put: "empty OR expires_at &lt; now" → TAKEOVER, new owner token
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>            Query max seq → PutItem 9,10,11 …
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>Worker A ── UNFREEZES, still believes counter=8, lock=mine
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a>            PutItem seq 9 → condition FAILS, ALL_OLD returned, occupant idem_key ≠ mine
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>            GetItem lock#abc → owner ≠ my token
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>            BRANCH 2: I am the zombie. Raise. Stop emitting entirely.
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a>Worker B ── continues seq 12, 13 … log uncorrupted
+</code></pre></div>
+<p>On the collision, <code>ALL_OLD</code> returns the occupying item and A runs:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="k">except</span> <span class="n">ClientError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>   <span class="c1"># ConditionalCheckFailed</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>    <span class="n">existing</span> <span class="o">=</span> <span class="n">deserialize</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">response</span><span class="p">[</span><span class="s2">"Item"</span><span class="p">])</span>   <span class="c1"># who's in my slot?</span>
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>    <span class="c1"># Branch 1 — the occupant IS the event I'm writing right now.</span>
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>    <span class="k">if</span> <span class="n">existing</span><span class="p">[</span><span class="s2">"idem_key"</span><span class="p">]</span> <span class="o">==</span> <span class="n">this_write</span><span class="o">.</span><span class="n">idem_key</span><span class="p">:</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>        <span class="k">return</span> <span class="n">seq</span>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>        <span class="c1"># my own earlier attempt landed (ACK lost, SDK retried) or an identical replay already</span>
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>        <span class="c1"># wrote it. Either way the LOGICAL event exists; the write is satisfied. Continue.</span>
+<a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>
+<a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>    <span class="c1"># Foreign occupant → am I still allowed to write at all? Check the lock NOW (lazily — this</span>
+<a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>    <span class="c1"># read is paid only on the rare collision path):</span>
+<a id="__codelineno-17-12" name="__codelineno-17-12" href="#__codelineno-17-12"></a>    <span class="n">lock</span> <span class="o">=</span> <span class="n">get_lock</span><span class="p">(</span><span class="n">tid</span><span class="p">)</span>
+<a id="__codelineno-17-13" name="__codelineno-17-13" href="#__codelineno-17-13"></a>    <span class="k">if</span> <span class="n">lock</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">lock</span><span class="p">[</span><span class="s2">"owner"</span><span class="p">]</span> <span class="o">!=</span> <span class="n">owner_token</span> <span class="ow">or</span> <span class="n">lock</span><span class="p">[</span><span class="s2">"expires_at"</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">now</span><span class="p">:</span>
+<a id="__codelineno-17-14" name="__codelineno-17-14" href="#__codelineno-17-14"></a>        <span class="c1"># Branch 2 — I am the zombie. My lock was taken while I was frozen.</span>
+<a id="__codelineno-17-15" name="__codelineno-17-15" href="#__codelineno-17-15"></a>        <span class="k">raise</span> <span class="n">ZombieWriter</span><span class="p">(</span><span class="n">tid</span><span class="p">)</span>
+<a id="__codelineno-17-16" name="__codelineno-17-16" href="#__codelineno-17-16"></a>        <span class="c1"># stop emitting ENTIRELY. Never re-seed past the collision — that would weave my stale</span>
+<a id="__codelineno-17-17" name="__codelineno-17-17" href="#__codelineno-17-17"></a>        <span class="c1"># events into the live log ABOVE the reader's cursor.</span>
+<a id="__codelineno-17-18" name="__codelineno-17-18" href="#__codelineno-17-18"></a>
+<a id="__codelineno-17-19" name="__codelineno-17-19" href="#__codelineno-17-19"></a>    <span class="c1"># Branch 3 — foreign occupant but I legitimately hold the lock: a dead predecessor's</span>
+<a id="__codelineno-17-20" name="__codelineno-17-20" href="#__codelineno-17-20"></a>    <span class="c1"># straggler write landed AFTER my seed read.</span>
+<a id="__codelineno-17-21" name="__codelineno-17-21" href="#__codelineno-17-21"></a>    <span class="n">seq</span> <span class="o">=</span> <span class="n">reseed_from_table</span><span class="p">()</span>   <span class="c1"># query max again, hop over the corpse's writes</span>
+<a id="__codelineno-17-22" name="__codelineno-17-22" href="#__codelineno-17-22"></a>    <span class="n">retry_bounded</span><span class="p">()</span>             <span class="c1"># transient by construction: a corpse has finitely many</span>
+<a id="__codelineno-17-23" name="__codelineno-17-23" href="#__codelineno-17-23"></a>                                <span class="c1"># in-flight/SDK-queued writes to drain</span>
+</code></pre></div>
+<p><strong>What "mine" means in branch 1:</strong> not worker identity — <code>idem_key</code> carries none. It compares
+the occupant's key to the key of the write in my hand. Because <code>idem_key</code> is deterministic (same
+execution position → same key), an equal key means the logical event is already durable, and who
+physically wrote it is irrelevant.</p>
+<p><strong>Branch 2 needs no cooperation from the zombie:</strong> it missed the lease lapse, the redelivery, the
+lock takeover — every memo. But the very write that would have corrupted the log is the atomic
+operation that reveals what it has become. <strong>The storage layer is the final arbiter of who's
+alive</strong> (same idea as fencing tokens in distributed locks). This is also why a competing writer,
+for us, is <em>never</em> legitimate — so we must fence them out rather than run an
+increment-and-retry allocator that tolerates them.</p>
+<p><strong>Branch 3 walkthrough (how "foreign key but my lock" arises at all):</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>t=40.000  Dying worker Z fires PutItem(abc, 9); the request leaves its network stack.
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>          Z dies. The HTTP request is still in flight.
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>t=40.100  B seeds: ConsistentRead max — truthful AT THIS INSTANT.
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>t=40.150  Z's straggler ARRIVES at DynamoDB. Slot (abc, 9) empty → lands.
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>t=40.200  B writes seq 9 → collision. Foreign idem_key. Lock check: mine.
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>t=40.250  B re-seeds → 9. Writes at 10. Z is dead; twitches are finite. Done.
+</code></pre></div>
+<p>Z's orphaned event at seq 9 stays in the log — harmless: when B's resumed run re-executes that
+node, its events carry the same <code>idem_key</code>, and the reader dedups.</p>
+<hr />
+<h2 id="part-5-edge-case-catalog">Part 5 — Edge case catalog<a class="headerlink" href="#part-5-edge-case-catalog" title="Permanent link">&para;</a></h2>
+<p>Each entry: what happens, how it's detected, how it's handled, which layer owns it.</p>
+<ul>
+<li>
+<p><strong>E1. Double-clicked Approve / frontend retry / SDK retry of <code>send_message</code>.</strong> Two independent
+  layers: (a) the resume claim's conditional-put lease — two racing approves, exactly one wins,
+  the loser gets <code>409 resume_in_progress</code>; (b) SQS content-based dedup — byte-identical bodies
+  within a 5-minute window are silently dropped. Residual: a <em>legitimate</em> second run minutes
+  later has a different <code>run_id</code> → different body hash → correctly enqueued, and FIFO makes it
+  wait behind run 1.</p>
+</li>
+<li>
+<p><strong>E2. Two runs queued on one thread.</strong> <code>MessageGroupId = thread_id</code> — SQS won't deliver message
+  2 of a group while message 1 is in flight, even with idle workers. Transport guarantee, no app
+  code.</p>
+</li>
+<li>
+<p><strong>E3. Worker crashes mid-node (clean death).</strong> Detected by silence: no more checkpoints → no
+  lease extensions → visibility timeout lapses → SQS redelivers (<code>ApproximateReceiveCount</code>++).
+  Handled by the pickup ritual on the next worker: resume from the last checkpoint; the
+  at-most-one incomplete node re-runs; per-task pending writes (<code>put_writes</code>) mean a parallel
+  sibling that <em>did</em> finish is not re-executed. <strong>Loss granularity = one node, never the run.</strong>
+  Cost: one duplicated LLM/tool call, one receive count.</p>
+</li>
+<li>
+<p><strong>E4. Worker stalls without dying (the zombie).</strong> Detected by the fence: the zombie's next
+  event write collides, branch 2 fires. The zombie raises and stops emitting; B already owns the
+  thread. <strong>The corruption attempt is the detection.</strong></p>
+</li>
+<li>
+<p><strong>E5. Dead predecessor's straggler write (branch 3).</strong> Detected by collision with a foreign
+  <code>idem_key</code> while the lock check says "mine." Re-seed above the new max, bounded retry.
+  Transient by construction; the orphan event dedups on read.</p>
+</li>
+<li>
+<p><strong>E6. Poison pill — a message that kills every worker (3 strikes).</strong> Detected by
+  <code>maxReceiveCount=3</code> on the redrive policy, and app-side by stamping <code>receive_count</code> onto the
+  run-state record. Two cooperating paths, either flips the run: (a) the worker seeing
+  <code>receive_count == 3</code> knows it's the final permitted attempt and wraps execution — on failure it
+  writes <code>status=failed, reason="Run failed after 3 attempts"</code>; (b) if it can't (hard crash), SQS
+  moves the message to the DLQ and the DLQ-depth CloudWatch alarm (→ SNS) plus a DLQ
+  consumer/detector performs the same flip. Within ~250 ms of the flip the user sees a reason,
+  not an eternal spinner. <strong>Why stamping matters:</strong> SQS shows the receive count only to the
+  process currently holding the message; durably copying it to run-state lets anyone (API,
+  detector, human) reason about attempts afterward. Forensics: the DLQ retains the poison message
+  14 days; console redrive sends it back after a fix.</p>
+</li>
+<li>
+<p><strong>E7. Redelivery of an already-completed run.</strong> Worker finished everything but crashed between
+  the terminal writes and <code>delete_message</code>; the message resurfaces. Delete-last ordering makes
+  this the designed worst case: the next worker resumes from the final checkpoint; the graph is
+  at <code>END</code>; nothing re-executes; the status write is idempotent (deterministic keys → overwrite,
+  not duplicate). Total cost: one no-op receive.</p>
+</li>
+<li>
+<p><strong>E8. The lease-extension / lock-renew call itself fails (SQS throttle, network blip).</strong>
+  Fire-and-forget in the saver wrapper — log a warning, continue; the old countdown keeps
+  running and the next checkpoint retries. Worst case: a premature redelivery — which E3 already
+  handles. Never crash a healthy run.</p>
+</li>
+<li>
+<p><strong>E9. A single node runs longer than the visibility timeout.</strong> Prevented by sizing: the 30-min
+  floor must exceed the longest single node; the lease resets to a full window at every
+  checkpoint, so run length is irrelevant. <strong>Do not add mid-node heartbeats — they'd renew
+  zombies.</strong> Hard wall: SQS caps total invisibility at 12 hours per receive. A run needing more
+  must checkpoint, delete the message, and enqueue a continuation.</p>
+</li>
+<li>
+<p><strong>E10. Event-table outage while a run is executing.</strong> The projection principle: emitter writes
+  fail → log, drop the feed lines, keep executing; checkpoints (different table) are untouched.
+  The feed goes quiet; the run completes. An event-log outage never costs work.</p>
+</li>
+<li>
+<p><strong>E11. TTL vs a late reconnect.</strong> Risk: an in-progress run's early events expire before a
+  disconnected user reconnects and replays. Handled by sizing TTL ≫ max run + max reconnect gap
+  (~24h), and treating TTL as janitorial only (DynamoDB TTL deletion lags up to ~48h and is
+  best-effort, so no correctness logic may depend on it). Same rule for the lock's <code>ttl</code>: the
+  enforced expiry is <code>expires_at</code>; <code>ttl</code> merely garbage-collects abandoned rows.</p>
+</li>
+<li>
+<p><strong>E12. Clock skew between workers (lock expiry disputes).</strong> Margins, not precision:
+  <code>expires_at</code> comparisons use writer-supplied epochs; lease durations (minutes) dwarf realistic
+  skew (sub-second under NTP). And even under skew, the conditional write is the arbiter of fact.</p>
+</li>
+<li>
+<p><strong>E13. Deploy / ECS task recycling mid-run.</strong> Same machinery as E3 — a recycled task is just a
+  clean death. The dying worker owes zero cooperation: the checkpoint + the undeleted message
+  reconstruct everything.</p>
+</li>
+<li>
+<p><strong>E14. Event payload exceeds DynamoDB's 400 KB item cap.</strong> Offload — the final report, large
+  token batches, chart blobs go to S3 under deterministic keys; the event item carries a pointer.
+  (The checkpointer already does the same for state.)</p>
+</li>
+<li>
+<p><strong>E15. SSE client disconnects and reconnects.</strong> The browser's native <code>EventSource</code> resends
+  <code>Last-Event-ID</code>; the reader seeds its cursor from it; catch-up uses <code>ConsistentRead</code>, then the
+  steady tail relaxes to eventual. The worker writes regardless of whether anyone is watching.</p>
+</li>
+<li>
+<p><strong>E16. Duplicate feed lines from any at-least-once path (E3/E4/E5/E7).</strong> Read-side dedup on
+  <code>idem_key</code> — the single mechanism that converts "at-least-once written" into "exactly-once
+  seen." Write-side, branch 1 additionally short-circuits byte-identical own retries.</p>
+</li>
+</ul>
+<hr />
+<h2 id="part-6-faq-in-the-order-people-ask-them">Part 6 — FAQ (in the order people ask them)<a class="headerlink" href="#part-6-faq-in-the-order-people-ask-them" title="Permanent link">&para;</a></h2>
+<p><strong>Q: Are the "events" the LangGraph checkpoints?</strong> No. Two streams, two tables, two audiences.
+Checkpoints: automatic, machine-readable, for resume. Events: our emitter's curated feed lines,
+for the user. One node might produce 1 or many events.</p>
+<p><strong>Q: Does DynamoDB auto-increment <code>seq</code>?</strong> No — DynamoDB has no auto-increment. The worker seeds
+once per receive (strongly-consistent <code>max</code> query) and increments a local variable. Safe because
+there is one writer per thread; fenced for the moment there briefly isn't.</p>
+<p><strong>Q: Does B start numbering from 0 after taking over?</strong> No — it seeds from the table max and
+continues (…8 → 9, 10), so the feed is one continuous log. Starting at 0 would collide with A's
+item immediately, and the fence would reject it.</p>
+<p><strong>Q: Is <code>attribute_not_exists(thread_id)</code> missing an <code>AND seq</code> check?</strong> No. The condition is
+evaluated against the single item at the exact <code>(PK, SK)</code> slot being written — it can only ever
+mean "is this slot empty?" Checking one key attribute is enough; the second is redundant.</p>
+<p><strong>Q: How does a worker know an <code>idem_key</code> is "its own" without worker identity in the key?</strong> It
+doesn't need authorship — it compares the occupant's key with the key of the write in its hand.
+Deterministic keys: equality = the logical event exists, satisfied regardless of who performed
+it. Worker identity lives in exactly one place: the lock's owner token.</p>
+<p><strong>Q: Why isn't <code>seq</code> part of <code>idem_key</code>?</strong> Because replay assigns new seqs — a key containing
+<code>seq</code> would never match its replay, and dedup would be decorative. <code>idem_key</code> is built
+exclusively from things identical on replay.</p>
+<p><strong>Q: Why <code>checkpoint_id</code> in the key when we have <code>node_name</code>?</strong> The agent node runs many times
+legitimately (ReAct loop). <code>checkpoint_id</code> separates iteration 7 from iteration 2 (different
+launch checkpoints) while equating iteration 7 with its own replay (same launch checkpoint).
+It's the only ID with exactly that property.</p>
+<p><strong>Q: Is lease extension additive, or based on how long the node took?</strong> Neither —
+<code>ChangeMessageVisibility</code> overwrites the remaining countdown with a fixed "N seconds from now."
+No measurement, no adaptivity; the constant just has to exceed one node.</p>
+<p><strong>Q: What is <code>ApproximateReceiveCount</code> and why "approximate"?</strong> An SQS system attribute (request
+it in <code>ReceiveMessage</code>) counting deliveries of this message, including the current one.
+"Approximate" because SQS is distributed and delivery edge cases can skew it — which is why it
+drives coarse decisions (3 strikes) and is stamped durably at pickup, never used as a precise
+counter.</p>
+<p><strong>Q: Who reads <code>Query(seq &gt; cursor)</code>?</strong> Only the API's SSE tail (and the same query serves
+reconnect replay). The write path never range-queries; its single read is the seed
+(<code>Limit=1</code>, descending).</p>
+<hr />
+<h2 id="appendix-a-parallel-tool-execution-support-handoff">Appendix A — Parallel tool execution (support handoff)<a class="headerlink" href="#appendix-a-parallel-tool-execution-support-handoff" title="Permanent link">&para;</a></h2>
+<p><strong>Who executes N <code>query_source(...)</code> calls side by side?</strong> The framework.
+<code>deepagents.create_deep_agent()</code> is built on <code>langchain.agents.create_agent()</code>, which uses
+LangGraph's <code>ToolNode</code>. In the async path, <code>ToolNode</code> runs the tool coroutines with
+<code>asyncio.gather(*coros)</code>. In the sync path it uses an executor map. <strong>There is no custom thread
+pool or manual thread spawning</strong> in app code for parallel tool calls.</p>
+<p><strong>How do parallel results merge without overwriting each other?</strong> The <code>source_results</code> state
+channel uses an <code>operator.add</code> reducer, so each tool's <code>Command(update={"source_results": [...]})</code>
+<em>appends</em>. A separate <code>step_validation_failures</code> channel uses a dict-merge reducer.</p>
+<p><strong>Does the deep agent use multithreading?</strong> For the normal async worker/API path, no: the worker
+calls <code>agent.astream_events(None, version="v2")</code> and parallel tool execution is
+framework-managed async concurrency via <code>asyncio.gather</code> inside the tool node — concurrent I/O,
+not app-authored threads. Threads still exist at infrastructure boundaries: FastAPI endpoints use
+<code>asyncio.to_thread</code> for blocking DynamoDB/SQS/checkpointer operations so the event loop isn't
+blocked; the sync tool path can use an executor map; ECS may run multiple API/worker tasks (with
+per-thread safety protected by SQS FIFO grouping, run-state, and worker locks).</p>
+<p><strong>Operational pattern for three parallel source calls:</strong></p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a># Approved plan
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>step-1 [source: SOURCE_B] [group: 1 parallel]
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>step-2 [source: SOURCE_A] [group: 1 parallel]
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>step-3 [source: SOURCE_D] [group: 1 parallel]
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a># Model response after approval → one AI message with three tool_calls
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a>query_source(source="SOURCE_B", step="step-1")
+<a id="__codelineno-19-8" name="__codelineno-19-8" href="#__codelineno-19-8"></a>query_source(source="SOURCE_A", step="step-2")
+<a id="__codelineno-19-9" name="__codelineno-19-9" href="#__codelineno-19-9"></a>query_source(source="SOURCE_D", step="step-3")
+<a id="__codelineno-19-10" name="__codelineno-19-10" href="#__codelineno-19-10"></a>
+<a id="__codelineno-19-11" name="__codelineno-19-11" href="#__codelineno-19-11"></a># Framework execution
+<a id="__codelineno-19-12" name="__codelineno-19-12" href="#__codelineno-19-12"></a>LangGraph ToolNode parses all tool_calls from that one AI message.
+<a id="__codelineno-19-13" name="__codelineno-19-13" href="#__codelineno-19-13"></a>Async path builds one coroutine per call → awaits asyncio.gather(*coros).
+<a id="__codelineno-19-14" name="__codelineno-19-14" href="#__codelineno-19-14"></a>
+<a id="__codelineno-19-15" name="__codelineno-19-15" href="#__codelineno-19-15"></a># App tool behavior (per call)
+<a id="__codelineno-19-16" name="__codelineno-19-16" href="#__codelineno-19-16"></a>- validates plan/source/step
+<a id="__codelineno-19-17" name="__codelineno-19-17" href="#__codelineno-19-17"></a>- creates a backend span "query_source: &lt;agent_name&gt;"
+<a id="__codelineno-19-18" name="__codelineno-19-18" href="#__codelineno-19-18"></a>- stores one SourceResult with a provenance_id
+<a id="__codelineno-19-19" name="__codelineno-19-19" href="#__codelineno-19-19"></a>- source_results reducer appends all results into one checkpointed state
+</code></pre></div>
+<p>In tracing this appears as one orchestrator/model span followed by multiple same-level
+tool/backend spans with overlapping timestamps. If the model emits call 1, waits, then emits
+calls 2 and 3 without needing call 1's output, that's a planning/model batching issue, not a
+missing thread in app code.</p>
+<hr />
+<h2 id="appendix-b-state-persistence-and-stores-quick-reference">Appendix B — State, persistence, and stores (quick reference)<a class="headerlink" href="#appendix-b-state-persistence-and-stores-quick-reference" title="Permanent link">&para;</a></h2>
+<p><strong>Checkpoints.</strong> <code>DynamoDBSaver</code> from <code>langgraph-checkpoint-aws</code>. Table
+<code>app-{env}-deep-checkpoints</code>; <code>DEEP_CHECKPOINTER_BACKEND=dynamodb</code>; thread id = <code>chat_id</code>;
+default TTL 30 days (<code>DEEP_CHECKPOINT_TTL_SECONDS</code>); large payloads offload to
+<code>DEEP_CHECKPOINT_S3_BUCKET</code> under prefix <code>deep-checkpoints</code>. Misconfiguration <em>raises</em> for an
+unknown backend; warns if the offload bucket is missing.</p>
+<p><strong>Deep events and run state.</strong> The <code>deep-events</code> table has two row families: event-feed rows
+(<code>PK=chat_id</code>, <code>SK=seq number</code>, replayable curated SSE frames, TTL ~24h) and the run-state
+singleton (<code>PK=run#{chat_id}</code>, <code>SK=seq</code>, latest async status <code>queued|running|retrying|failed|
+completed</code>, no TTL). The event feed is a projection, not the execution source of truth — if an
+append fails, the worker tries to write a warning frame and continues; the checkpoint owns graph
+progress.</p>
+<p><strong>SQS queue.</strong> <code>app-{env}-deep-run.fifo</code>; <code>MessageGroupId = thread_id</code> serializes one worker per
+chat thread; body is <code>{"thread_id", "run_id"}</code>. Queue URL resolution order:
+<code>DEEP_RUN_QUEUE_URL</code>, then SSM <code>/app/{env}/sqs/deep-run/url</code>, then <code>GetQueueUrl</code>. In the API
+task, <code>DEEP_RUN_QUEUE_URL</code> is load-bearing because the API role is send-only.</p>
+<hr />
+<h2 id="appendix-c-api-sse-support-contract">Appendix C — API &amp; SSE support contract<a class="headerlink" href="#appendix-c-api-sse-support-contract" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Method</th>
+<th>Purpose / support note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/api/v1/chat/stream</code> (<code>mode="deep"</code>)</td>
+<td>POST</td>
+<td>Starts the proposal phase. Expected to close at <code>interrupt</code> with <strong>no</strong> terminal end frame while waiting for approval.</td>
+</tr>
+<tr>
+<td><code>/api/v1/deep/{thread_id}/plan/refine</code></td>
+<td>POST</td>
+<td>Resume the gate with feedback. Streams an updated plan and another <code>interrupt</code>.</td>
+</tr>
+<tr>
+<td><code>/api/v1/deep/{thread_id}/decline</code></td>
+<td>POST</td>
+<td>Decline the plan. No retrieval. Used as a misroute signal when an auto-router sent a bad deep plan.</td>
+</tr>
+<tr>
+<td><code>/api/v1/deep/{thread_id}/approve/async</code></td>
+<td>POST</td>
+<td>Lock plan, write <code>queued</code> run-state, enqueue worker job. Returns <code>202</code>; execution output is <strong>not</strong> in this response.</td>
+</tr>
+<tr>
+<td><code>/api/v1/deep/{thread_id}/stream?cursor=</code></td>
+<td>GET</td>
+<td>Replay/tail durable execution events. Uses <code>Last-Event-ID</code> or <code>?cursor=</code>. Terminal output comes from the event log plus run-state.</td>
+</tr>
+<tr>
+<td><code>/api/v1/deep/{thread_id}/run</code></td>
+<td>GET</td>
+<td>Read async run status. Use on reload or stuck-run triage.</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../orchestrator-prompt-annotated/" class="md-footer__link md-footer__link--prev" aria-label="Previous: The Orchestrator">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                The Orchestrator
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/neeleshsethi/agentic-engineering-patterns" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.action.edit"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../assets/scrubber.js"></script>
+      
+    
+  </body>
+</html>
