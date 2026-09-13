@@ -25,6 +25,22 @@ The checkpoint is the graph's source of truth. The event log is narration. The q
 
 If you blur these together, the system becomes hard to repair after a crash. A lost event should not lose the run. A lost queue message should be re-enqueueable. A completed worker should not need a live browser to make completion true.
 
+## The deep-agent package map
+
+The codebase mirrors those records and phases. In the production implementation, `agent/deep/` was not one giant "agent" file; it was a set of small modules grouped by job:
+
+| Group | Modules | Responsibility |
+|---|---|---|
+| Graph and control flow | `graph.py`, `gate.py`, `plan.py`, `contract.py` | Assemble the graph, own the plan approval gate, project todos into a typed plan, and centralize shared tool/node names. |
+| Middleware | `proposal_context.py`, `manifest.py`, `sufficiency.py`, `retrieval_budget.py`, `exit_path.py` | Inject user context, render held data, check sufficiency, meter retrieval depth, and generate the report at exit. |
+| Execution and analysis | `analyst.py`, `interpreter.py` | Run bounded code-analysis loops outside the quick answer path. |
+| Async worker plumbing | `run_queue.py`, `run_state.py`, `worker_lock.py`, `resume_claim.py`, `resume_decision.py`, `checkpointer.py`, `token_escrow.py` | Enqueue approved work, track attempts, fence workers, prevent double resume, persist the resume decision, share checkpoints, and let workers authenticate to data sources. |
+| Event feed | `curator.py`, `event_log.py`, `events_table.py` | Turn raw graph events into stable UI frames and write them idempotently for the SSE tail. |
+| Provenance, citations, and charts | `provenance.py`, `citations.py`, `chart_tool.py`, `chart_state.py`, `chart_anchors.py`, `chart_adapter.py` | Name each retrieval, attach citations and cards to the right evidence, and keep chart specs tied to the report cycle. |
+| Prompts | `prompts/orchestrator_prompts.py`, `report_prompts.py`, `sufficiency_prompts.py`, `analyst_prompts.py` | Shape planning, reporting, sufficiency grading, and code-analysis behavior. |
+
+This map is a design guardrail. `graph.py` assembles the system, but it should not own every policy. The gate owns approval, the middleware owns loop and exit behavior, worker modules own durable execution, and provenance modules own attribution. When a bug crosses one of those boundaries, it usually means the responsibility landed in the wrong group.
+
 ## Phase 1: planning runs in the API
 
 The first request starts from a user question.

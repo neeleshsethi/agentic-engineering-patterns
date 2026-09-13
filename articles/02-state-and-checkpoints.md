@@ -93,6 +93,21 @@ class DeepState(TypedDict):
 
 Rule of thumb: reach for `LastValue` **only** when stale carry-over is genuinely acceptable, or when every new turn is guaranteed to write an explicit replacement. If you cannot guarantee that, you have a France/Germany bug waiting to happen.
 
+In the production deep agent, the important channels fell into four groups:
+
+| State key | Channel behavior | Why |
+|---|---|---|
+| `messages` | `add_messages` reducer | Conversation turns append; a new user message should not erase history. |
+| `source_results` | `operator.add` reducer | Each retrieval writes one result. Parallel fan-out merges losslessly, and later turns can reuse carried evidence. |
+| `step_status` | dict merge reducer | Parallel branches can update different plan steps without clobbering each other. |
+| `files` | delta merge reducer | The playbook workspace evolves over the run. |
+| `plan` | `LastValue`, but sticky by design | Only the gate should write it. Once locked, it must not be replaced by follow-up turns. |
+| `cycle` | `LastValue` | This is the turn-boundary counter that feeds `plan_id`. It advances only for genuinely new questions. |
+| `raw_question`, `user_context`, `deep_run_id` | `LastValue`, rewritten per proposal | These describe the current proposal. If they are omitted, the old proposal leaks forward. |
+| `final_answer`, `source_cards`, `reported_cycle` | `LastValue` outputs | The visible report is the latest delivered report for the current evidence set. |
+
+The approval decision is intentionally missing from this table. It is not a state channel. It is checkpoint pending-write plumbing: the API stages the resume value beside the state, then the worker drains it when the paused `interrupt()` resumes.
+
 ## Turn the convention into an API
 
 The discipline "write these keys every turn" is a convention, and conventions rot — every new endpoint is a chance to forget one. So don't let endpoints hand-build graph input. Put the required keys behind one factory:

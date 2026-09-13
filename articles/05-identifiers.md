@@ -90,6 +90,43 @@ The last pair is about trusting the output, not running it:
 - **[Provenance id](00-glossary.md#provenance-id)** is a pointer from a *fact* back to the tool result that produced it — which `query_source` call a given figure in the report came from. It turns [grounding](00-glossary.md#grounding) from a promise into something *auditable*: every number carries the id of its retrieval, so a reviewer, or code, can confirm no figure was invented. In a regulated domain this is the difference between a quality issue and a compliance one.
 - **[`trace_id`](00-glossary.md#trace_id)** ties every log line, span, and model call for one request together for the humans debugging later. Nothing in the run's *correctness* depends on it — it is pure observability.
 
+Deep runs need provenance because their evidence is async, resumable, parallel, and reused across turns. A synchronous one-shot agent can treat "the list of tool results in memory" as the answer. A deep agent cannot:
+
+- SQS can redeliver the same work; the report writer must recognize the same evidence set.
+- `source_results` accumulates across turns; "all results in state" is not the same as "results for this question."
+- Parallel retrievals can finish in one graph step; retries need deterministic deduplication.
+- Citations, cards, charts, and activity logs all need to point to the exact retrieval that produced a fact.
+
+The production provenance id was deliberately deterministic:
+
+```python
+provenance_id = "{source}:{plan_id}:{step_id}:{sha1(sub_question)[:8]}"
+# e.g. cortex:plan-thread-123-2:step-1:a1b2c3d4
+```
+
+An identical retry intentionally gets the same id. A changed clarification answer changes the sub-question hash, so the new retrieval gets a new id. Because the `plan_id` is embedded, the system can filter current-cycle evidence by rebuilding the id for the current plan and comparing strings, without relying on timestamps.
+
+Three ordinal values sit next to provenance, and conflating them is a bug:
+
+| Ordinal | Counts | Purpose |
+|---|---|---|
+| `retrieval_ordinal` | Retrievals in the report | Maps inline citation markers like `[3]` back to `source_results`. |
+| `source_ordinal` | Retrievals in the cycle | Join key on cards and tables so citations attach to the right retrieval. |
+| `card["ordinal"]` | Cards in display order | Display only. It is not a citation join key. |
+
+The trap is that one retrieval can fan out into multiple cards. Display order and retrieval order then diverge, so joining citations to cards by display ordinal can attach a neighboring retrieval's card.
+
+Finally, a deep report needs an evidence-set identity, not just an id per retrieval:
+
+```python
+cycle_stamp = {
+    "plan_id": plan.plan_id,
+    "provenance_ids": sorted({r.provenance_id for r in results}),
+}
+```
+
+`reported_cycle` stores the stamp of the last delivered report; if an SQS redelivery reaches the exit path with the same stamp, report generation is a no-op. `chart_cycle` plays the same role for chart anchors, ensuring stale chart specs cannot attach to a new report.
+
 ## The whole map on one axis
 
 The single most useful way to hold all of these is by the replay question:

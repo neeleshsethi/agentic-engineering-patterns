@@ -91,6 +91,20 @@ read_file        ← playbooks only, path-guarded by middleware
 
 The framework can inject any number of others; the middleware makes them invisible.
 
+In the production deep graph, seven middlewares formed the runtime contract around those tools:
+
+| Order | Middleware | Job |
+|---:|---|---|
+| 1 | `UserContextMiddleware` | Inject profile, persona, and prior entity context into model calls. |
+| 2 | `DataManifestMiddleware` | Render the held-data inventory so the model can see reusable evidence. |
+| 3 | `AllowedToolsMiddleware` | Restrict the visible tools to the contract set. |
+| 4 | `PlaybookReadGuard` | Refuse `read_file` outside the approved playbook area before the backend sees it. |
+| 5 | `DeepExitPathMiddleware` | Generate the report and assembly outputs when there is unreported evidence. |
+| 6 | `SufficiencyGateMiddleware` | Check completeness and allow one bounded gap-fill round before reporting. |
+| 7 | `RetrievalBudgetMiddleware` | Meter retrieval rounds and route to exit when the budget is spent. |
+
+The order is not decorative. LangChain runs `after_agent` hooks in reverse registration order, so the sufficiency gate must run before the exit path writes the report. The retrieval budget uses model-call hooks, so it can meter loop depth without perturbing that exit ordering.
+
 **Gate sequencing, status, concurrency.** Whether the plan is approved, when it locks, how many times it was refined, whether two requests raced — all of that is code (the gate's `interrupt()`, `model_copy` on the plan status, a DynamoDB claim). See [Human-in-the-Loop Plan Approval](./04-planning-and-human-approval.md) for the mechanism. Here the point is only that these were *not* delegated to the prompt.
 
 | Rule | Where it lives | Why not the prompt |
@@ -259,6 +273,39 @@ Germany did not appear randomly. It entered the run when the user explicitly ask
 There is no code that can detect "the model re-resolved an entity mid-execution." The prompt is the only thing holding this invariant. When this line was missing, the model produced a confident, well-formatted report for the wrong country.
 
 The lesson: **know which invariants have no structural enforcement, and treat those prompt lines as load-bearing — nothing else is holding the weight.**
+
+## Clarification Is A Control-Flow Event
+
+A clarification is any turn where the system asks the user something instead of answering. The prompt shapes the wording, but the source of the pause decides the machinery:
+
+| Type | When | Detector | User sees |
+|---|---|---|---|
+| Plan-gate clarification | At plan time | `submit_plan(clarification=...)` on the gate interrupt | Plan card plus one question or assumption |
+| Terminal clarification | Before planning | The turn is classified as non-reportable | One question, no plan |
+| Source elicitation | Mid-retrieval | A source result is marked `is_elicitation` | The source's question relayed to the user |
+| Zero-retrieval guard | At exit | No current-cycle results, or the evidence set was already reported | No report over nothing |
+
+The confusing case is source elicitation. Suppose one source returns promo ROI data while another asks, "retail or non-retail?" Deep does not ship a partial report. `pending_elicitation` is a whole-cycle gate: if any open step is waiting on the user, the report writer skips report generation. The completed source result stays in `source_results`, and the next user reply re-queries only the asking step.
+
+That reply is **not** `Command(resume=...)`. Only the plan approval gate leaves a pending `interrupt()`. A source elicitation turn completes normally after relaying the question. The user's answer enters as a fresh graph invocation on the same `thread_id`, under the same locked `plan_id`; the carried result is reused, the clarified step gets a new `provenance_id`, and the changed evidence set can now report.
+
+This is the boundary between prompt and code again:
+
+- The prompt tells the model to relay the source's question and mention what data is already held.
+- The exit middleware enforces "elicitation present means no report" even if the model tries to synthesize.
+- The locked plan prevents a second approval loop and keeps carried evidence attached to the same cycle.
+
+## Budgets Meter Depth, Not Breadth
+
+A deep agent needs a real loop bound that fits its execution shape. Counting individual tool calls punishes parallel fan-out, which is exactly what a research agent should use to reduce wall-clock time. The production design instead meters retrieval rounds:
+
+| Bound | Default | Behavior |
+|---|---:|---|
+| Retrieval rounds per plan cycle | 6 | Gracefully route to the exit path; sufficiency and reporting still run. |
+| Graph recursion limit | 50 | Backstop only; hitting it is a terminal graph failure. |
+| SQS receives | 3 | Attempts 1-2 can redeliver; attempt 3 is poison-pill handling. |
+
+A round is one model turn that issued one or more retrieval calls. A turn that queries three sources in parallel spends one round, not three. Gap-fill turns from the sufficiency gate spend the same budget, and the budget resets when a genuinely new question opens a new plan cycle.
 
 ## Grounding: The Purely-Prompt Invariant
 
