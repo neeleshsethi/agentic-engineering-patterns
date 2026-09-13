@@ -17,40 +17,79 @@ For any rule the agent must follow, ask one question: **can code enforce it dete
 - If yes, put it in code and spend zero prompt tokens on it. Prompt instructions compete with the model's other instincts and occasionally lose. Structure does not.
 - If no — because enforcement would require reading the model's mind — the prompt is the only surface available, and the sentence has to be exact.
 
+```text
+                    ┌─────────────────────────────────────┐
+                    │  Can code enforce this deterministically?  │
+                    └──────────────┬──────────────────────┘
+                                   │
+               ┌───────────────────┴────────────────────┐
+               │ YES                                     │ NO
+               ▼                                         ▼
+  ┌─────────────────────────┐             ┌─────────────────────────┐
+  │       USE CODE          │             │      USE THE PROMPT      │
+  │                         │             │                         │
+  │  Tool allow-list        │             │  Phase machine          │
+  │  Gate (interrupt())     │             │  Evaluation order       │
+  │  Plan status machine    │             │  Priority stack         │
+  │  Concurrency claim      │             │  Grounding invariant    │
+  │  Owner validation       │             │  What counts as done    │
+  └─────────────────────────┘             └─────────────────────────┘
+  Code never lies. It either                Prompt shapes judgment.
+  runs or it doesn't.                       It can be overridden.
+```
+
 The rest of this article is that test applied to a real orchestrator, in both directions.
 
 ## What The Code Enforces (Not The Prompt)
 
 Start with the boundaries, because they are the easy calls. None of these appear in the prompt at all.
 
-**Tool availability.** The agent framework injects several built-in tools by default, including one that spawns sub-agents. A sub-agent would run its retrievals *outside* the approval gate — exactly the thing the whole design exists to prevent. The naive fix is a prompt line: "do not use the sub-agent tool." That is fragile. The structural fix removes the tool from the request before the model ever sees it:
+**Tool availability.** The agent framework injects several built-in tools by default, including one that spawns sub-agents. A sub-agent would run its retrievals *outside* the approval gate — exactly the thing the whole design exists to prevent.
+
+```text
+❌ WRONG — using the prompt to forbid a tool:
+
+  System prompt: "Do not use the spawn_subagent tool."
+
+  Model sees tools: [write_todos, submit_plan, query_source, spawn_subagent, ...]
+                                                              ↑
+                                                    tool is visible
+                                                    model sometimes calls it anyway
+                                                    (prompts compete with instincts)
+```
+
+```text
+✅ RIGHT — removing the tool before the model sees it:
+
+  Middleware filters request:
+    IN:  [write_todos, submit_plan, query_source, spawn_subagent, read_filesystem, ...]
+    OUT: [write_todos, submit_plan, query_source]
+                                                  ↑
+                                        spawn_subagent is gone
+                                        model cannot call what it cannot see
+                                        this is a guarantee, not a request
+```
 
 ```python
 class AllowedToolsMiddleware(AgentMiddleware):
-    def __init__(self, *, allowed: frozenset[str]) -> None:
-        self._allowed = allowed
-
     def _filter(self, request):
         tools = [t for t in request.tools if t.name in self._allowed]
         return request.override(tools=tools)   # the model never sees the rest
-
-    def wrap_model_call(self, request, handler):
-        return handler(self._filter(request))
 ```
 
-In the teaching examples, we often collapse retrieval behind one generic `query_source` tool. The production orchestrator had a larger but still fixed allow-list:
+The production orchestrator allowed exactly seven tools — the rest were invisible:
 
 ```text
-write_todos
-submit_plan
-query_cortex
-query_iqvia_gmi
-run_analysis
-rebuild_artifacts
-read_file
+write_todos      ← planning only (before approval)
+submit_plan      ← the gate tool
+query_cortex     ← retrieval (plan-gated, only after approval)
+query_iqvia_gmi  ← retrieval (plan-gated, only after approval)
+run_analysis     ← synthesis over already-held data
+rebuild_artifacts← re-render charts from existing evidence
+read_file        ← playbooks only, path-guarded by middleware
 ```
 
-The framework can inject any number of others; the middleware makes them invisible. The rule is a contract, not a request. Retrieval tools are plan-gated, synthesis tools work over already-held evidence, and `read_file` is guarded for playbook files only. Analyst or sub-agent tools are not directly reachable by the orchestrator.
+The framework can inject any number of others; the middleware makes them invisible.
 
 **Gate sequencing, status, concurrency.** Whether the plan is approved, when it locks, how many times it was refined, whether two requests raced — all of that is code (the gate's `interrupt()`, `model_copy` on the plan status, a DynamoDB claim). See [Human-in-the-Loop Plan Approval](./04-planning-and-human-approval.md) for the mechanism. Here the point is only that these were *not* delegated to the prompt.
 
@@ -70,15 +109,31 @@ Now the other side: the judgments no code can make. These are where prompt wordi
 The workflow is written as five numbered, labeled steps — PLAN, SUBMIT, REFINE, EXECUTE, FOLLOW-UP — not as prose. The numbering is not decoration. It gives the model a phase machine it can locate itself in: at any point in a long conversation it matches its situation ("I just received refine feedback") to a step and reads off what to do.
 
 ```text
-Workflow: plan, get approval, then execute.
-  1. PLAN       break the question into steps, record them with write_todos
-  2. SUBMIT     call submit_plan; never call retrieval before approval
-  3. REFINE     update the todos, then call submit_plan again
-  4. EXECUTE    once locked, run the steps; entities are FINAL
-  5. FOLLOW-UP  a new question starts a fresh cycle from step 1
+┌──────────────────────────────────────────────────────────┐
+│           ORCHESTRATOR PHASE MACHINE                     │
+│                                                          │
+│  ① PLAN      User asks a question                        │
+│      │       Model breaks it into steps with write_todos  │
+│      ▼                                                   │
+│  ② SUBMIT    Model calls submit_plan                     │
+│      │       Graph pauses — human sees the plan          │
+│      ▼                                                   │
+│  ③ REFINE   Human says "add X" → feedback arrives        │
+│  (loop)      Model updates todos, calls submit_plan again │
+│      │       ↑ repeats until human approves              │
+│      ▼                                                   │
+│  ④ EXECUTE   Plan is LOCKED — entities are FINAL         │
+│              Model runs retrieval tools, writes report   │
+│      ▼                                                   │
+│  ⑤ FOLLOW-UP New question → back to ① (fresh cycle)     │
+└──────────────────────────────────────────────────────────┘
+
+⚠ Without numbered phases, the model loses track:
+   - calls query_source at ② instead of waiting for ④
+   - re-runs old plan at ③ instead of updating todos first
 ```
 
-Unnumbered prose loses this — models skip phases when the phases have no names. Observed without it: the model calls `query_source` before approval, or re-executes the old plan after feedback instead of updating the todos first.
+Unnumbered prose loses this — models skip phases when the phases have no names.
 
 ### Ordering the model's reasoning
 
@@ -86,54 +141,222 @@ Some rules the code physically cannot impose because there is no code between th
 
 > Resolve the entities FIRST — fill any missing country or brand from context — BEFORE deciding routing and BEFORE asking any clarification.
 
-Routing rules are entity-scoped: whether `SOURCE_A` or `SOURCE_B` serves a "sales" question depends on the brand and country. Route before resolving entities and you route to a source that is invalid for the entity you later settle on. No code sits between "the model reads the question" and "the model picks a source," so the prompt has to fix the order.
+```text
+❌ WRONG ORDER — route first, resolve entities later:
+
+  Question: "Give me my sales"
+
+  Step 1: Pick source
+    Model picks SOURCE_A (handles "sales" questions)
+
+  Step 2: Resolve entities
+    "my" → user default is JAPAN
+    SOURCE_A does not cover JAPAN
+
+  Result: plan routes to a source that cannot serve the entity
+          → retrieval fails, or wrong data returned
+
+──────────────────────────────────────────────────────────────
+
+✅ RIGHT ORDER — resolve entities first, then route:
+
+  Question: "Give me my sales"
+
+  Step 1: Resolve entities
+    "my" → user default is JAPAN, brand = PAXLOVID
+
+  Step 2: Pick source
+    JAPAN + PAXLOVID → SOURCE_B handles this combination
+
+  Result: correct source chosen for the correct entity ✓
+```
+
+No code sits between "the model reads the question" and "the model picks a source." The prompt is the only place to fix this ordering.
 
 ### The priority stack
 
 > Entities named explicitly in the question always win over the defaults in the context block.
 
-Without this line, a user whose default market is `AUSTRALIA` asking for `GERMANY` sales occasionally got an `AUSTRALIA` plan, because the injected default sat at higher salience than the question's own words. The code never sees the defaults — the context block is injected into the model request by middleware and never checkpointed — so only the model can apply the precedence, and only if told to.
+```text
+What the model actually sees (one flat prompt):
+
+  ┌─────────────────────────────────────────┐  ← HIGH salience (top of prompt)
+  │  [User context]                         │
+  │  User defaults: AUSTRALIA / BRAND_A     │  ← injected by middleware
+  │  [/User context]                        │
+  │                                         │
+  │  Give me GERMANY sales for BRAND_B      │  ← user's actual question
+  └─────────────────────────────────────────┘  ← LOWER salience (bottom)
+
+❌ WITHOUT priority rule:
+   Model sees AUSTRALIA at high salience → plans for AUSTRALIA
+   User asked for GERMANY → wrong country, 200 OK
+
+✅ WITH priority rule in prompt:
+   "Entities named in the question always override defaults"
+   Model reads GERMANY in the question → applies priority rule → plans for GERMANY
+```
+
+The code never sees the defaults — the context block is injected into the model request by middleware and never checkpointed — so only the model can apply the precedence, and only if told to.
 
 ## The Case That Has To Be Both
 
-The sharpest example is a rule that is enforced by *neither* side cleanly, and shows exactly why the dividing line exists.
+The sharpest example is a rule that is enforced by *neither* side cleanly. During execution, middleware still injects defaults on every model call — it does not know what phase the run is in. But the human already approved a plan with specific entities.
 
-During execution, the middleware still injects the user's default context ("defaults: AUSTRALIA") on every model call — it does not know what phase the run is in. But the human already approved a plan that resolved the market as `GERMANY`. So the prompt carries the invariant:
+Quick vocabulary check:
 
-> The locked plan's entities are FINAL. Never re-resolve entities from the context block during execution.
+- **Raw question** is only what the user typed.
+- **Model input** is the full bundle the LLM receives after code adds context, history, tool results, and the raw question.
 
-There is no code enforcement possible here. Detecting "the model re-resolved an entity mid-execution" would require reading its intent. The prompt is the *only* thing standing between the injected default and a wrong-market report. When this line was missing, the model re-resolved `GERMANY` back to `AUSTRALIA` mid-run and produced a confident report for the wrong country — a silent failure that looked completely normal in the logs. (This is Bug 1 in the companion source notes.)
+<div class="scrubber" data-scrubber markdown="0">
+  <div class="scrubber-stage">
+    <div class="scrubber-step">
+      <span class="scrubber-time">Planning · default is only a fallback</span>
+      <div class="scrubber-caption">Middleware adds the user's default country, Australia. The user's question explicitly asks for Germany, so the model should resolve Germany.</div>
+      <pre class="scrubber-item">[User context] defaults: AUSTRALIA [/User context]
+"Give me GERMANY sales"
 
-The lesson is not "prompts are unreliable." It is: **know which invariants have no structural enforcement, and treat those prompt lines as load-bearing, because nothing else is holding the weight.**
+resolved entity = GERMANY   <span class="ok">question wins</span></pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">Approval · Germany becomes final</span>
+      <div class="scrubber-caption">The human approves the plan. Execution should now follow the locked plan's entities, not re-run entity resolution from scratch.</div>
+      <pre class="scrubber-item">locked plan:
+  country = GERMANY
+  status = approved   <span class="ok">final for this run</span></pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">Execution · middleware injects again</span>
+      <div class="scrubber-caption">On a later model call, the same context middleware adds Australia again. That default is now stale for this run, but it appears near the top of the prompt.</div>
+      <pre class="scrubber-item">top of prompt:
+  [User context] defaults: AUSTRALIA [/User context]   <span class="warn">freshly injected</span>
+
+conversation history:
+  [tool] Plan approved: GERMANY   <span class="ok">older message</span></pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">Without invariant · wrong report</span>
+      <div class="scrubber-caption">If the prompt lets the model re-resolve during execution, it may pick the high-salience Australia default and produce a normal-looking report for the wrong country.</div>
+      <pre class="scrubber-item">model re-resolves from context
+country = AUSTRALIA
+
+report country = AUSTRALIA   <span class="bad">silent failure</span></pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">With invariant · correct report</span>
+      <div class="scrubber-caption">The prompt line is load-bearing: once the plan is locked, its entities are final. The context block may still be present, but it cannot override the approved plan.</div>
+      <pre class="scrubber-item">prompt invariant:
+  locked plan entities are FINAL
+  never re-resolve from context during execution
+
+report country = GERMANY   <span class="ok">correct</span></pre>
+    </div>
+  </div>
+</div>
+
+Germany did not appear randomly. It entered the run when the user explicitly asked for Germany, then became durable when the human approved a plan whose entities said Germany. The bug is that Australia kept re-entering later as injected default context.
+
+There is no code that can detect "the model re-resolved an entity mid-execution." The prompt is the only thing holding this invariant. When this line was missing, the model produced a confident, well-formatted report for the wrong country.
+
+The lesson: **know which invariants have no structural enforcement, and treat those prompt lines as load-bearing — nothing else is holding the weight.**
 
 ## Grounding: The Purely-Prompt Invariant
 
-The clearest case of a prompt-only rule is grounding, and it is where the domain earns its keep.
+The clearest case of a prompt-only rule is grounding — making sure every number in the report came from a real tool call, not from the model's memory.
 
-> Ground the final report ONLY in approved tool results. If a retrieval call fails, mark the step completed and state plainly in the report that retrieval failed. Never state, estimate, or approximate a figure not present in a tool result. If every retrieval fails, report that and stop.
+```text
+❌ WITHOUT grounding rule:
 
-Why this cannot be code: deciding whether a number in the report came from a tool result or from the model's own memory is not tractable at inference time. The enforcement surface is the prompt; the only backstop is logging every `query_source` call so a post-hoc audit can catch fabricated figures.
+  Step 2: query IQVIA for PAXLOVID market share
+    → API timeout, retrieval fails
 
-Why it matters *here* specifically: this rule is a deliberate counterweight to the base agent prompt appended after it, which says "keep iterating until the task is done." Combined with a failed retrieval, "keep iterating" reads to a model as "find another way to get the number" — and the model's other way is its training data. In a general research tool a plausible guess might be acceptable. In pharmaceutical commercial analytics, a model-fabricated market share sitting next to real retrieved figures is indistinguishable from data. That is a compliance problem, not a quality problem.
+  Base prompt says: "keep iterating until the task is done"
+  Model reads this as: "find another way to get the number"
+  Model's other way: its training data
+
+  Report includes:
+  "PAXLOVID market share in Q3 2024: approximately 34%"
+                                      ↑
+                              fabricated from training data
+                              looks identical to real data
+                              in a regulated domain = compliance violation
+
+──────────────────────────────────────────────────────────────
+
+✅ WITH grounding rule:
+
+  "Ground the report ONLY in approved tool results.
+   If retrieval fails, mark the step completed and state
+   that retrieval failed. Never estimate or approximate."
+
+  Step 2: query IQVIA → fails
+
+  Report includes:
+  "PAXLOVID market share: retrieval failed for this step.
+   Data not available in this report."
+                          ↑
+                    honest, auditable, compliant
+```
+
+Why this cannot be code: there is no way to detect at inference time whether a specific sentence in the model's output came from a tool result or from its training data. The enforcement surface is the prompt only.
 
 Two wording details, each scar tissue from a real failure:
 
-- **"Never state, estimate, or approximate"** — three verbs because the model negotiates. Told not to *state* figures, it estimates ("approximately 40%"); told not to estimate, it gives a range. Enumerating the verbs closes the ladder.
-- **"Mark the step completed"** — because the model invented a `failed` status the status map did not recognize, which silently coerced the step back to `pending`, making a finished-and-failed step look un-started. A failed retrieval is a *completed* step whose outcome is reported in prose.
+```text
+"Never state, estimate, OR approximate"
+         ↑        ↑           ↑
+   Three verbs because the model negotiates one verb at a time:
+   - told not to STATE → it estimates ("approximately 34%")
+   - told not to estimate → it gives a range ("between 30-40%")
+   - all three blocked → it stops
+```
+
+```text
+"Mark the step COMPLETED" (not "failed")
+         ↑
+   The model invented a "failed" status the status map didn't recognize
+   → silently coerced back to "pending"
+   → finished-and-failed step looked un-started
+   → executor retried it forever
+
+   A failed retrieval IS a completed step. The outcome is prose, not data.
+```
 
 ## Deliver The Next Instruction As A Tool Result
 
-One structural choice supports the prompt: how the model learns what to do after a human decision. You could put it in the system prompt ("after approval, execute the steps"). Better is to return it as the tool result of `submit_plan`.
+After the human approves or refines, the model needs to know what to do next. There are two places to put that instruction:
 
-```python
-# on approve
-ToolMessage("Plan approved and locked. Execute the research steps now, exactly as planned.")
-# on refine
-ToolMessage("The user requested changes: ...\n"
-            "Update the todo list, then call submit_plan again. Do not retrieve anything yet.")
+```text
+OPTION A — system prompt only:
+
+  System prompt: "Step 4: once locked, execute the research steps."
+                          ↑
+                  written at the TOP of context,
+                  far from the model's current position
+                  (the model just finished a tool call)
+
+  Model's attention is on the most recent messages.
+  System prompt instruction gets "forgotten" in long conversations.
+  Model sometimes re-enters planning instead of executing. ✗
+
+──────────────────────────────────────────────────────────────
+
+OPTION B — ToolMessage (RIGHT next to where the model is):
+
+  [system prompt] "Step 4: once locked, execute..."  ← pre-explains the concept
+
+  ... many tool messages and model turns later ...
+
+  [ToolMessage from submit_plan]
+  "Plan approved and locked. Execute the research steps now,
+   exactly as planned."                              ← immediate, high salience ✓
+
+  Model is deciding what to call next.
+  The ToolMessage return value is the last thing it read.
+  It executes. ✓
 ```
 
-A tool result has higher salience than the system prompt for what-to-do-next reasoning: the model just finished a tool call and is deciding what to call next, and the return value is right there in context. The system prompt's REFINE and EXECUTE steps *pre-explain* both messages, so when one arrives the model recognizes it as "I am now in step 3" or "step 4." Prompt and code cooperate: the code routes the human's decision into one of two instructions; the prompt taught the model what each one means.
+System prompt and ToolMessage work together: the system prompt *teaches* the model what each message means ("step 4 = execute"), and the ToolMessage *triggers* it at the right moment with high salience.
 
 ## A Versioning Note
 

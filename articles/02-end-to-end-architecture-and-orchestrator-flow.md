@@ -73,7 +73,7 @@ checkpoint resume decision -> run-state queued -> queue message
 
 A queue message can be re-sent. A human approval decision cannot be reconstructed safely after the fact, so it is written first.
 
-The older design where the approve request itself streamed the execution is useful history, but it is not the production target. Treat it as an interim S2 path. The final path returns `202 queued` and lets a worker own the long run.
+An earlier design had the approve request itself stream execution synchronously in the HTTP response — useful for local testing, but not the production target. The production path returns `202 queued` and lets a separate background worker own the long run.
 
 ## Phase 3: the worker resumes with no input
 
@@ -99,14 +99,42 @@ Deleting the SQS message is last because loss is worse than duplication. If the 
 
 The frontend should never consume raw LangGraph or DeepAgents events. Those are framework internals. The UI gets a curated `StreamEnvelope`.
 
+The two phases use different streaming paths:
+
 ```text
-plan phase:     API curator    -> SSE
-research phase: worker curator -> deep-events table -> API SSE tail -> browser
+PLAN PHASE
+──────────
+  Browser ←── SSE ←── API (curator runs here, inline)
+
+RESEARCH PHASE
+──────────────
+  Worker (curator runs here)
+      │
+      │  writes curated events
+      ▼
+  DynamoDB event log
+  (one row per event, keyed by thread_id + seq)
+      │
+      │  browser polls: "give me rows where seq > my Last-Event-ID"
+      ▼
+  API SSE tail endpoint
+      │
+      ▼
+  Browser
 ```
 
-During research, the API's SSE endpoint does not talk to the worker. It tails the durable event log by `seq`, using the browser's `Last-Event-ID` as the reconnect cursor.
+During research, **the API and the worker never talk to each other directly.** The worker writes to the event log. The API reads from it. The browser's `Last-Event-ID` header is the cursor — if the browser reconnects after a network blip, it sends the last `seq` it saw, and the API picks up from there. No events are lost.
 
-Termination is status-based:
+Termination is status-based, not sentinel-based:
+
+```text
+Browser asks: "are we done?"
+API checks: run-state record in database
+
+  if status == "running"  → keep tailing the event log
+  if status == "completed"  → send terminal frame, close stream
+  if status == "failed"     → send terminal frame, close stream
+```
 
 ```python
 if run.status in ("completed", "failed"):

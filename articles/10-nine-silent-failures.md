@@ -108,7 +108,7 @@ decision, feedback = _decision_of(
     interrupt({
         "kind": "plan_approval",
         "thread_id": thread_id,
-        "owner_ntid": owner_ntid,
+        "owner_id": owner_id,
         "plan": plan.model_dump(),
         "prompt": prompt,
     })
@@ -295,20 +295,68 @@ The tradeoff is that the injection is invisible in the checkpointed transcript a
 
 ## 1. Injected context kept overriding a decision the user already made
 
-Before every LLM call in the planning phase, we injected a context block onto the user's message with their default entities and prior conversation history so phrases like "give me my sales" resolve correctly.
+Before every LLM call, middleware injected a context block with the user's default entities and prior conversation history. That is useful for vague questions like "give me my sales."
 
-The bug was that we injected on every model call, including execution calls after the user had already approved a plan with specific entities:
+Two names matter here:
 
-```text
-[User context]
-User defaults: AUSTRALIA / BRAND_A.
-Use these when the question says "my" or omits country/brand.
-[/User context]
+- **Raw question** means the exact text the user typed, before the system adds anything.
+- **Model input** means what the LLM actually receives: system prompt, injected user context, conversation history, tool messages, and the raw question.
 
-give me my sales
-```
+So if the user types `"Give me my sales for GERMANY"`, the raw question contains `GERMANY`. Middleware then wraps extra context around it before the model sees it.
 
-The correction to `GERMANY` lived in a tool message buried mid-conversation, while the Australia default stayed glued to the question on every call at the highest salience. The model re-resolved against Australia during execution and wrote a report about the wrong country.
+Here is the missing moment: **Germany comes from the user's question and then from the human-approved plan.** Australia is only the user's default.
+
+<div class="scrubber" data-scrubber markdown="0">
+  <div class="scrubber-stage">
+    <div class="scrubber-step">
+      <span class="scrubber-time">1 · Middleware adds defaults</span>
+      <div class="scrubber-caption">Before the model sees the question, the API adds account context. The default country is Australia. This is helpful only when the user did not name a country.</div>
+      <pre class="scrubber-item">[User context]
+default country = AUSTRALIA
+[/User context]</pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">2 · User names Germany</span>
+      <div class="scrubber-caption">The actual question explicitly says Germany. During planning, the model should prefer the user's words over the default.</div>
+      <pre class="scrubber-item">[User context] default country = AUSTRALIA [/User context]
+
+"Give me my sales for GERMANY"
+
+resolved country = GERMANY   <span class="ok">correct</span></pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">3 · Human approves Germany</span>
+      <div class="scrubber-caption">The plan is now locked with Germany as the entity. From this point on, execution should use the locked plan, not re-read defaults.</div>
+      <pre class="scrubber-item">approved plan:
+  step 1: query sales
+  entities.country = GERMANY   <span class="ok">locked</span></pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">4 · The bug: defaults return</span>
+      <div class="scrubber-caption">Middleware injects the Australia default again during execution. Without a prompt rule saying locked plan entities are final, the model may re-resolve and drift back to Australia.</div>
+      <pre class="scrubber-item">top of model input:
+  [User context] default country = AUSTRALIA [/User context]   <span class="warn">high salience</span>
+
+later in history:
+  [tool] Plan approved: GERMANY   <span class="ok">buried</span>
+
+model picks AUSTRALIA   <span class="bad">wrong country, 200 OK</span></pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">5 · The fix</span>
+      <div class="scrubber-caption">The context block and execute-phase prompt both state the priority rule: explicit question entities beat defaults, and locked plan entities beat the context block during execution.</div>
+      <pre class="scrubber-item">priority:
+  question entities > user defaults
+  locked plan entities > user defaults during execution
+
+execution country = GERMANY   <span class="ok">correct</span></pre>
+    </div>
+  </div>
+</div>
+
+The bug was that we injected context on every model call, including execution calls after the user had already approved a plan with specific entities. The approved `GERMANY` decision lived in plan state and a tool message, while the Australia default kept being reattached near the top of each fresh model input.
+
+That is why the report could be about the wrong country without any crash: the model did not fail to read Germany during planning. It forgot that Germany was already final during execution.
 
 The obvious fix was wrong. Gating injection on `plan["status"] == "locked"` would break multi-turn sessions because the previous question's locked plan still sits in the `plan` channel while a new question is entering the planning phase.
 
@@ -368,16 +416,31 @@ Lesson: when your code finds "the latest item of type X in a list," enumerate ev
 
 ## 3. A search loop continued past its target and decorated the wrong message
 
-The original reverse-scan condition was:
+The injection code scanned backward through the message list looking for a `HumanMessage` with string content. The original condition:
 
 ```python
 if isinstance(msg, HumanMessage) and isinstance(msg.content, str):
     # inject here
 ```
 
-LangChain messages can carry list-form content for multimodal inputs. If the latest human message has list content, the condition fails and the loop continues backward until it finds an earlier string message.
+LangChain messages can carry list-form content for multimodal inputs (images, documents). If the latest human message has list content, the condition fails and the loop **keeps going backward** until it finds an older string message.
 
-That means the loop can attach turn 2's context block to turn 1's question while turn 2 receives no context at all.
+```text
+Message list (newest at the bottom):
+
+  index 0  HumanMessage  "Give me Germany sales"     ← Turn 1 (string content)
+  index 1  AIMessage     "Here are the results..."
+  index 2  HumanMessage  [image, "Compare these"]    ← Turn 2 (LIST content, fails check)
+
+Backward scan starts at index 2:
+  index 2 → HumanMessage but content is list → FAIL → keep going
+  index 1 → AIMessage → skip
+  index 0 → HumanMessage with string → MATCH → inject here ✗ WRONG TURN
+```
+
+Turn 2's context ("user defaults: Australia") gets injected into Turn 1's question. Turn 2's message receives no context at all. The model plans for Australia when the user asked about Germany — from a turn that already completed.
+
+The fix was to separate "not the target" from "the target exists but cannot be processed":
 
 The fix was to separate "not the target" from "the target exists but cannot be processed":
 
@@ -457,18 +520,35 @@ A deep run finishes, we stream an `end` event, then save the turn to the databas
 
 The bug was that the frontend correctly closes the SSE connection as soon as it receives the `end` event. In Python and Starlette, a client disconnect raises `CancelledError` at the generator's next `await`.
 
-```python
-# BEFORE
-yield end_event
-await save_to_database(...)
+```text
+BEFORE — the save is after the terminal event:
+
+  server                           browser
+    │  yield end_event  ──────────▶  │
+    │                                │  receives "end"
+    │                                │  closes connection immediately ✓
+    │  await save_to_database()      │
+    │       ↑                        │
+    │  CANCELLED — the browser       │
+    │  already left; this await      │
+    │  never resolves                │
+    │  no log, no error, turn lost   │
+```
+
+```text
+AFTER — the save is owned before yielding the terminal event:
+
+  server                           browser
+    │  task = create_task(save)      │
+    │  (save running in background)  │
+    │  yield end_event  ──────────▶  │
+    │                                │  receives "end"
+    │                                │  closes connection ✓
+    │  (background task still runs)  │
+    │  save completes ✓              │
 ```
 
 `CancelledError` is a `BaseException` in Python 3.11+, not an `Exception`, so ordinary `except Exception` blocks never saw it.
-
-Two silent failure modes followed:
-
-- Fast disconnect: the save never starts, so the turn is missing from history entirely.
-- Mid-save disconnect: one row is written, the paired row is cancelled, leaving an orphaned record.
 
 The fix was to spawn a detached background task before yielding the terminal event:
 
@@ -616,6 +696,27 @@ The review habits that caught these before they shipped were consistent:
 
 Built on LangGraph, Python 3.11, DynamoDB, and Starlette SSE. The stack is incidental. Context injection targeting, lock ownership, async cancellation, and writer-reader key mismatch are universal failure classes.
 
+## A note on the approval code snippet
+
+One detail to watch in the approval endpoint pattern above: the code shows a `plan_id` check, but `plan_id` is stable across refinements by design — it names the logical plan, not the exact interrupt. To reject a stale browser tab that approved an older revision, also validate `interrupt_id`, which is minted fresh for each pause:
+
+```python
+gate = read_pending_gate(thread_id)
+if gate is None:
+    raise HTTPException(404)
+if gate["plan"]["plan_id"] != payload.plan_id:
+    raise HTTPException(409, "plan_id_mismatch")
+if gate["interrupt_id"] != payload.interrupt_id:
+    raise HTTPException(409, "interrupt_id_mismatch")
+# only now stage the decision
+persist_resume_decision(thread_id, {"type": "approve"})
+put_run_state(thread_id, run_id, status="queued")
+enqueue_deep_run(thread_id, run_id)
+return {"status": "queued", "run_id": run_id}
+```
+
+`plan_id` catches a plan-content mismatch. `interrupt_id` catches the more common case: the user refined and re-interrupted, but an old tab still has the original interrupt open.
+
 ---
 
 !!! check "You should now understand"
@@ -630,5 +731,38 @@ Built on LangGraph, Python 3.11, DynamoDB, and Starlette SSE. The stack is incid
     ??? success "Example answer"
         For "unconditional lock release," the chapter is [Step 6 · Distributed Locks](07-distributed-locks.md). The failed invariant is: a process may only release the claim it still owns. The review question is: "Does release prove ownership with the current claim token, or does it delete by thread id alone?" The test is a takeover scenario: A acquires, A's lease expires, B acquires, A attempts release, and B's claim must remain.
 
-Thanks and regards,  
-Neelesh Sethi
+## Four more from production (post-release)
+
+The nine above came from a single pre-release review. These four arrived as production PRs in the following weeks. They follow the same pattern: the system reported success, and something semantic was wrong.
+
+### Quadratic writes from replace-semantics streaming
+
+A model that emits reasoning tokens sends many `thinking.delta` events, each carrying the *full accumulated* reasoning text to that point (replace semantics). Persisting each delta naively means N deltas write O(N²) bytes into one DynamoDB partition key, which hit the per-partition write-capacity ceiling (~1,000 WCU/s) mid-run.
+
+The fix: time-coalesce live frames in the curator — flush at most once per 2 seconds per step. The SSE path to the browser stays byte-identical; only the durable-log write is coalesced.
+
+The lesson: replace-semantics streaming plus per-delta persistence is quadratic. Identify the semantics (append vs. replace) before deciding whether to persist every frame or the last.
+
+### Async client bound to a per-job event loop
+
+Each worker job called `asyncio.run()`, which creates and closes a new event loop per job. A cached `httpx.AsyncClient` is bound to the event loop that created it; on the second job, the first client's loop is already closed, and the first Cortex call dies with `Event loop is closed`.
+
+The fix: one process-lifetime `asyncio.Runner`, with pooled clients drained at shutdown. A weakref guard converts any reintroduced per-job `asyncio.run()` into a named error at startup.
+
+The lesson: an async client must never cross event loops. In a worker process that runs many jobs, one process-lifetime runner is the only safe design.
+
+### Burned timeout retried
+
+`ReadTimeout` was classified as a retryable error, so a call that already spent its entire 300-second timeout budget was replayed for another 300 seconds. Two exhausted attempts burned 600 seconds on work that had no chance of succeeding faster.
+
+The fix: only retry errors that fail *before the request was sent* — `ConnectError`, `ConnectTimeout` — plus rate-limit and gateway responses (`429`, `502`, `503`). Use jittered exponential backoff. A `ReadTimeout` means the server acknowledged the request and timed out during processing; retrying it from the start sends a duplicate with no guarantee the first copy was not processed.
+
+The lesson: a burned timeout is spent budget, not a transient blip. Classify retryable errors at the transport layer, not at the exception class.
+
+### Stale plan re-persisted on a follow-up turn
+
+The `plan` channel is `LastValue`. The exit path persisted the plan onto every completed turn's DynamoDB record — including follow-up turns that never called `submit_plan`. This caused a stale prior-turn plan to be stamped onto a follow-up row and resurface later as the current plan.
+
+The fix: stamp `plan.minted_run_id = deep_run_id` at plan creation and persist only when `plan.minted_run_id` matches the current turn's `deep_run_id`. Fail open when either is absent.
+
+The lesson: a sticky `LastValue` channel written only at plan time, combined with end-of-run persistence on every turn, silently re-persists the old value. The per-turn reset signal — the turn's own run id — is the only safe discriminator.

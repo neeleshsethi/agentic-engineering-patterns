@@ -52,6 +52,48 @@ The reasoning: a lost message can be re-enqueued, but a lost approval cannot be 
 
 The approval decision is not written as a normal state field. It is staged into LangGraph's pending-writes area, so the paused `interrupt()` can consume it later.
 
+## What Is The Run-State Record?
+
+Before the pickup ritual makes sense, you need to know what the run-state record is.
+
+It is a single row in the database (one row per run attempt). Think of it as a **status board** for the run that every part of the system can read:
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  RUN-STATE RECORD                                           │
+│                                                             │
+│  thread_id   = "chat-abc"    ← which conversation          │
+│  run_id      = "run-001"     ← which attempt               │
+│  status      = "running"     ← current lifecycle state     │
+│  receive_count = 2           ← how many times SQS retried  │
+│  reason      = null          ← filled on failure           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+The status field moves through a simple lifecycle:
+
+```text
+Approval happens
+      │
+      ▼
+  "queued"   ← API writes this when it enqueues the work
+      │
+      │  Worker picks up the SQS message
+      ▼
+  "running"  ← Worker writes this on first attempt
+  "retrying" ← Worker writes this on attempt 2, 3...
+      │
+      │  Work finishes
+      ▼
+  "completed"  or  "failed"  ← Worker writes this last
+```
+
+Three parts of the system read this record:
+
+- **The SSE tail** — checks status on every poll. When it sees `completed` or `failed`, it sends a final event to the browser and closes the stream. Without this, the browser would spin forever after a crash.
+- **The worker** — reads `receive_count` to know if this is a retry and writes the new status on pickup.
+- **A failure detector** — can flip status to `failed` even if the worker crashes before it can do so itself.
+
 ## Pickup Is A Ritual, Not A Function Call
 
 When a worker receives a message, a fixed sequence runs *before* the graph does:

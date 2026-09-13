@@ -10,6 +10,40 @@ Some agent actions are expensive, slow, or irreversible. A research plan that hi
 
 The running example is a pharmaceutical commercial-analytics agent: it plans a set of data-retrieval steps, a human approves or refines the plan, and only then does it query anything. The identifiers are generic (`BRAND_A`, `SOURCE_A`, `query_source`), but the shape applies to any agent with a costly execute phase.
 
+## The Big Picture First
+
+Before diving into code, here is the shape of the whole system this chapter builds:
+
+```text
+ WITHOUT approval gate          WITH approval gate
+ ───────────────────            ──────────────────
+
+ question                       question
+    │                              │
+    ▼                              ▼
+ Agent plans              Agent calls submit_plan tool
+ (internally,                      │
+  never shown)            Tool calls interrupt()
+    │                     Graph PAUSES — plan shown to human
+    ▼                              │
+ Agent executes           Human: APPROVE or REFINE?
+ (you can't stop it)               │
+    │                    ┌─────────┴──────────┐
+    ▼                    │ APPROVE            │ REFINE
+ Answer                  │                   │
+                         ▼                   ▼
+                  Tool tells agent:   Tool tells agent:
+                  "Execute now."      "Update todos, ask
+                         │             me again."
+                         ▼                   │
+                  Agent executes       Agent edits plan
+                         │             calls tool again ↑
+                         ▼
+                       Answer
+```
+
+The key idea: the `submit_plan` **tool** is the bridge between the agent and the human. The agent calls the tool. The tool pauses everything and shows the human the plan. When the human decides, the tool gets the decision back and **tells the agent what to do next** via a ToolMessage. The agent never talks to the human directly.
+
 ## Start With The Naive Version
 
 Before any approval machinery, the baseline agent is one straight line:
@@ -137,6 +171,43 @@ The problem is the marked line. Applying "add a competitive analysis step" means
 
 The structural fix: the tool never applies feedback. It hands the feedback back to the agent as its tool result, and the "loop" becomes the agent's own loop. Each `submit_plan` call interrupts exactly once and returns.
 
+Here is who does what at each step of a refine round:
+
+```text
+┌─────────┐         ┌──────────┐         ┌──────────┐         ┌──────────┐
+│ Browser │         │   API    │         │  Agent   │         │  Tool    │
+│ (Human) │         │          │         │  (LLM)   │         │submit_plan│
+└────┬────┘         └────┬─────┘         └────┬─────┘         └────┬─────┘
+     │                   │                    │                    │
+     │  "Add a competitor │                    │                    │
+     │   analysis step"  │                    │                    │
+     │──────────────────▶│                    │                    │
+     │                   │  resume graph      │                    │
+     │                   │  with feedback ───▶│                    │
+     │                   │                    │  calls submit_plan │
+     │                   │                    │───────────────────▶│
+     │                   │                    │                    │
+     │                   │                    │  ToolMessage:      │
+     │                   │                    │  "user wants       │
+     │                   │                    │   changes — update │
+     │                   │                    │   todos, then call │
+     │                   │                    │   submit_plan"     │
+     │                   │                    │◀───────────────────│
+     │                   │                    │                    │
+     │                   │                    │  edits its own     │
+     │                   │                    │  todo steps  ◀─── │ (Agent work)
+     │                   │                    │                    │
+     │                   │                    │  calls submit_plan │
+     │                   │                    │  again ───────────▶│
+     │                   │                    │                    │
+     │                   │  interrupt() ◀─────────────────────────│
+     │  new plan + gate  │                    │                    │
+     │◀──────────────────│                    │                    │
+     │                   │                    │                    │
+```
+
+**The key insight:** the `submit_plan` tool is a messenger, not an editor. It passes the human's feedback to the agent as a tool result and pauses again. The agent is the one that reads the feedback and rewrites the plan steps. The tool never touches the plan content itself.
+
 ```python
 def submit_plan(title, scope, runtime) -> Command:
     plan = project_plan(runtime.state.get("todos"))   # from the agent's own todos
@@ -161,15 +232,44 @@ def submit_plan(title, scope, runtime) -> Command:
     })
 ```
 
+Here is the complete picture of both outcomes — approve and refine — showing exactly what the tool returns to the agent each time:
+
 ```text
-agent: writes plan steps
-agent: submit_plan -> interrupt -> human: "add BRAND_A competitive analysis"
-       ToolMessage: "user requested changes... update the todo list, then call submit_plan again"
-agent: edits its steps            <- the AGENT interprets the feedback
-agent: submit_plan -> a NEW interrupt -> human: approve
-       ToolMessage: "Plan approved and locked. Execute now."
-agent: executes
+                    AGENT calls submit_plan tool
+                              │
+                              ▼
+                    Tool builds plan from todos
+                    Tool calls interrupt()
+                    ┌─────────────────────────────┐
+                    │  GRAPH PAUSES               │
+                    │  HTTP request ends          │
+                    │  Plan shown in browser      │
+                    └─────────────────────────────┘
+                              │
+              ┌───────────────┴────────────────────┐
+              │ Human clicks APPROVE                │ Human sends REFINE feedback
+              ▼                                     ▼
+    Worker resumes graph                  API resumes graph
+    interrupt() returns:                  interrupt() returns:
+    {"type": "approve"}                   {"type": "refine",
+                                           "feedback": "add X step"}
+              │                                     │
+              ▼                                     ▼
+    Tool returns ToolMessage:             Tool returns ToolMessage:
+    ┌────────────────────────┐            ┌────────────────────────────────┐
+    │ "Plan approved and     │            │ "User requested changes: add X │
+    │  locked. Execute the   │            │  step. Update the todo list,   │
+    │  research steps now."  │            │  then call submit_plan again." │
+    └────────────────────────┘            └────────────────────────────────┘
+              │                                     │
+              ▼                                     ▼
+    AGENT reads ToolMessage               AGENT reads ToolMessage
+    → runs query_cortex,                  → edits its own todo steps
+      query_iqvia_gmi, etc.               → calls submit_plan again
+    → writes report                       → back to interrupt() ↑
 ```
+
+**The tool is the messenger in both directions.** Going in: it carries the plan to the human via `interrupt()`. Coming back: it tells the agent what the human decided. The agent never talks to the human directly — it only ever reads a ToolMessage.
 
 Each refine round is one full trip: a new tool call, a new `interrupt()`, a new HTTP request. The tool stays dumb; the agent stays the sole author of the plan. The human's feedback reaches the agent as conversational input, never as a direct edit the code performs.
 
@@ -209,18 +309,42 @@ The model only ever writes plan *content*, and only in DRAFT. The `locked` trans
 
 ## Concurrency: One Resume At A Time
 
-Two browser tabs, or a double-clicked approve, can both try to resume the same thread. LangGraph does not support concurrent runs on one thread — they would execute twice and leave the final state to whichever finished last. Claim the thread with a conditional write before resuming.
+Imagine a user opens the plan approval screen in two browser tabs. Both show the same plan. Both have an "Approve" button. If they click approve in tab A and then again in tab B half a second later, two HTTP requests hit your server at almost the same moment — both trying to resume the same graph thread.
+
+LangGraph does not support two runs on the same thread at once. If both requests succeed, the graph executes the research plan twice in parallel, each writing to the same checkpoint. Whichever finishes last wins and overwrites the other's work. The user gets one result, one run's state is silently lost, and nothing logs an error.
+
+The fix is a **claim**: before resuming, write a small record to the database that says "I own this thread right now." The write is conditional — it only succeeds if no one else already holds the claim. The second request races to write the same record, loses the race, and gets a `409 Conflict` back. Exactly one resume proceeds.
+
+```text
+Tab A clicks approve:
+  → try to write CLAIM#thread-123 to database
+  → nobody holds it yet, write succeeds
+  → Tab A resumes the graph ✓
+
+Tab B clicks approve (50ms later):
+  → try to write CLAIM#thread-123 to database
+  → record already exists, write fails
+  → Tab B gets 409 Conflict ✓
+```
+
+In code, the conditional write looks like this:
 
 ```python
 table.put_item(
-    Item={"PK": f"CLAIM#{thread_id}", "SK": "RESUME",
-          "claim_token": token, "expires_at": now + LEASE},
+    Item={
+        "PK": f"CLAIM#{thread_id}",   # one record per thread
+        "claim_token": token,          # a unique ID so only the holder can release it
+        "expires_at": now + 1800,      # auto-expire after 30 min in case of crash
+    },
+    # only succeed if the record does not exist yet, or if it expired
     ConditionExpression="attribute_not_exists(PK) OR expires_at < :now",
     ExpressionAttributeValues={":now": now},
 )
 ```
 
-Two racing resumes hit this write; exactly one wins, the loser gets a 409. The lease lets a crashed resume stream recover, and a token-guarded release stops a slow stream from deleting a newer holder's claim. This is the same pattern, at a smaller scale, as the worker lock in [Distributed Locks](./07-distributed-locks.md).
+The `expires_at` is the crash-recovery handle: if the first request crashes mid-run, its claim expires after 30 minutes and a retry can acquire it again. The `claim_token` UUID prevents a slow stream that outlived its lease from deleting a newer holder's claim when it eventually finishes.
+
+This is the same pattern at a smaller scale as the worker lock in [Distributed Locks](./07-distributed-locks.md).
 
 ## An Implementation Path
 
