@@ -291,6 +291,29 @@ Two payoffs:
 
 Refine, then, is just: the agent edits its todos, calls `submit_plan` again, and the projection produces the revised plan automatically. There is no plan object being mutated in place.
 
+## The Gate Does Not Run On Every Turn
+
+The full plan workflow is expensive and state-changing:
+
+```text
+write_todos -> submit_plan -> interrupt() -> approve/refine -> execute
+```
+
+That workflow should run only when the conversation needs a new approved plan. In the production agent, only two of the common turn shapes opened the gate:
+
+| Turn type | Plan workflow? | What happens |
+|---|---:|---|
+| First question on a thread | Yes | Draft todos, submit the plan, pause for approval. |
+| Follow-up that is a genuinely new topic | Yes | Advance `cycle`, mint a new `plan_id`, and approve a fresh plan. |
+| Entity or metric gap with no safe default | No | Ask one terminal clarification before any todos exist. |
+| Mid-retrieval source elicitation reply | No | Keep the locked plan; re-query only the step that asked back. |
+| Extension, such as "also pull New Zealand" | No | Retrieve directly under the current locked plan. |
+| Evidence reply or presentation change | No | Answer from held evidence or rebuild artifacts once. |
+
+This is why the plan's lifetime matters. A locked plan keeps its `plan_id`, step ids, and carried evidence attached to the same cycle. Re-opening the gate for a source-elicitation reply would mint a new `plan_id`, orphan already-fetched results from the current cycle, and ask the human to approve the same question twice.
+
+The rule is simple enough to review: clarification about the user's intended entity or metric happens before planning; source ambiguity can ride the plan gate; once a plan is locked, only a genuinely new question reopens planning.
+
 ## The State Machine Lives In Code
 
 The plan has a lifecycle, and the code — not the model — owns every transition:

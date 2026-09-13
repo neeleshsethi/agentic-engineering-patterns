@@ -53,6 +53,8 @@ nav:
   - "Step 6 · Distributed locks": 07-distributed-locks.md
   - "Step 7 · Queue and worker execution": 08-queue-and-worker-execution.md
   - "Step 8 · Orchestrator prompt": 09-orchestrator-prompt.md
+  - "Deep dive · Clarifications": 09a-clarifications.md
+  - "Deep dive · Code components and organization": 09b-code-components-and-organization.md
   - "Capstone · Nine silent failures in one agent": 10-nine-silent-failures.md
   - Reference:
       - Glossary: 00-glossary.md

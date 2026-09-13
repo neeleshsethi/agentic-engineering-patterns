@@ -32,9 +32,11 @@ The series is a build path, not a bug catalog. Read it as if you are implementin
 8. [Distributed Locks](07-distributed-locks.md) — make exactly one worker own a run, even under double-clicks, crashes, and retries.
 9. [Queue and Worker Execution](08-queue-and-worker-execution.md) — move approved work out of the API process and make replay safe.
 10. [The Orchestrator Prompt](09-orchestrator-prompt.md) — decide what the prompt shapes and what code must enforce.
+11. [Clarifications](09a-clarifications.md) — handle ask-back turns correctly without confusing source elicitation with plan approval resume.
+12. [Code Components and Organization](09b-code-components-and-organization.md) — keep `agent/deep/` split by ownership so bugs have an obvious home.
 
 ### Finally, review the scars
-11. [Nine Silent Failures](10-nine-silent-failures.md) — the final case study. Each failure should now feel recognizable, not mysterious.
+13. [Nine Silent Failures](10-nine-silent-failures.md) — the final case study. Each failure should now feel recognizable, not mysterious.
 
 ## Reference
 - [Glossary](00-glossary.md) — every term, defined once.
