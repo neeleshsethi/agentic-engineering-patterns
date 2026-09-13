@@ -13,3 +13,7 @@ build/
 *.log
 .env
 .env.*
+
+# Raw source material — kept local. Contains un-genericized internal names and large binaries.
+data/
+docs:images/
