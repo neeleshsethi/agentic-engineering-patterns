@@ -59,6 +59,33 @@ Use this when:
 - No safe default exists.
 - The plan would be misleading without the answer.
 
+## Plan Lifecycle: Replan, Extend, Or Answer From Evidence
+
+The deep plan lifecycle is not "plan on every user message." The full workflow is:
+
+```text
+write_todos -> submit_plan -> interrupt() -> approve/refine -> execute
+```
+
+That workflow runs only when the conversation needs a new approved plan. Other turns reuse the existing locked plan or avoid retrieval altogether.
+
+| Turn type | Plan workflow? | What happens |
+|---|---:|---|
+| First question on a thread | Yes | Create todos, submit a plan, pause at the gate, then execute after approval. |
+| Follow-up that is a genuinely new topic | Yes | Advance `cycle`, mint a fresh `plan_id`, and approve a new plan. |
+| Entity or metric gap with no safe default | No | Ask a terminal clarification before any plan exists. |
+| Mid-retrieval source elicitation reply | No | Keep the locked plan; re-query only the step that asked back. |
+| Extension of the current ask | No | Retrieve directly under the current locked plan, keeping the same `plan_id`. |
+| Evidence reply or presentation change | No | Answer from held evidence or run `rebuild_artifacts` once. |
+
+This gives the plan three practical states after approval:
+
+- **Replan** when the user asks a new question. This opens a new cycle and creates a new `plan_id`.
+- **Extend** when the user adds a small requirement to the current approved question. The plan stays locked; the system retrieves under the current plan.
+- **Do not plan** when the user is answering a source elicitation, asking for a presentation change, or asking something answerable from held evidence.
+
+The invariant is: once a plan is locked, nothing short of a genuinely new question should reopen the approval workflow. Replanning an elicitation reply would detach already-fetched evidence from the current cycle because current-cycle evidence is filtered by `plan_id`.
+
 ## Source Elicitation
 
 Source elicitation is the hard case. It happens after retrieval begins, when a downstream source asks back instead of returning final data.
@@ -96,6 +123,35 @@ The deterministic deep path has three owners:
 That is the "middleware gate" in deep: the model may phrase the relayed question, but the sufficiency/exit path code decides whether a report is allowed.
 
 Deep needs that code backstop because the failure mode is expensive: a polished report written over "which market definition?" looks like success and is wrong.
+
+## Reactive Mode And Its Prompt
+
+Reactive mode is the contrast case. It does not run a plan-gate loop. Its system prompt is built for a one-pass router:
+
+```text
+decide -> call at most the needed data tool once -> answer
+```
+
+The reactive prompt carries several layers in a fixed order:
+
+| Prompt layer | Job |
+|---|---|
+| Role and one-pass mandate | Tell the model this is not a deep research loop. |
+| Persona context | Inject the user's profile/persona. |
+| Tool decision rule | Decide whether to use carried data, refresh, query, clarify, or rebuild artifacts. |
+| Source routing guidance | Show the source catalog and routing cards. |
+| User context | Provide default brand, country, access pairs, and market rules. |
+| Shared rule blocks | Entity resolution, coreference, business defaults, clarification, source routing, parallel-vs-chain, carryover reuse, elicitation relay, rebuild. |
+| Action branches | Choose exactly one: data query, direct conversation answer, terminal clarification, or presentation rebuild. |
+| After-tool rules | Synthesize returned prose/tables; retry only within the per-turn budget. |
+| Fidelity rules | Preserve tables, caveats, footnotes, and source details. |
+| Final answer schema | Return the required JSON response shape. |
+
+Clarification in reactive is therefore mostly prompt-led. The prompt has a `clarification` rule block for entity/metric gaps and an `elicitation_relay` rule block that tells the model to surface a source's question instead of answering over it.
+
+Reactive does have a narrow code guard: `ClarificationGuardMiddleware` enforces the "never two clarification turns in a row" policy by injecting a default-and-declare instruction when the previous turn already asked. It does not decide whether the current turn should clarify. That decision is still prompt/model work.
+
+Deep is different: source elicitation detection is deterministic, and the report boundary is code-enforced by `pending_elicitation()` in the sufficiency/exit path. Reactive can relay an elicitation correctly, but it is much more dependent on the prompt obeying the relay rule.
 
 ## Partial Source Clarification
 
