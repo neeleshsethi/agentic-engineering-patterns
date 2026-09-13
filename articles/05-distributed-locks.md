@@ -1,167 +1,180 @@
 # Distributed Locks
 
-Distributed locks look straightforward until timing, retries, and partial failures are introduced. At that point, a lock can appear to work while still allowing duplicate execution or dead ownership.
+## The problem: two clicks, one plan, two runs
 
-## Why Agent Systems Need Them
+A user opens an approved research plan in two browser tabs and clicks **Approve** in both. Or clicks once, the page is slow, and they click again. Two requests now arrive to run the same plan.
 
-LangGraph does not support two concurrent runs mutating the same thread safely.
+Nothing in the plain design stops them. Both requests start the graph, the plan executes twice — two sets of database queries, double the cost — and the final saved state is left to whichever request happens to finish last. The app returned `200 OK` both times. Nobody sees an error.
 
-If two browser tabs both approve the same plan, both requests can resume the graph. The research plan may execute twice, charge twice, and leave the final checkpoint to whichever run writes last.
+We need one rule: **only one request may run a given conversation at a time.** Everyone else must be turned away. That rule is a *lock*.
 
-An in-process Python lock is not enough when you have multiple API replicas. The lock must live where every replica can see it.
+> **[Lock](00-glossary.md#lock)** — a rule enforced through data: "only one process may act on X at a time." **[Claim](00-glossary.md#claim)** — this series' word for a lock that guards a resumable run: a small marker a request writes before running that says *"I'm running this thread — hands off."*
+
+## Why an in-process lock is not enough
+
+Your API does not run as one process. It runs as several identical copies — [replicas](00-glossary.md#replica) — behind a load balancer. The two approve clicks can land on two different replicas.
 
 ```text
-Browser tab A -> API replica 1 -> DynamoDB claim
-Browser tab B -> API replica 2 -> same DynamoDB claim
+Browser tab A  ->  API replica 1  ┐
+                                  ├─>  the lock must live HERE, where both can see it
+Browser tab B  ->  API replica 2  ┘
 ```
 
-## Failure Modes
+A Python `threading.Lock` lives inside one replica's memory and is invisible to the other. The lock has to live somewhere every replica can see: a database. We use one DynamoDB item.
 
-- Lease expiry shorter than real work duration
-- Unlock operations that do not verify ownership
-- Retry loops that reacquire locks without reconciling prior state
-- Lock state stored only in one process while other replicas keep running
-- Claim items that use a different key shape from release code
+## `attribute_not_exists` in plain English
 
-## DynamoDB-Specific Concerns
+The whole lock rests on one database feature: the [**conditional write**](00-glossary.md#conditional-write) — a write that only succeeds if a condition is true *at the moment of writing*, with no gap for a second writer to slip in.
 
-With DynamoDB-backed coordination, conditional writes help, but they are not enough by themselves. You still need clear ownership tokens, lease renewal strategy, and recovery behavior for crashed workers.
-
-## `attribute_not_exists` In Plain English
-
-In DynamoDB, a conditional write only succeeds if its condition is true at write time.
-
-`attribute_not_exists(PK)` means "only write this item if there is not already an item with this partition key attribute."
-
-For a lock, that means "acquire the claim only if nobody currently owns it."
+`attribute_not_exists(PK)` is the condition **"only if there is no item with this key yet"** — in plain words, *"only if this slot is empty."* For a lock, that means *"acquire only if nobody holds it."*
 
 ```python
 table.put_item(
     Item={
-        "PK": f"CLAIM#{thread_id}",
+        "PK": f"CLAIM#{thread_id}",   # the slot this claim lives in
         "SK": "RESUME",
-        "claim_token": token,
-        "expires_at": now + 1800,
+        "claim_token": token,          # who holds it (explained below)
+        "expires_at": now + 1800,      # when it lapses (explained below)
     },
     ConditionExpression="attribute_not_exists(PK) OR expires_at < :now",
     ExpressionAttributeValues={":now": now},
 )
 ```
 
-The second half, `expires_at < :now`, allows recovery from a crashed worker whose lease expired.
+Read the condition as one sentence: **"write this claim only if the slot is empty, OR the claim already there has expired."** Two racing approves both attempt this write; DynamoDB evaluates the condition and performs the write as one atomic step, so exactly one wins. The winner runs the plan. The loser's write is rejected with `ConditionalCheckFailedException` — which is not an error, it is the expected **"someone else got there first"** signal. Return a 409 and stop.
 
-If another request already owns an unexpired claim, DynamoDB rejects the write with `ConditionalCheckFailedException`. That exception is the expected "lock busy" signal.
+## The lease must be short, the work is long
 
-## Ownership Token Diagram
+Why is there an `expires_at` at all? Because of a dilemma:
 
-```text
-Acquire
-  token = random UUID
-  write CLAIM#thread_id if absent or expired
+- **If the claim never expires**, a request that crashes while holding it wedges the conversation *forever*. Every later request finds a live claim and backs off, until a human manually deletes a database row.
+- **If the claim expires quickly**, a healthy request whose real work runs longer than the expiry loses the claim mid-run.
 
-Run
-  stream graph resume
+The way out is renewal. Keep the expiry short (minutes) and have the *living* holder keep pushing it forward while it works. This sliding expiry is the claim's [**lease**](00-glossary.md#lease).
 
-Release
-  delete CLAIM#thread_id only if claim_token == token
-```
-
-The token matters because leases expire. A slow old worker must not delete a newer worker's claim.
+The natural place to renew is wherever the work already proves it is both alive and making progress. In a checkpointing graph, that is each [checkpoint](00-glossary.md#checkpoint) write — not a wall-clock timer. (A timer keeps renewing a process that is alive but stuck; a progress-tied renewal only extends a run that is actually advancing.)
 
 ```python
-table.delete_item(
-    Key={"PK": f"CLAIM#{thread_id}", "SK": "RESUME"},
-    ConditionExpression="claim_token = :token",
-    ExpressionAttributeValues={":token": token},
-)
-```
-
-## The Lease Must Be Short, The Work Is Long
-
-These two facts pull in opposite directions:
-
-- If the lease is long, a crashed owner wedges the thread until a human deletes a database item. Every later worker finds a "live" claim and backs off forever.
-- If the lease is short, a healthy owner whose real work takes longer than the lease loses the claim mid-run.
-
-The resolution is renewal. Keep the lease short (minutes) and have the living owner push `expires_at` forward while it works. The natural place to renew is wherever the work already proves it is alive and making progress. In a checkpointing graph, that is each checkpoint write, not a wall-clock timer.
-
-A timer renews a process that is alive but stuck. A progress-tied renewal only extends a run that is actually advancing, so a hung worker stops renewing and the claim is reclaimed.
-
-```python
-# renew, piggybacked on each checkpoint, guarded by the same token
+# renew, piggybacked on each checkpoint write
 table.update_item(
     Key={"PK": f"CLAIM#{thread_id}", "SK": "RESUME"},
     UpdateExpression="SET expires_at = :new",
-    ConditionExpression="claim_token = :token",   # only my claim
-    ExpressionAttributeValues={":new": now + LEASE, ":token": token},
+    ConditionExpression="claim_token = :token",   # only if it is still MY claim
+    ExpressionAttributeValues={":new": now + 1800, ":token": token},
 )
 ```
 
-Every write to the claim — acquire, renew, release — carries the token condition. The size rule that falls out: the lease floor must exceed the longest single unit of work between renewals (one model call or one tool call), never the whole run.
+**Size rule:** the lease must be longer than the longest single unit of work between renewals (one model call or one tool call) — never the whole run, which can be far longer.
 
-## Tenure Token, Not Worker Identity
+## Tenure token, not worker identity
 
-The claim identifies a *tenure*, not a worker. Every acquisition mints a brand-new random token, even if the same worker reacquires later.
+Look at that `claim_token = :token` condition. Every write to the claim — acquire, renew, release — is guarded by *"only if the stored token still equals mine."* The [**token**](00-glossary.md#token) is a fresh random string minted each time the claim is acquired. It identifies **this specific tenure**, not the worker.
 
-Think of a hotel key card. At check-in the desk programs a new card for the room; your name is not on it. When the next guest checks in, the door is reprogrammed for their card and your old card simply stops opening the door. Nobody has to find you and revoke anything.
+The mental model is a hotel key card. At check-in the desk programs a *new* card for the room; your name is not on it. When the next guest checks in, the door is reprogrammed for their card, and your old card simply stops working. Nobody has to find you and take your card away — it just no longer matches the door.
 
-Takeover works the same way. A new owner overwrites the expired claim with its own token. There is no separate "break the old lock" step, and the old owner is never consulted. Its token was never revoked — it just no longer matches what is in the door.
+Takeover works exactly this way. A new holder overwrites the expired claim with its own token. There is no separate "break the old lock" step, and the old holder is never told. Its token was never revoked — it just stops matching what is in the slot.
 
-```text
-t=0    A acquires, token "aaa". Writes claim if absent or expired.
-t=0-40 A renews on every checkpoint. expires_at slides forward.
-t=45   A freezes (GC pause, network partition). No checkpoints, no renews.
-t=55   expires_at passes. Nothing happens in the table. Expiry is not an event.
-t=60   B takes over: the same conditional write now sees an expired claim, succeeds,
-       overwrites the item with token "bbb".
-t=75   A unfreezes, still believing it owns the thread.
-```
+Watch one full takeover play out. Each state is one real DynamoDB item; step through it:
 
-The last line is the real problem. Expiry is silent, so a frozen owner has no idea it was replaced. This is the zombie.
+<div class="scrubber" data-scrubber markdown="0">
+  <div class="scrubber-stage">
+    <div class="scrubber-step">
+      <span class="scrubber-time">t = 0 · A acquires</span>
+      <div class="scrubber-caption">Worker A mints token "aaa" and writes the claim — the slot is empty, so the conditional write succeeds.</div>
+      <pre class="scrubber-item">CLAIM#abc { owner: "aaa", expires_at: 600 }   <span class="ok">← A holds it</span></pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">t = 0…40 · A renews</span>
+      <div class="scrubber-caption">On every checkpoint, A renews. The lease slides forward. A is healthy.</div>
+      <pre class="scrubber-item">CLAIM#abc { owner: "aaa", expires_at: 640 }   <span class="ok">← lease pushed forward</span></pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">t = 45 · A freezes</span>
+      <div class="scrubber-caption">A hits a GC pause or a network partition. No checkpoints, so no renewals. The table does not change.</div>
+      <pre class="scrubber-item">CLAIM#abc { owner: "aaa", expires_at: 640 }   <span class="warn">← frozen, not renewing</span></pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">t = 55 · lease lapses</span>
+      <div class="scrubber-caption">expires_at passes. Nothing happens in the table — expiry is not an event. It only means the next acquire's condition will now pass.</div>
+      <pre class="scrubber-item">CLAIM#abc { owner: "aaa", expires_at: 640 }   <span class="warn">← now < 'now'; reclaimable</span></pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">t = 60 · B takes over</span>
+      <div class="scrubber-caption">Worker B runs the same acquire. The "OR expires_at < now" half is now true, so the write succeeds and overwrites the whole item. That overwrite IS the takeover.</div>
+      <pre class="scrubber-item">CLAIM#abc { owner: "bbb", expires_at: 660 }   <span class="ok">← B holds it now</span></pre>
+    </div>
+    <div class="scrubber-step">
+      <span class="scrubber-time">t = 75 · the zombie wakes</span>
+      <div class="scrubber-caption">A unfreezes, still believing it owns the thread. Its next renew is guarded by owner = "aaa", but the item says "bbb". The write fails. A is fenced out — its card no longer opens the door.</div>
+      <pre class="scrubber-item">renew if owner = "aaa"  vs  item owner "bbb"   <span class="bad">✗ ConditionalCheckFailed</span></pre>
+    </div>
+  </div>
+</div>
 
-## The Write Fence: When Even the Lock Check Races
+The last frame is the danger the token defends against: a frozen holder has no idea it was replaced, because expiry is silent. A process in that state is a [**zombie**](00-glossary.md#zombie).
 
-A lock check at the top of a critical section is a check-then-act gap: the owner can lose the claim in the window between checking and writing. So the lock is not the last line of defense. The *data write itself* is.
+## The write fence: when even the lock check races
 
-Make every real write conditional on a slot that only the rightful owner can fill. If a per-item sequence number must be unique, write it with "this slot must be empty." A zombie whose sequence counter has fallen behind the new owner collides on its very next write.
+A lock check at the top of a critical section is a *check-then-act* gap: a holder can lose the claim in the window between checking it and writing. So the lock is not the last line of defense — the **data write itself** is.
+
+Make every real write conditional on a slot only the rightful owner can fill. If each event carries a unique, ever-increasing number, write it with *"this slot must be empty."* A zombie whose counter has fallen behind the new holder collides on its very next write. This is a [**write fence**](00-glossary.md#fencing).
 
 ```python
 try:
     table.put_item(
         Item={"PK": thread_id, "SK": seq, "idem_key": key, ...},
         ConditionExpression="attribute_not_exists(PK)",   # this exact slot must be empty
-        ReturnValuesOnConditionCheckFailure="ALL_OLD",
+        ReturnValuesOnConditionCheckFailure="ALL_OLD",     # on failure, hand me the occupant
     )
-except ClientError:                       # collision — inspect the occupant
-    existing = read_returned_item()
+except ClientError:
+    existing = read_returned_item()   # someone is already in my slot — who?
 
     if existing["idem_key"] == my_write.idem_key:
-        # Branch 1: the occupant is my own logical write. A retry or replay already
-        # landed it. The write is satisfied; continue.
+        # Branch 1 — the occupant is my OWN logical write. A retry or a replay already
+        # landed it. The write is already satisfied; carry on.
         return seq
 
     lock = get_claim(thread_id)
     if lock is None or lock["owner"] != token or lock["expires_at"] < now:
-        # Branch 2: I am the zombie. My claim was taken while I was frozen.
+        # Branch 2 — I am the zombie. My claim was taken while I was frozen.
         # Stop writing entirely. Never renumber past the collision.
         raise ZombieWriter(thread_id)
 
-    # Branch 3: foreign occupant, but I still hold the claim — a dead predecessor's
+    # Branch 3 — foreign occupant, but I DO still hold the claim: a dead predecessor's
     # in-flight write landed after I started. Re-read the max, hop over it, retry.
     seq = reseed()
     retry_bounded()
 ```
 
-Three things make this work:
+Three ideas make this hold:
 
-- **The corruption attempt is the detection.** The zombie never has to be told it lost; the very write that would corrupt the log is the atomic operation that reveals it lost. The storage layer is the final arbiter of who is alive.
-- **"Mine" is by content, not identity.** Branch 1 compares a deterministic idempotency key, not a worker id. If the key is derived from execution position (not from the sequence number, which changes on replay), an equal key means the logical write already exists and who physically wrote it is irrelevant.
+- **The corruption attempt is the detection.** The zombie is never told it lost. The very write that would have corrupted the log is the atomic operation that reveals it lost. The storage layer is the final arbiter of who is alive.
+- **"Mine" is decided by content, not identity.** Branch 1 compares an [idempotency key](00-glossary.md#idempotency-key) — a value derived from *execution position*, identical on replay — not a worker id. Equal key means the logical write already exists; who physically wrote it is irrelevant. (This is why the key must not be built from the sequence number, which changes on replay — see [Durable Async Runs](07-durable-async-agent-runs.md#sequence-number-versus-idempotency-key).)
 - **The lock read is lazy.** Healthy workers never poll the claim. It is read only on the rare collision path, so the common case pays nothing.
+
+## Release must prove ownership
+
+The same lesson returns at cleanup. Releasing the claim is a *token-guarded* delete:
+
+```python
+table.delete_item(
+    Key={"PK": f"CLAIM#{thread_id}", "SK": "RESUME"},
+    ConditionExpression="claim_token = :token",   # only delete MY claim
+    ExpressionAttributeValues={":token": token},
+)
+```
+
+Without the guard, a slow request that already lost its lease would, on teardown, delete the *next* holder's claim — reopening the exact double-run window the lock exists to close. "Release a lock" and "release *your* lock" are different operations.
 
 ## Guardrails
 
-- Use unique ownership identifiers
-- Verify ownership on release
-- Size leases from observed worst-case work, not optimistic averages
-- Instrument lock acquisition, renewal, and expiry paths
-- Treat conditional write failures as normal contention, not infrastructure failure
+- Put the lock where every replica can see it — a database item, never process memory
+- Treat `ConditionalCheckFailedException` as normal contention, not an infrastructure error
+- Mint a fresh ownership token per acquisition; guard every renew, release, and fence with it
+- Size the lease from observed worst-case work between renewals, not optimistic averages
+- Renew on progress (each checkpoint), never on a wall clock
+- Back the lock with a write fence, so correctness survives even a raced lock check
+- Verify ownership on release; never delete a claim unconditionally
+
+---
+*Next: [Durable Async Runs](07-durable-async-agent-runs.md) — the full run that survives crashes, deploys, and reconnects, of which this lock is one part. New term? Check the [glossary](00-glossary.md). Confused by any step above? Ask — that is what your teacher is for.*

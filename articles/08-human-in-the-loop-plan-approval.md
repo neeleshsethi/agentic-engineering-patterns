@@ -37,7 +37,25 @@ Command(resume={"type": "approve"})
 Command(resume={"type": "refine", "feedback": "add a competitive analysis step"})
 ```
 
-LangGraph finds the paused graph in the checkpoint, re-runs the node, and delivers the `Command` as the return value of `interrupt()`. That is the entire mechanism: two requests, one checkpoint, one `interrupt()` call. Everything else in this article is built on top.
+LangGraph finds the paused graph in the [checkpoint](00-glossary.md#checkpoint), re-runs the node, and delivers the `Command` as the return value of `interrupt()`. That is the entire mechanism: two requests, one checkpoint, one `interrupt()` call. Everything else in this article is built on top.
+
+```mermaid
+sequenceDiagram
+    participant U as Browser
+    participant A as API
+    participant C as Checkpoint (DynamoDB)
+    U->>A: POST (propose)
+    A->>C: run graph, saver.put() each step
+    A->>C: interrupt() freezes state
+    A-->>U: stream plan, close (no "end")
+    Note over U,C: minutes or days pass; no process is running
+    U->>A: POST /approve  (second request)
+    A->>C: read pending interrupt, validate
+    A->>C: Command(resume) → reload, re-run node from top
+    A-->>U: stream execution to "end"
+```
+
+The dashed pause is the whole point: between the two requests, **nothing is running**. The plan lives in the checkpoint, and any [replica](00-glossary.md#replica) can pick it up.
 
 ## The Idempotency Rule You Cannot Ignore
 

@@ -39,7 +39,7 @@ Silent failures are expensive because they are hard to detect and hard to debug:
 
 This repository is written for Python engineers who know ordinary web APIs and want to understand production agent systems.
 
-You do not need to be a LangGraph expert before reading it. You do need to track four ideas:
+Every term this series uses is defined once in the [glossary](00-glossary.md), and each article links there the first time it uses a word. You do not need to be a LangGraph expert before reading it. You do need to track four ideas:
 
 - A graph run can pause and resume later from a checkpoint.
 - Agent state is durable data, not just local Python variables.
