@@ -31,6 +31,9 @@ Silent failures are expensive because they are hard to detect and hard to debug:
 - SSE cancellation handling that leaves background work running
 - DynamoDB persistence behavior that breaks resumability
 - Distributed locking mistakes that look safe until concurrent load arrives
+- Durable async runs where state must outlive the process that started it
+- Human-in-the-loop approval gates that resume safely across requests and replicas
+- Orchestrator prompts that draw the line between judgment and enforcement
 
 ## Intended Audience
 
@@ -52,6 +55,9 @@ Read the series in this order:
 3. Read `03-langgraph-state.md` before reading any checkpoint examples.
 4. Read `04-sse-cancellation.md` before changing streaming code.
 5. Read `05-distributed-locks.md` before touching DynamoDB claims.
-6. Read `06-nine-silent-failures-langgraph-research-agent.md` last.
+6. Read `06-nine-silent-failures-langgraph-research-agent.md` next.
+7. Read `07-durable-async-agent-runs.md` to see how the pieces combine into a run that survives crashes, deploys, and reconnects.
+8. Read `08-human-in-the-loop-plan-approval.md` for the approval gate that pauses a run for a human and resumes it safely.
+9. Read `09-designing-the-orchestrator-prompt.md` last, for where prompt wording ends and code enforcement begins.
 
 The long article assumes you understand the vocabulary from the focused articles. If a code snippet looks small, ask what persisted before and after it runs. That question catches most silent failures.
