@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 06 · Carryover Without Context Poisoning</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* ── Manifest animation (scoped) ──────────────────────────────── */
+    .cm-wrap { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.8rem; align-items: start; }
+    @media (max-width: 860px) { .cm-wrap { grid-template-columns: 1fr; } }
+
+    .cm-col-h { font-size: 0.7rem; font-weight: 900; letter-spacing: 0.07em; text-transform: uppercase; color: #815017; margin-bottom: 0.4rem; display: flex; justify-content: space-between; align-items: baseline; }
+    .cm-col-h span { color: #60717b; font-weight: 700; letter-spacing: 0; text-transform: none; }
+
+    .cm-state { background: #102932; border: 1px solid #0b1f26; border-radius: 8px; padding: 0.55rem; min-height: 300px; max-height: 344px; overflow-y: auto; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.66rem; }
+    .cm-ctx { background: rgba(255,255,252,0.94); border: 1px solid #d9d1c5; border-radius: 8px; padding: 0.55rem; min-height: 300px; }
+
+    .cm-card { border: 1px solid #24405a; border-radius: 7px; padding: 0.5rem 0.6rem; margin-bottom: 0.5rem; color: #cfe0e8; background: #14313c; animation: cmIn 0.4s ease both; position: relative; }
+    .cm-card .kk { color: #7dd3fc; } .cm-card .vv { color: #eef3f1; } .cm-card .bool { color: #86efac; }
+    .cm-card .rows { color: #fca5a5; font-weight: 700; }
+    .cm-card .size { position: absolute; top: 0.45rem; right: 0.55rem; font-size: 0.6rem; font-weight: 800; color: #fbbf24; background: #3a2e10; border-radius: 4px; padding: 0.05rem 0.35rem; }
+    .cm-card.hot { box-shadow: 0 0 0 2px #4ade80; }
+    .cm-card.warn { box-shadow: 0 0 0 2px #fbbf24; }
+
+    .cm-line { display: block; padding: 0.4rem 0.45rem; border-bottom: 1px solid #ece5d8; color: #33414a; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.66rem; line-height: 1.4; word-break: break-word; animation: cmIn 0.45s ease both; }
+    .cm-line .pid { color: #1f6680; font-weight: 700; } .cm-line .ok { color: #217a3a; } .cm-line .rc { color: #b8860b; font-weight: 700; }
+    .cm-line.hot { background: #eafaf1; } .cm-line.warn { background: #fff6e0; }
+    .cm-sentinel { font-size: 0.62rem; color: #7c5cc4; font-weight: 800; margin-bottom: 0.3rem; }
+    .cm-rollup { padding: 0.35rem 0.45rem; color: #7a6a4a; font-style: italic; font-size: 0.66rem; }
+
+    .cm-meter { margin-top: 0.7rem; display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; font-size: 0.8rem; }
+    .cm-bar { flex: 1 1 220px; height: 0.7rem; border-radius: 6px; background: #e7e0d3; overflow: hidden; min-width: 160px; }
+    .cm-bar > i { display: block; height: 100%; width: 0.4%; background: linear-gradient(90deg,#25806f,#4ade80); transition: width 0.5s ease; }
+    .cm-meter b { color: #172126; } .cm-meter .st { color: #b4462b; font-weight: 800; } .cm-meter .cx { color: #1f6680; font-weight: 800; }
+
+    .cm-decision { margin-top: 0.6rem; border-radius: 8px; padding: 0.55rem 0.7rem; font-size: 0.86rem; display: none; animation: cmIn 0.4s ease both; }
+    .cm-decision.show { display: block; }
+    .cm-decision.reuse { border: 1px solid #b9d9d4; background: #eefbf7; }
+    .cm-decision.requery { border: 1px solid #ead29b; background: #fff7d9; }
+    .cm-decision code { font-size: 0.82em; }
+
+    .cm-controls { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.85rem; flex-wrap: wrap; }
+    .cm-btn { border: 1px solid #c9d7d3; border-radius: 8px; background: #fff; color: #172126; min-height: 2.2rem; padding: 0.4rem 0.9rem; font: inherit; font-size: 0.88rem; font-weight: 700; cursor: pointer; }
+    .cm-btn:hover { border-color: #25806f; background: #f4fbf8; }
+    .cm-btn.primary { background: #255f85; border-color: #1f5273; color: #fff; }
+    .cm-btn.primary:hover { background: #1f5273; }
+    .cm-cap { font-size: 0.82rem; color: #38505a; min-height: 1.2rem; }
+    .cm-cap b { color: #172126; }
+
+    @keyframes cmIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+  </style>
+</head>
+<body>
+<div class="lesson-shell">
+  <header class="topbar">
+    <div class="brand"><span>Lesson 06</span><small>Carryover Without Context Poisoning</small></div>
+    <nav class="nav-actions">
+      <a class="primary-link" href="index.html">Index</a>
+      <button class="icon-btn" data-prev>Prev</button>
+      <span class="progress" data-progress></span>
+      <button class="icon-btn" data-next>Next</button>
+    </nav>
+  </header>
+
+  <main class="deck">
+    <!-- 1 · Title -->
+    <section class="slide">
+      <p class="eyebrow">Production Deep Agent Engineering</p>
+      <h1>Reuse the answer, not the megabytes</h1>
+      <p class="lead">A Cortex call returns a prose answer <em>and</em> a data table that can be a thousand rows. You want the model to reuse a prior turn's answer instead of re-querying — but you cannot paste a thousand rows back into the window every turn. So you inject an index of metadata, never the data.</p>
+      <div class="meta"><span class="pill">9 slides</span><span class="pill">Data manifest</span><span class="pill">Anti-poisoning</span><span class="pill">Live demo</span></div>
+    </section>
+
+    <!-- 2 · Two ways to lose -->
+    <section class="slide">
+      <p class="eyebrow">The problem</p>
+      <h2>Two ways to lose, and the manifest avoids both</h2>
+      <div class="grid">
+        <div class="panel warn"><span class="label">Re-query what you hold</span>The answer is already in <code>state["source_results"]</code>. Re-querying Cortex is slow, costly, and sometimes non-deterministic — wasteful when you already have the answer.</div>
+        <div class="panel danger"><span class="label">Paste the data back</span>Avoid re-querying by re-injecting the rows and you <strong>poison the window</strong>: a thousand stale rows bury the conversation, blow the token budget, and degrade attention.</div>
+      </div>
+      <p class="lead">The fix is to give the model an <strong>index</strong> of what it holds — shape and age in ~100 bytes — and let it decide reuse-versus-refetch itself.</p>
+    </section>
+
+    <!-- 3 · Schema: index not copy -->
+    <section class="slide">
+      <p class="eyebrow">Index, not copy</p>
+      <h2>What is in state vs. what the model sees</h2>
+      <div class="grid">
+        <div class="panel"><span class="label">source_results item (state · MB)</span>
+<pre style="margin-top:0.3rem;"><code>{
+  "provenance_id": "SUBNATIONAL:plan-c1-1:step-1:a3f9c2d1",
+  "source": "iqvia_gmi",
+  "sub_question": "NZ subnational sales by region, 2024",
+  "success": true,
+  "retrieved_at": "2026-09-14",
+  "answer": "Auckland led at 32%, then Wellington…",
+  "data": [ /* … 412 rows … */ ]
+}</code></pre></div>
+        <div class="panel accent"><span class="label">manifest line (context · ~100 B)</span>
+<pre style="margin-top:0.3rem;"><code>- {provenance_id} | ok={bool}
+  | rows={len(data)}
+  | retrieved {retrieved_at[:10]}
+  | {sub_question[:80]}
+
+→ SUBNATIONAL:plan-c1-1:step-1:a3f9c2d1
+  | ok=True | rows=412
+  | retrieved 2026-09-14
+  | NZ subnational sales by region, 2024</code></pre></div>
+      </div>
+      <p class="lead">The row <em>count</em> rides the wire; the rows never do.</p>
+    </section>
+
+    <!-- 4 · ANIMATION -->
+    <section class="slide">
+      <p class="eyebrow">Live demo · press play</p>
+      <h2>1,000 rows in state, one line in context</h2>
+      <div class="cm-wrap">
+        <div>
+          <div class="cm-col-h">state["source_results"] <span>durable · grows · MB</span></div>
+          <div class="cm-state" id="cm-state"></div>
+        </div>
+        <div>
+          <div class="cm-col-h">model context — [held data] <span>~100 B / line</span></div>
+          <div class="cm-ctx" id="cm-ctx"></div>
+        </div>
+      </div>
+      <div class="cm-meter">
+        <span>state <b class="st" id="cm-mb">0.0 MB</b></span>
+        <div class="cm-bar"><i id="cm-fill"></i></div>
+        <span>context <b class="cx" id="cm-bytes">0 B</b></span>
+      </div>
+      <div class="cm-decision" id="cm-dec"></div>
+      <div class="cm-controls">
+        <button class="cm-btn primary" id="cm-play">▶ Play</button>
+        <button class="cm-btn" id="cm-step">Step ›</button>
+        <button class="cm-btn" id="cm-reset">⟲ Reset</button>
+        <span class="cm-cap" id="cm-cap">Each turn appends a full result to state; the manifest injects only a metadata line.</span>
+      </div>
+    </section>
+
+    <!-- 5 · Ambient not a tool -->
+    <section class="slide">
+      <p class="eyebrow">Why ambient</p>
+      <h2>Injected every turn, not a lookup tool</h2>
+      <div class="grid">
+        <div class="panel accent"><span class="label">Ambient manifest</span>Rebuilt from state and framed onto the latest human message via <code>wrap_model_call</code> — transient, never checkpointed. The option to reuse is always in view.</div>
+        <div class="panel warn"><span class="label">A search_held_data tool</span>Costs extra model turns and <strong>fails silently</strong>: when the model doesn't think to call it, it just re-queries and nothing flags the missed reuse.</div>
+      </div>
+      <p class="lead">"The model can only reuse what it knows it holds — and it can't ask about what it doesn't know exists." Capped at the newest 30 lines, newest-first; older ones roll into one honest line.</p>
+    </section>
+
+    <!-- 6 · Two boundaries -->
+    <section class="slide">
+      <p class="eyebrow">Keeping reuse honest</p>
+      <h2>Two hard boundaries — the anti-poisoning guarantees</h2>
+      <table>
+        <thead><tr><th>Boundary</th><th>Rule</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Prose-only reuse</td><td>Reuse a held <strong>answer's text</strong>, never its data rows. Need figures the prose doesn't state? Re-query — never estimate.</td><td>The rows aren't in context, only the pointer is. <code>rows=412</code> says data <em>exists</em> to re-pull, not that it's in the window.</td></tr>
+          <tr><td>Staleness check</td><td>Every line carries <code>retrieved</code>. Prefer a fresh pull when held data looks stale; old rollups say "ask the user first."</td><td>A follow-up asking for "current" numbers must not silently reuse a week-old table.</td></tr>
+        </tbody>
+      </table>
+      <p class="lead">Reuse the <em>conclusion</em> a prior turn reached; re-fetch the <em>evidence</em> whenever the new answer depends on numbers you are not holding.</p>
+    </section>
+
+    <!-- 7 · Reuse is a plan step -->
+    <section class="slide">
+      <p class="eyebrow">Visible at approval</p>
+      <h2>Reuse is a plan step, not a hidden optimization</h2>
+      <p class="lead">At plan time the orchestrator writes a step with <strong>no <code>[source:]</code> tag</strong> that names the held result by its provenance id, so a reviewer sees the reuse before approving.</p>
+      <div class="grid">
+        <div class="panel accent"><span class="label">Reuse step (no source tag)</span><code>Reuse the sales already retrieved (SUBNATIONAL:plan-c1-1:step-1:a3f9c2d1) [group: 1 parallel]</code></div>
+        <div class="panel warn"><span class="label">Retrieval step (source tag)</span><code>[source: iqvia_gmi] Pull Auckland sales broken down by store, 2024 [group: 1]</code></div>
+      </div>
+    </section>
+
+    <!-- 8 · Quiz -->
+    <section class="slide quiz" data-right="Right. The manifest carries the row count and the prose stays reusable, but the rows themselves are never in context — so a breakdown the prose doesn't state must be re-fetched, never estimated." data-wrong="Remember the prose-only boundary: the model holds the answer text and a pointer, not the 412 rows. It cannot derive a per-store breakdown from a pointer.">
+      <p class="eyebrow">Check yourself</p>
+      <h2>A held result has <code>rows=412</code>. The user asks for a per-store breakdown the prose never stated. What happens?</h2>
+      <div class="quiz-options">
+        <button class="choice" data-correct="false">Reuse — the 412 rows are in context, so the model computes the breakdown</button>
+        <button class="choice" data-correct="true">Re-query — the rows aren't in context; the model must not estimate from the pointer</button>
+        <button class="choice" data-correct="false">Reuse — the model reconstructs the rows from the row count</button>
+        <button class="choice" data-correct="false">Ask the user to paste the data back in</button>
+      </div>
+      <div class="feedback"></div>
+    </section>
+
+    <!-- 9 · Remember -->
+    <section class="slide">
+      <p class="eyebrow">Remember</p>
+      <h2>Index over state, never a copy of it</h2>
+      <div class="grid three">
+        <div class="panel accent"><span class="label">Inject pointers</span>Provenance id, shape, age — ~100 B/line. The moment a data row is in the block, you're poisoning the window.</div>
+        <div class="panel"><span class="label">Keep it ambient</span>A reuse path the model must remember to look up is one it will silently skip.</div>
+        <div class="panel warn"><span class="label">Forbid estimation</span>Prose may be reused; numbers must be re-fetched. Carry the age so staleness is part of the decision.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">Source notes: <code>data/raw/iCloud Photos/15092026/extracted-3/findings.md</code></footer>
+</div>
+<script src="lesson.js"></script>
+<script>
+/* ── Carryover manifest animation (self-contained) ───────────────── */
+(function () {
+  const stateEl = document.getElementById("cm-state");
+  const ctxEl   = document.getElementById("cm-ctx");
+  const capEl   = document.getElementById("cm-cap");
+  const mbEl    = document.getElementById("cm-mb");
+  const bytesEl = document.getElementById("cm-bytes");
+  const fillEl  = document.getElementById("cm-fill");
+  const decEl   = document.getElementById("cm-dec");
+  const playBtn = document.getElementById("cm-play");
+  const stepBtn = document.getElementById("cm-step");
+  const resetBtn = document.getElementById("cm-reset");
+  if (!stateEl) return;
+
+  let mb = 0, bytes = 0, ctxLines = 0, hasSentinel = false;
+
+  function card(o) {
+    return '<div class="cm-card ' + (o.hl || '') + '" id="card-' + o.id + '">' +
+      '<span class="size">' + o.size + '</span>' +
+      '{ <span class="kk">provenance_id</span>: <span class="vv">"' + o.pid + '"</span>,<br>' +
+      '&nbsp;&nbsp;<span class="kk">success</span>: <span class="bool">true</span>, ' +
+      '<span class="kk">retrieved_at</span>: <span class="vv">"' + o.date + '"</span>,<br>' +
+      '&nbsp;&nbsp;<span class="kk">answer</span>: <span class="vv">"' + o.answer + '"</span>,<br>' +
+      '&nbsp;&nbsp;<span class="kk">data</span>: [ <span class="rows">… ' + o.rows + ' rows …</span> ] }' +
+      '</div>';
+  }
+  function line(o) {
+    return '<span class="cm-line ' + (o.hl || '') + '" id="line-' + o.id + '">' +
+      '- <span class="pid">' + o.pid + '</span> | <span class="ok">ok=True</span> ' +
+      '| <span class="rc">rows=' + o.rows + '</span> | retrieved ' + o.date + ' | ' + o.q +
+      '</span>';
+  }
+  function ensureSentinel() {
+    if (!hasSentinel) {
+      ctxEl.insertAdjacentHTML("beforeend", '<div class="cm-sentinel">[held data] — prefer reusing a held result; check retrieved for staleness; reference by provenance id</div>');
+      hasSentinel = true;
+    }
+  }
+  function meter() {
+    mbEl.textContent = mb.toFixed(1) + " MB";
+    bytesEl.textContent = bytes + " B";
+    // context占 as a tiny fraction of state — visualize context growth vs a 4 MB ceiling
+    fillEl.style.width = Math.max(0.4, Math.min(100, (bytes / 4000) * 100)) + "%";
+  }
+  function decide(kind, html) {
+    decEl.className = "cm-decision show " + kind;
+    decEl.innerHTML = html;
+  }
+
+  const STEPS = [
+    function () {
+      capEl.innerHTML = "① <b>Turn 1</b> — query_cortex('NZ subnational sales…') returns an answer + a <b>412-row</b> table. The full result is appended to state.";
+      stateEl.insertAdjacentHTML("beforeend", card({ id:1, pid:"SUBNATIONAL:plan-c1-1:step-1:a3f9c2d1", date:"2026-09-14", answer:"Auckland led at 32%…", rows:412, size:"1.4 MB" }));
+      mb += 1.4; meter();
+    },
+    function () {
+      capEl.innerHTML = "② The manifest keeps a <b>~112-byte pointer</b>, not the 412 rows. Only metadata enters the context.";
+      ensureSentinel();
+      ctxEl.insertAdjacentHTML("beforeend", line({ id:1, pid:"SUBNATIONAL:plan-c1-1:step-1:a3f9c2d1", rows:412, date:"2026-09-14", q:"NZ subnational sales by region, 2024" }));
+      bytes += 112; ctxLines++; meter();
+    },
+    function () {
+      capEl.innerHTML = "③ <b>Turn 2</b> — query_cortex('CRP channel share') returns an <b>88-row</b> table. State keeps growing.";
+      stateEl.insertAdjacentHTML("beforeend", card({ id:2, pid:"CRP:plan-c1-1:step-2:b7e0aa14", date:"2026-09-14", answer:"CRP share was 21%…", rows:88, size:"0.3 MB" }));
+      mb += 0.3; meter();
+    },
+    function () {
+      capEl.innerHTML = "④ Second pointer injected. Notice the gap: <span class='cm-cap'></span> <b class='st'>state ≈ 1.7 MB</b> vs <b class='cx'>context ≈ 224 B</b>.";
+      ctxEl.insertAdjacentHTML("beforeend", line({ id:2, pid:"CRP:plan-c1-1:step-2:b7e0aa14", rows:88, date:"2026-09-14", q:"CRP channel share, NZ, 2024" }));
+      bytes += 112; ctxLines++; meter();
+    },
+    function () {
+      capEl.innerHTML = "⑤ <b>Turn 3</b> — “what was CRP's share again?” The held prose already states it, retrieved today → <b>REUSE</b>.";
+      document.getElementById("card-2").classList.add("hot");
+      document.getElementById("line-2").classList.add("hot");
+      decide("reuse", "<strong>✓ Reuse (no re-query).</strong> Prose covers it · fresh today. Plan step, no <code>[source:]</code> tag: <code>Reuse the CRP share already retrieved (CRP:plan-c1-1:step-2:b7e0aa14)</code>");
+    },
+    function () {
+      capEl.innerHTML = "⑥ <b>Turn 4</b> — “break Auckland down by store.” Those rows aren't in the prose → <b>RE-QUERY</b> (never estimate).";
+      document.getElementById("card-2").classList.remove("hot");
+      document.getElementById("line-2").classList.remove("hot");
+      document.getElementById("card-1").classList.add("warn");
+      document.getElementById("line-1").classList.add("warn");
+      decide("requery", "<strong>✗ Cannot reuse.</strong> The 412 rows are in <em>state</em>, not context — prose-only boundary. Plan a retrieval step: <code>[source: iqvia_gmi] Auckland sales by store, 2024</code>");
+    },
+    function () {
+      capEl.innerHTML = "⑦ Result: state holds megabytes for assembly; the window ever only carried a few hundred bytes of pointers. Reuse stayed possible; nothing was estimated from memory.";
+    },
+  ];
+
+  let idx = 0, timer = null;
+
+  function reset() {
+    if (timer) { clearInterval(timer); timer = null; }
+    idx = 0; mb = 0; bytes = 0; ctxLines = 0; hasSentinel = false;
+    stateEl.innerHTML = ""; ctxEl.innerHTML = "";
+    decEl.className = "cm-decision"; decEl.innerHTML = "";
+    capEl.innerHTML = "Each turn appends a full result to state; the manifest injects only a metadata line.";
+    meter();
+    playBtn.textContent = "▶ Play";
+  }
+  function renderStep() {
+    if (idx >= STEPS.length) return false;
+    STEPS[idx]();
+    stateEl.scrollTop = stateEl.scrollHeight;
+    idx++;
+    return idx < STEPS.length;
+  }
+  function play() {
+    if (timer) { clearInterval(timer); timer = null; playBtn.textContent = "▶ Play"; return; }
+    if (idx >= STEPS.length) reset();
+    playBtn.textContent = "⏸ Pause";
+    timer = setInterval(function () {
+      const more = renderStep();
+      if (!more) { clearInterval(timer); timer = null; playBtn.textContent = "▶ Replay"; }
+    }, 1500);
+  }
+
+  playBtn.addEventListener("click", play);
+  stepBtn.addEventListener("click", function () {
+    if (timer) { clearInterval(timer); timer = null; playBtn.textContent = "▶ Play"; }
+    if (idx >= STEPS.length) reset();
+    renderStep();
+  });
+  resetBtn.addEventListener("click", reset);
+  meter();
+})();
+</script>
+</body>
+</html>

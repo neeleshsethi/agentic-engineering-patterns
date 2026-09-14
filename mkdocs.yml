@@ -58,6 +58,7 @@ nav:
   - "Deep dive · Plan lifecycle": 09c-plan-lifecycle.md
   - "Deep dive · Reactive mode prompt": 09d-reactive-mode-prompt.md
   - "Deep dive · The event feed and idempotency": 09e-event-feed-and-idempotency.md
+  - "Deep dive · Carryover and the data manifest": 09f-carryover-and-the-data-manifest.md
   - "Interactive lessons": lessons/index.html
   - "Capstone · Nine silent failures in one agent": 10-nine-silent-failures.md
   - Reference:

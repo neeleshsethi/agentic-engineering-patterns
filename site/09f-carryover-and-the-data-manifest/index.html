@@ -13,10 +13,10 @@
       
       
       
-        <link rel="prev" href="../09d-reactive-mode-prompt/">
+        <link rel="prev" href="../09e-event-feed-and-idempotency/">
       
       
-        <link rel="next" href="../09f-carryover-and-the-data-manifest/">
+        <link rel="next" href="../lessons/">
       
       
         
@@ -27,7 +27,7 @@
     
     
       
-        <title>Deep dive · The event feed and idempotency - Agentic Engineering Patterns</title>
+        <title>Deep dive · Carryover and the data manifest - Agentic Engineering Patterns</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#deep-dive-the-event-feed-and-idempotency" class="md-skip">
+        <a href="#deep-dive-carryover-and-the-data-manifest" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Deep dive · The event feed and idempotency
+              Deep dive · Carryover and the data manifest
             
           </span>
         </div>
@@ -666,6 +666,33 @@
       
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../09e-event-feed-and-idempotency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · The event feed and idempotency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -685,7 +712,7 @@
   <span class="md-ellipsis">
     
   
-    Deep dive · The event feed and idempotency
+    Deep dive · Carryover and the data manifest
   
 
     
@@ -703,7 +730,7 @@
   <span class="md-ellipsis">
     
   
-    Deep dive · The event feed and idempotency
+    Deep dive · Carryover and the data manifest
   
 
     
@@ -729,10 +756,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#two-sources-of-duplicates" class="md-nav__link">
+  <a href="#what-accumulates-and-why-you-cannot-just-resend-it" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Two Sources Of Duplicates
+        What Accumulates, And Why You Cannot Just Resend It
       
     </span>
   </a>
@@ -740,10 +767,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#two-values-opposite-jobs" class="md-nav__link">
+  <a href="#one-line-per-result-the-schema" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Two Values, Opposite Jobs
+        One Line Per Result — The Schema
       
     </span>
   </a>
@@ -751,10 +778,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-idem_key-is-replay-stable" class="md-nav__link">
+  <a href="#capped-by-attention-not-by-tokens" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How idem_key Is Replay-Stable
+        Capped By Attention, Not By Tokens
       
     </span>
   </a>
@@ -762,10 +789,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-writer-a-conditional-put-fence" class="md-nav__link">
+  <a href="#ambient-not-a-tool" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The Writer: A Conditional-Put Fence
+        Ambient, Not A Tool
       
     </span>
   </a>
@@ -773,10 +800,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-reader-dumb-on-purpose" class="md-nav__link">
+  <a href="#how-reuse-actually-happens" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The Reader: Dumb On Purpose
+        How Reuse Actually Happens
       
     </span>
   </a>
@@ -784,10 +811,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#one-stream-must-not-poison-anothers-keys" class="md-nav__link">
+  <a href="#the-two-boundaries-that-keep-reuse-honest" class="md-nav__link">
     <span class="md-ellipsis">
       
-        One Stream Must Not Poison Another's Keys
+        The Two Boundaries That Keep Reuse Honest
       
     </span>
   </a>
@@ -795,10 +822,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-actually-rides-the-wire" class="md-nav__link">
+  <a href="#the-payoff-in-one-sentence" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What Actually Rides The Wire
+        The Payoff, In One Sentence
       
     </span>
   </a>
@@ -806,10 +833,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#three-idempotency-layers-three-keys" class="md-nav__link">
+  <a href="#the-reactive-sibling" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Three Idempotency Layers, Three Keys
+        The Reactive Sibling
       
     </span>
   </a>
@@ -831,33 +858,6 @@
   
 </nav>
       
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../09f-carryover-and-the-data-manifest/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Deep dive · Carryover and the data manifest
-  
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -1199,10 +1199,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#two-sources-of-duplicates" class="md-nav__link">
+  <a href="#what-accumulates-and-why-you-cannot-just-resend-it" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Two Sources Of Duplicates
+        What Accumulates, And Why You Cannot Just Resend It
       
     </span>
   </a>
@@ -1210,10 +1210,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#two-values-opposite-jobs" class="md-nav__link">
+  <a href="#one-line-per-result-the-schema" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Two Values, Opposite Jobs
+        One Line Per Result — The Schema
       
     </span>
   </a>
@@ -1221,10 +1221,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-idem_key-is-replay-stable" class="md-nav__link">
+  <a href="#capped-by-attention-not-by-tokens" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How idem_key Is Replay-Stable
+        Capped By Attention, Not By Tokens
       
     </span>
   </a>
@@ -1232,10 +1232,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-writer-a-conditional-put-fence" class="md-nav__link">
+  <a href="#ambient-not-a-tool" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The Writer: A Conditional-Put Fence
+        Ambient, Not A Tool
       
     </span>
   </a>
@@ -1243,10 +1243,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#the-reader-dumb-on-purpose" class="md-nav__link">
+  <a href="#how-reuse-actually-happens" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The Reader: Dumb On Purpose
+        How Reuse Actually Happens
       
     </span>
   </a>
@@ -1254,10 +1254,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#one-stream-must-not-poison-anothers-keys" class="md-nav__link">
+  <a href="#the-two-boundaries-that-keep-reuse-honest" class="md-nav__link">
     <span class="md-ellipsis">
       
-        One Stream Must Not Poison Another's Keys
+        The Two Boundaries That Keep Reuse Honest
       
     </span>
   </a>
@@ -1265,10 +1265,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-actually-rides-the-wire" class="md-nav__link">
+  <a href="#the-payoff-in-one-sentence" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What Actually Rides The Wire
+        The Payoff, In One Sentence
       
     </span>
   </a>
@@ -1276,10 +1276,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#three-idempotency-layers-three-keys" class="md-nav__link">
+  <a href="#the-reactive-sibling" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Three Idempotency Layers, Three Keys
+        The Reactive Sibling
       
     </span>
   </a>
@@ -1314,7 +1314,7 @@
 
 
   
-    <a href="https://github.com/neeleshsethi/agentic-engineering-patterns/edit/main/articles/09e-event-feed-and-idempotency.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/neeleshsethi/agentic-engineering-patterns/edit/main/articles/09f-carryover-and-the-data-manifest.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -1322,280 +1322,144 @@
   
 
 
-<h1 id="deep-dive-the-event-feed-and-idempotency">Deep Dive · The Event Feed and Idempotency<a class="headerlink" href="#deep-dive-the-event-feed-and-idempotency" title="Permanent link">&para;</a></h1>
-<p>The event feed is the live activity log the user watches while a deep run executes: <em>Querying subnational… · SUBNATIONAL 412 rows · Querying CRP… · Report ready.</em> It is a projection of the run, streamed to the browser over Server-Sent Events. This deep dive is the companion to <a href="../08-queue-and-worker-execution/">Step 7 · Queue and worker execution</a>: that chapter gets the run <em>onto</em> a worker; this one is about making the frames it emits appear <strong>exactly once</strong>, even though two independent mechanisms conspire to write them twice.</p>
+<h1 id="deep-dive-carryover-and-the-data-manifest">Deep Dive · Carryover and the Data Manifest<a class="headerlink" href="#deep-dive-carryover-and-the-data-manifest" title="Permanent link">&para;</a></h1>
+<p>A user asks a follow-up: <em>"and how does that compare to last quarter?"</em> The agent already pulled the underlying sales two turns ago — the answer is sitting in state. Re-querying the source would be slow, costly, and sometimes non-deterministic. But the retrieved data is <strong>megabytes</strong>, and pasting it back into the model's context every turn would bury the actual conversation, blow the token budget, and drown the one line that matters under a wall of stale rows. That second failure is <a href="../00-glossary/">context poisoning</a>: the window fills with low-value text and the model's attention degrades.</p>
+<p>So there are two ways to lose. Re-query when you already hold the answer, and you are wasteful and non-deterministic. Paste the held data back to avoid re-querying, and you poison the window. The data manifest is how a deep agent avoids <strong>both</strong>.</p>
 <p>The safe mental model is:</p>
 <blockquote>
-<p>The feed is written at-least-once and read exactly-once. Ordering is a write-time counter; identity is a replay-stable key. Correctness only ever leans on the identity.</p>
+<p>Give the model an <em>index</em> of what it holds, never a <em>copy</em>. It should see the shape and age of every prior result in ~100 bytes, decide reuse-versus-refetch itself, and pull the megabytes by name only when a step truly needs them.</p>
 </blockquote>
-<h2 id="two-sources-of-duplicates">Two Sources Of Duplicates<a class="headerlink" href="#two-sources-of-duplicates" title="Permanent link">&para;</a></h2>
-<p>Nothing here is hypothetical — the feed must survive both of these, and they compound:</p>
+<p>This is a <a href="../03-context-injection/">context-injection</a> mechanism — same middleware seam, same delimiter discipline — specialized for carrying prior <em>results</em> forward.</p>
+<h2 id="what-accumulates-and-why-you-cannot-just-resend-it">What Accumulates, And Why You Cannot Just Resend It<a class="headerlink" href="#what-accumulates-and-why-you-cannot-just-resend-it" title="Permanent link">&para;</a></h2>
+<p><code>state["source_results"]</code> keeps every verbatim retrieval for the life of the thread. It is an <a href="../05-identifiers/"><code>operator.add</code></a> channel, so it only grows — by design, because assembly, citations, and follow-ups all need the raw evidence later. A single retrieval can be thousands of rows; a long thread can hold megabytes.</p>
+<p>Two things must both be true:</p>
 <ul>
-<li><strong>At-least-once delivery.</strong> The run message rides an SQS FIFO queue. If a worker stalls past the visibility timeout or dies before deleting the message, SQS redelivers it to another worker. The whole run — and its feed writes — happen again.</li>
-<li><strong>Crash-replay inside a run.</strong> When a worker resumes from the last checkpoint, any node that had started but not yet committed <strong>re-executes</strong>, re-emitting the feed lines it already emitted before the crash.</li>
+<li>The model must be able to <strong>reuse</strong> a prior turn's answer instead of re-querying.</li>
+<li>The context window must <strong>not</strong> carry those rows on every turn.</li>
 </ul>
-<p>A naive feed — "append a row per event" — double-counts under both. The design answer is to give every row two values with deliberately opposite behavior under replay.</p>
-<h2 id="two-values-opposite-jobs">Two Values, Opposite Jobs<a class="headerlink" href="#two-values-opposite-jobs" title="Permanent link">&para;</a></h2>
-<p>The <code>deep-events</code> table is the one place a sequence number is a real, writer-allocated counter (DynamoDB has no auto-increment). Every row carries both a <code>seq</code> and an <code>idem_key</code>:</p>
-<table>
-<thead>
-<tr>
-<th>Value</th>
-<th>Question it answers</th>
-<th>Behavior on replay</th>
-<th>Derivation</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>seq</code></td>
-<td><em>In what order?</em></td>
-<td><strong>New every write</strong></td>
-<td>In-process counter, seeded once per pickup from the partition's current max, incremented per emitted line</td>
-</tr>
-<tr>
-<td><code>idem_key</code></td>
-<td><em>Have I shown this already?</em></td>
-<td><strong>Identical</strong></td>
-<td><code>"{task_id}#{n}"</code> — from execution position, never from <code>seq</code>, never random</td>
-</tr>
-</tbody>
-</table>
-<p><code>seq</code> is also the reader's cursor and the browser's <code>Last-Event-ID</code>. Gaps are fine; monotonicity is not. <code>idem_key</code> is the dedup identity. The entire scheme rests on the fact that exactly one of the two changes on replay and exactly one does not.</p>
-<h2 id="how-idem_key-is-replay-stable">How <code>idem_key</code> Is Replay-Stable<a class="headerlink" href="#how-idem_key-is-replay-stable" title="Permanent link">&para;</a></h2>
-<p><code>idem_key = "{task_id}#{n}"</code>:</p>
-<ul>
-<li><strong><code>task_id</code></strong> identifies one node executing in one superstep. A parallel fan-out — three retrievals in a single superstep — has three tasks and three <code>task_id</code>s. The curator does not hash anything: it parses <code>task_id</code> out of each streamed event's checkpoint namespace, which LangGraph shapes as <code>"{node}:{task_id}"</code>. Reading it per-event means there is no "which task is currently open" bookkeeping, so parallel tasks can never misattribute an emission.</li>
-<li><strong><code>n</code></strong> is a per-<code>task_id</code> counter of the events that task has emitted — <code>#0</code>, <code>#1</code>, <code>#2</code> — reset fresh each time the keyer is constructed.</li>
-</ul>
-<p>The subtlety that makes it work is <em>which</em> checkpoint the id keys on. <code>task_id</code> is derived from the checkpoint the node <strong>started from</strong> (its input), not the one it writes:</p>
-<ul>
-<li><strong>Crash-replay</strong> — the same run resumes and re-runs the uncommitted node <strong>from the same input checkpoint it started from before the crash</strong> → <strong>same <code>task_id</code></strong> → same <code>idem_key</code>. This is what makes replay idempotent.</li>
-<li><strong>Legitimate re-iteration</strong> — the loop genuinely runs the same node again, but now from a <strong>newer input checkpoint</strong> → <strong>different <code>task_id</code></strong> → correctly counted as new events.</li>
-</ul>
-<p>So the answer to "doesn't the checkpoint change when the node re-runs?" is: on a replay the <em>input</em> checkpoint is the same (that is the whole point); only a real loop iteration advances it. <code>task_id</code> is precisely the signal that separates the two.</p>
-<h2 id="the-writer-a-conditional-put-fence">The Writer: A Conditional-Put Fence<a class="headerlink" href="#the-writer-a-conditional-put-fence" title="Permanent link">&para;</a></h2>
-<p>Every append is a fenced write at the exact <code>(thread_id, seq)</code> slot:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">event_table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">Item</span><span class="o">=</span><span class="p">{</span><span class="s2">"thread_id"</span><span class="p">:</span> <span class="n">tid</span><span class="p">,</span> <span class="s2">"seq"</span><span class="p">:</span> <span class="n">seq</span><span class="p">,</span> <span class="s2">"idem_key"</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span> <span class="s2">"event"</span><span class="p">:</span> <span class="n">payload</span><span class="p">,</span> <span class="s2">"ttl"</span><span class="p">:</span> <span class="n">ttl</span><span class="p">},</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">ConditionExpression</span><span class="o">=</span><span class="s2">"attribute_not_exists(thread_id)"</span><span class="p">,</span>   <span class="c1"># "is this slot empty?"</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">ReturnValuesOnConditionCheckFailure</span><span class="o">=</span><span class="s2">"ALL_OLD"</span><span class="p">,</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">)</span>
+<p>An index reconciles them. Here is the whole item that lives in state versus the single line the model is shown:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">"provenance_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"SUBNATIONAL:plan-chat-1-1:step-1:a3f9c2d1"</span><span class="p">,</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">"source"</span><span class="p">:</span><span class="w"> </span><span class="s2">"iqvia_gmi"</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">"sub_question"</span><span class="p">:</span><span class="w"> </span><span class="s2">"NZ subnational sales by region, 2024"</span><span class="p">,</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="nt">"retrieved_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-09-10"</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="nt">"answer"</span><span class="p">:</span><span class="w"> </span><span class="s2">"NZ subnational sales were led by Auckland (32%), then …"</span><span class="p">,</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"region"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Auckland"</span><span class="p">,</span><span class="w"> </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="mi">41280</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="s2">"… 412 rows …"</span><span class="w"> </span><span class="p">]</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">}</span>
 </code></pre></div>
-<p>The condition tests one key attribute but means "is this slot empty?" — DynamoDB first addresses the exact item by its full primary key, then evaluates the condition against whatever single item sits there. An empty slot passes trivially; an occupied slot necessarily carries its own <code>thread_id</code>, so the condition fails. <code>seq</code> is seeded once per pickup and incremented <strong>in memory</strong> — safe as a local only because of the single-writer-per-thread invariant (one FIFO message group per thread, plus the <a href="../07-distributed-locks/">worker lock</a>). When the fence does fail, a three-way branch decides what the collision means:</p>
-<table>
-<thead>
-<tr>
-<th>Collision</th>
-<th>Meaning</th>
-<th>Action</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>occupant's <code>idem_key</code> == mine</td>
-<td>my own earlier attempt already landed (lost ACK + SDK retry, or a replay hitting the same slot)</td>
-<td>treat as success, advance, continue</td>
-</tr>
-<tr>
-<td>foreign occupant, my lock lost/expired</td>
-<td>I am a zombie; a new worker owns the thread</td>
-<td>raise <code>ZombieWriterError</code>, stop emitting — never weave stale events above the reader's cursor</td>
-</tr>
-<tr>
-<td>foreign occupant, my lock still held</td>
-<td>a dead predecessor's straggler write landed after my seed read</td>
-<td>re-seed above the new max, bounded retry</td>
-</tr>
-</tbody>
-</table>
-<p>Critically, on a clean redelivery the new worker re-seeds <code>seq</code> <strong>above</strong> the current max, so its replayed events get <em>fresh</em> seqs — they do not collide with the old rows at all. The fence catches only the genuine same-slot races above. Dedup of the ordinary replay case is the reader's job.</p>
-<h2 id="the-reader-dumb-on-purpose">The Reader: Dumb On Purpose<a class="headerlink" href="#the-reader-dumb-on-purpose" title="Permanent link">&para;</a></h2>
-<p>The reader is the API-side SSE generator for <code>GET /deep/{thread_id}/stream</code>. It knows nothing about queues, locks, or workers; it polls one table and forwards frames.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">cursor</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Last-Event-ID"</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">seen</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>               <span class="c1"># per-connection, in API RAM — not in the table</span>
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">items</span> <span class="o">=</span> <span class="n">event_table</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">PK</span><span class="o">=</span><span class="n">tid</span><span class="p">,</span> <span class="n">seq_gt</span><span class="o">=</span><span class="n">cursor</span><span class="p">,</span> <span class="n">consistent</span><span class="o">=</span><span class="n">first_pass</span><span class="p">)</span>
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
-<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>        <span class="n">cursor</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">"seq"</span><span class="p">]</span>                 <span class="c1"># advance even on a skipped row</span>
-<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>        <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="s2">"idem_key"</span><span class="p">]</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
-<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>            <span class="k">continue</span>
-<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>        <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">"idem_key"</span><span class="p">])</span>
-<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>        <span class="k">yield</span> <span class="n">sse</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s2">"seq"</span><span class="p">],</span> <span class="n">data</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s2">"event"</span><span class="p">])</span>
-<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>
-<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="n">run</span> <span class="o">=</span> <span class="n">get_run_state</span><span class="p">(</span><span class="n">tid</span><span class="p">)</span>
-<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="k">if</span> <span class="n">run</span><span class="o">.</span><span class="n">status</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"failed"</span><span class="p">,</span> <span class="s2">"completed"</span><span class="p">):</span>
-<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>        <span class="k">yield</span> <span class="n">terminal_frame</span><span class="p">(</span><span class="n">run</span><span class="o">.</span><span class="n">status</span><span class="p">,</span> <span class="n">run</span><span class="o">.</span><span class="n">reason</span><span class="p">)</span>
-<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>        <span class="k">return</span>
-<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.25</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>- SUBNATIONAL:plan-chat-1-1:step-1:a3f9c2d1 | ok=True | rows=412 | retrieved 2026-09-10 | NZ subnational sales by region, 2024
 </code></pre></div>
-<p>Two cooperating mechanisms remove duplicates, and it is worth being precise about which does what:</p>
-<ul>
-<li><strong>The cursor</strong> (persisted in the browser as <code>Last-Event-ID</code>) skips already-seen rows <strong>across reconnects</strong>. A fresh <code>EventSource</code> resumes from the last <code>seq</code> the browser saw, so replay and live tail are one query — there is no separate history endpoint.</li>
-<li><strong>The <code>seen</code> set</strong> (idempotency keys held per connection, in the API process's RAM) skips crash-replay duplicates that land <strong>ahead of the cursor within one live connection</strong>. Those re-emitted lines get <em>new</em> <code>seq</code> numbers, so the cursor alone cannot catch them; only the repeated <code>idem_key</code> can. Because the cursor advances even on a skipped row, a mid-stream reconnect pages <em>past</em> the duplicates rather than re-examining them.</li>
-</ul>
-<p>The durable table deliberately keeps the duplicate rows. Dedup is a presentation concern done live at read time and thrown away when the connection closes — the database never has to remember "what have I already shown this user."</p>
-<p>Step through a crash-and-replay to see the writer climb while the reader collapses:</p>
-<div class="scrubber" data-scrubber markdown="0">
-  <div class="scrubber-stage">
-    <div class="scrubber-step">
-      <span class="scrubber-time">Attempt 1 · writes</span>
-      <div class="scrubber-caption">Node A then node B emit four feed lines. seq climbs; each line's idem_key is its execution position.</div>
-      <pre class="scrubber-item">seq 1  taskA#0  Querying subnational...
-seq 2  taskA#1  SUBNATIONAL 412 rows
-seq 3  taskB#0  Querying CRP...
-seq 4  taskB#1  CRP 88 rows          <span class="warn">← crash before commit</span></pre>
-    </div>
-    <div class="scrubber-step">
-      <span class="scrubber-time">Attempt 2 · replays</span>
-      <div class="scrubber-caption">A new worker resumes and re-runs node B from the same input checkpoint. seq is re-seeded above the max, so the replayed lines get NEW seqs — but the same idem_keys.</div>
-      <pre class="scrubber-item">seq 5  taskB#0  Querying CRP...       <span class="warn">← duplicate content, new seq</span>
-seq 6  taskB#1  CRP 88 rows          <span class="warn">← duplicate content, new seq</span>
-seq 7  taskC#0  Report ready</pre>
-    </div>
-    <div class="scrubber-step">
-      <span class="scrubber-time">Reader · collapses</span>
-      <div class="scrubber-caption">seen already holds taskB#0 and taskB#1. seq 5 and 6 are skipped; the cursor still advances past them. The user sees each line once.</div>
-      <pre class="scrubber-item">seen: {taskA#0, taskA#1, taskB#0, taskB#1}
-seq 5 taskB#0 → <span class="bad">skip</span>   seq 6 taskB#1 → <span class="bad">skip</span>
-seq 7 taskC#0 → <span class="ok">show ✓ exactly-once</span></pre>
-    </div>
-  </div>
-</div>
-
-<h2 id="one-stream-must-not-poison-anothers-keys">One Stream Must Not Poison Another's Keys<a class="headerlink" href="#one-stream-must-not-poison-anothers-keys" title="Permanent link">&para;</a></h2>
-<p>There is a sharp edge in <code>n</code>, the per-task counter, that is easy to get wrong. If a single node emits <strong>two interleaved kinds of frame with different reproducibility guarantees</strong>, they must count under <strong>separate</strong> namespaces.</p>
-<p>In this system one node calls a downstream reasoning model (Cortex) and streams two kinds of frame at once:</p>
-<ul>
-<li><strong>Live "thinking" deltas</strong> — the panel filling token by token. Their <em>count</em> is non-reproducible: a replay re-calls the model and gets a different number of tokens, plus wall-clock coalescing variance.</li>
-<li><strong>Deterministic frames</strong> — a terminal thinking summary, a step status, a plan-tick checkmark. These <em>must</em> reproduce, because the reader dedups them by <code>idem_key</code>.</li>
-</ul>
-<p>Put both on one counter and the noisy stream shifts the quiet one's indices:</p>
-<table>
-<thead>
-<tr>
-<th>Shared counter</th>
-<th>Attempt 1 (5 deltas)</th>
-<th>Attempt 2 replay (3 deltas)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>#0</code>–<code>#2</code></td>
-<td>live delta</td>
-<td>live delta</td>
-</tr>
-<tr>
-<td><code>#3</code></td>
-<td>live delta</td>
-<td><strong>status</strong> ←</td>
-</tr>
-<tr>
-<td><code>#4</code></td>
-<td>live delta</td>
-<td><strong>plan tick</strong> ←</td>
-</tr>
-<tr>
-<td><code>#5</code></td>
-<td><strong>status</strong> ←</td>
-<td></td>
-</tr>
-<tr>
-<td><code>#6</code></td>
-<td><strong>plan tick</strong> ←</td>
-<td></td>
-</tr>
-</tbody>
-</table>
-<p>The status frame is <code>taskB#5</code> on attempt 1 but <code>taskB#3</code> on the replay → a different <code>idem_key</code> → the reader cannot tell it is a repeat → the checkmark renders twice. The noisy stream poisoned the quiet stream's keys.</p>
-<p>The fix is to quarantine the non-reproducible frames under their own suffix (<code>"{task_id}~cs"</code>), so the deterministic frames keep counting from <code>#0</code> regardless of how many live deltas flew by:</p>
-<table>
-<thead>
-<tr>
-<th>Split counters</th>
-<th>Attempt 1 (5 deltas)</th>
-<th>Attempt 2 replay (3 deltas)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>taskB~cs#…</code></td>
-<td>live deltas <code>~cs#0…#4</code></td>
-<td>live deltas <code>~cs#0…#2</code></td>
-</tr>
-<tr>
-<td><code>taskB#0</code></td>
-<td>status ✓</td>
-<td>status ✓</td>
-</tr>
-<tr>
-<td><code>taskB#1</code></td>
-<td>plan tick ✓</td>
-<td>plan tick ✓</td>
-</tr>
-</tbody>
-</table>
-<p>Now <code>status = taskB#0</code> on both runs, regardless of delta count → the key reproduces → dedup works. The live deltas themselves may re-show after a replay, but they carry replace-semantics (each frame holds the full accumulated text so far), so the panel simply re-fills — harmless.</p>
-<p>The rule generalizes past this one source: <strong>a counter-derived idempotency key may only count events whose count is itself replay-stable.</strong> Anything non-reproducible gets its own bucket.</p>
-<h2 id="what-actually-rides-the-wire">What Actually Rides The Wire<a class="headerlink" href="#what-actually-rides-the-wire" title="Permanent link">&para;</a></h2>
-<p>The reader emits <code>StreamEnvelope</code> frames. Each SSE message is an <code>id:</code> line (the DynamoDB <code>seq</code>, which the browser echoes back as <code>Last-Event-ID</code>) plus a <code>data:</code> line (the JSON envelope), blank-line terminated. Two things are worth internalizing:</p>
-<ul>
-<li><strong><code>idem_key</code> does not ride the wire.</strong> It is the event log's internal dedup name; the reader strips it after deduping. It is never something the browser has to understand.</li>
-<li><strong>Live thinking deltas are <code>artifact</code> frames with <code>operation: "replace"</code></strong>, each carrying the full accumulated text so far. That is exactly why re-showing one after a replay is harmless.</li>
-</ul>
-<p>There are eight wire types — <code>status</code>, <code>content</code>, <code>artifact</code>, <code>warning</code>, <code>error</code>, <code>end</code>, plus the deep-mode-additive <code>plan</code> and <code>interrupt</code>. A worked pair of attempts:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a># Attempt 1 — one Cortex call (taskB) streams 3 live deltas, then 2 deterministic frames
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>id: 43
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>data: {"type":"artifact","data":{"artifact":"cortex_thinking","operation":"replace",
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>       "value":["...final: retail, non-retail, and CRP channels."]}}   ← taskB~cs#2 (live, terminal)
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>id: 44
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>data: {"type":"status","data":{"message":"SUBNATIONAL returned 412 rows","state":"completed"}}  ← taskB#0
-<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>id: 45
-<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>data: {"type":"plan","data":{"plan_id":"plan-abc-1","steps":[{"id":"step-1","status":"done"}]}}  ← taskB#1
-<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
-<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a># Attempt 2 — crash, replay; the node re-runs and Cortex streams only 2 deltas this time
-<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>id: 58 ...artifact... ← taskB~cs#0 (live, NEW seq)
-<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>id: 59 ...artifact... ← taskB~cs#1 (live, NEW seq)
-<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>id: 60 {"type":"status",...}  ← taskB#0  (SAME idem_key as seq 44)
-<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>id: 61 {"type":"plan",...}    ← taskB#1  (SAME idem_key as seq 45)
+<p>The megabyte object collapses to ~100 bytes. The row <em>count</em> rides the wire; the rows themselves never do.</p>
+<h2 id="one-line-per-result-the-schema">One Line Per Result — The Schema<a class="headerlink" href="#one-line-per-result-the-schema" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># manifest.py:50-60</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">_line</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">question</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sub_question"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)[:</span><span class="n">_QUESTION_PREVIEW</span><span class="p">]</span>  <span class="c1"># 80 chars</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">question</span> <span class="o">=</span> <span class="n">question</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">MANIFEST_END</span><span class="p">,</span> <span class="s2">"[/held data]"</span><span class="p">)</span>  <span class="c1"># can't forge the boundary</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    <span class="n">retrieved</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"retrieved_at"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)[:</span><span class="mi">10</span><span class="p">]</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="k">return</span> <span class="p">(</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>        <span class="sa">f</span><span class="s2">"- </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'provenance_id'</span><span class="p">,</span><span class="w"> </span><span class="s1">'?'</span><span class="p">)</span><span class="si">}</span><span class="s2"> | ok=</span><span class="si">{</span><span class="nb">bool</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'success'</span><span class="p">))</span><span class="si">}</span><span class="s2"> "</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>        <span class="sa">f</span><span class="s2">"| rows=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'data'</span><span class="p">)</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="p">[])</span><span class="si">}</span><span class="s2"> "</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>        <span class="sa">f</span><span class="s2">"| retrieved </span><span class="si">{</span><span class="n">retrieved</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">'?'</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">question</span><span class="si">}</span><span class="s2">"</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="p">)</span>
 </code></pre></div>
-<p>The reader's <code>seen</code> already holds <code>taskB#0</code> and <code>taskB#1</code> from attempt 1, so seq 60 and 61 are skipped — the status is not re-shown and the checkmark is not re-rendered — even though the live stream's length changed from 3 deltas to 2. That is the entire <code>~cs</code> payoff in one trace.</p>
-<h2 id="three-idempotency-layers-three-keys">Three Idempotency Layers, Three Keys<a class="headerlink" href="#three-idempotency-layers-three-keys" title="Permanent link">&para;</a></h2>
-<p>Event-feed idempotency is one of three layers, each guarding a different artifact against replay. Do not conflate them:</p>
+<p>Each line carries exactly five fields, and each earns its place:</p>
 <table>
 <thead>
 <tr>
-<th>Layer</th>
-<th>Key / mechanism</th>
-<th>Guards against</th>
+<th>Field</th>
+<th>Why it is on the line</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Event feed (this chapter)</td>
-<td><code>idem_key</code> + reader dedup</td>
-<td>crash-replay re-emitting the same activity line</td>
+<td><code>provenance_id</code></td>
+<td>The durable name the model uses to <em>reference</em> the result in a plan step. See <a href="../05-identifiers/">Identifiers</a>.</td>
 </tr>
 <tr>
-<td>Report emission</td>
-<td><code>reported_cycle == cycle_stamp</code></td>
-<td>redelivery re-writing or double-reporting a report</td>
+<td><code>ok</code></td>
+<td>Whether the retrieval succeeded — a failed result is not reusable.</td>
 </tr>
 <tr>
-<td>Checkpoint / state</td>
-<td>deterministic <code>plan_id</code> / <code>provenance_id</code></td>
-<td>a replayed branch forking new state instead of rebuilding</td>
+<td><code>rows</code></td>
+<td>The <em>shape</em> of what is held, without the data. Lets the model judge whether the held answer could plausibly cover the new need.</td>
+</tr>
+<tr>
+<td><code>retrieved</code></td>
+<td>The staleness signal. A follow-up asking for "current" numbers must not reuse a week-old pull.</td>
+</tr>
+<tr>
+<td><code>question</code> (80 chars)</td>
+<td>What that retrieval was <em>about</em>, so the model can match it to the new step.</td>
 </tr>
 </tbody>
 </table>
-<p>All three rest on the same principle, which is the one worth carrying out of this series: <strong>identity is deterministic</strong> (<code>idem_key</code>, <code>cycle_stamp</code>, <code>plan_id</code>, <code>provenance_id</code> are pure functions of their inputs), <strong>physical placement is not</strong> (<code>seq</code>, retry timing), and correctness only ever relies on the deterministic half. See <a href="../05-identifiers/">Identifiers</a> for how the same rule shapes every id in the run.</p>
+<p>Note the delimiter escape: the 80-char preview is user-influenced text, so it is neutralized (<code>MANIFEST_END → [/held data]</code>) exactly as <a href="../03-context-injection/#two-subtle-ways-it-goes-wrong">Context Injection</a> escapes its own closing tag. Held content must never be able to forge the boundary of the trusted block.</p>
+<h2 id="capped-by-attention-not-by-tokens">Capped By Attention, Not By Tokens<a class="headerlink" href="#capped-by-attention-not-by-tokens" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># manifest.py:63-87</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">build_data_manifest</span><span class="p">(</span><span class="n">source_results</span><span class="p">):</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">results</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">source_results</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)]</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">results</span><span class="p">:</span>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>        <span class="k">return</span> <span class="s2">""</span>                               <span class="c1"># nothing held -&gt; inject nothing</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="n">shown</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="o">-</span><span class="n">MANIFEST_MAX_LINES</span><span class="p">:][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># newest 30, newest-first</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">_line</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">shown</span><span class="p">]</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="n">dropped</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">shown</span><span class="p">)</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="k">if</span> <span class="n">dropped</span><span class="p">:</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"...plus </span><span class="si">{</span><span class="n">dropped</span><span class="si">}</span><span class="s2"> older result(s) held in state - "</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>                     <span class="s2">"ask the user before assuming their content."</span><span class="p">)</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>    <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">MANIFEST_SENTINEL</span><span class="si">}</span><span class="s2"> - results already retrieved ... prefer reusing a held "</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>            <span class="s2">"result over re-querying ... check `retrieved` for staleness. Reference results "</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>            <span class="s2">"by provenance id</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">))</span>
+</code></pre></div>
+<p>The cap is the newest 30, newest-first — not a token budget. The reasoning is about <em>attention</em>, not accounting: reusable candidates are overwhelmingly recent, and a wall of ancient lines would bury the ones the model actually wants. Older results are not dropped from state; they collapse into a single honest rollup line — <em>"…plus N older result(s) held in state — ask the user before assuming their content."</em> That line is also the designated seam where a real <code>search_held_data</code> tool would plug in if a thread ever outgrows the ambient index.</p>
+<p>Assembled, the block the model sees looks like this:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>[held data] - results already retrieved this thread. Prefer reusing a held result
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>over re-querying; check `retrieved` for staleness. Reference results by provenance id.
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>- SUBNATIONAL:plan-chat-1-1:step-1:a3f9c2d1 | ok=True | rows=412 | retrieved 2026-09-10 | NZ subnational sales by region, 2024
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>- CRP:plan-chat-1-1:step-2:b7e0aa14        | ok=True | rows=88  | retrieved 2026-09-10 | CRP channel share, NZ, 2024
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>...plus 3 older result(s) held in state - ask the user before assuming their content.
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>[/held data]
+</code></pre></div>
+<h2 id="ambient-not-a-tool">Ambient, Not A Tool<a class="headerlink" href="#ambient-not-a-tool" title="Permanent link">&para;</a></h2>
+<p>The manifest is rebuilt from state and framed onto the latest genuine human message on <strong>every</strong> model call, through <code>wrap_model_call</code> — transient, never checkpointed, never accumulating, the same contract as <code>UserContextMiddleware</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># manifest.py:99-128 (abridged)</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">_inject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">ModelRequest</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModelRequest</span><span class="p">:</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">manifest</span> <span class="o">=</span> <span class="n">build_data_manifest</span><span class="p">(</span><span class="o">...</span><span class="n">state</span> <span class="n">source_results</span><span class="o">...</span><span class="p">)</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="c1"># framed onto the latest genuine HumanMessage; returns request unchanged if empty</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="o">...</span>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">wrap_model_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>        <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_inject</span><span class="p">(</span><span class="n">request</span><span class="p">))</span>
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">awrap_model_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span> <span class="k">return</span> <span class="k">await</span> <span class="n">handler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_inject</span><span class="p">(</span><span class="n">request</span><span class="p">))</span>
+</code></pre></div>
+<p>Why ambient and not a <code>search_held_data</code> tool the model calls when it wants? Because <em>the model can only reuse what it knows it holds — and it cannot ask about what it does not know exists.</em> A lookup tool costs extra model turns and, worse, fails <strong>silently</strong>: when the model does not think to call it, it simply re-queries, and nothing flags the missed reuse. Making the index ambient means the option to reuse is always in view. The cost is bounded precisely because the manifest is an index — 30 lines of ~100 bytes is cheap to carry every turn; 30 full results would not be.</p>
+<h2 id="how-reuse-actually-happens">How Reuse Actually Happens<a class="headerlink" href="#how-reuse-actually-happens" title="Permanent link">&para;</a></h2>
+<p>Reuse is not a hidden runtime optimization; it is a <strong>plan step the human can see and approve</strong>. At plan time the orchestrator writes a step with <em>no</em> <code>[source:]</code> tag that names the held result by its provenance id:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a># orchestrator_prompts.py:173-191 (the reuse rule)
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>Reuse before you re-query ... When a held result covers a step's information need
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>and the user is not asking for fresh numbers, do NOT create a retrieval step for it —
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>write the step WITHOUT a [source:] tag and name the held result's provenance id in the
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>step text (e.g. "Reuse the sales already retrieved
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>(SUBNATIONAL:plan-chat-1-1:step-1:a3f9c2d1) [group: 1 parallel]").
+</code></pre></div>
+<p>A retrieval step has a source tag and hits the source; a reuse step has none and points at evidence already in state. Because it is in the plan card, a reviewer sees "this turn reuses step-1's data" before approving.</p>
+<h2 id="the-two-boundaries-that-keep-reuse-honest">The Two Boundaries That Keep Reuse Honest<a class="headerlink" href="#the-two-boundaries-that-keep-reuse-honest" title="Permanent link">&para;</a></h2>
+<p>Reuse is only safe because of two hard rules. These are the anti-poisoning guarantees — they are what stop "reuse" from quietly becoming "hallucinate from a fading memory."</p>
+<ul>
+<li><strong>Prose-only reuse.</strong> What the model holds from a past retrieval is <em>only the prose answer</em>, never the data rows — because the rows are not in context, only the pointer is. It may reuse a held answer's <strong>text</strong> when that text already states what the step needs. If the new question needs figures, rankings, or breakdowns the held prose does not literally contain, it must plan a fresh retrieval. It must <strong>never</strong> derive or estimate numbers from a held answer. The <code>rows=412</code> on the line tells the model data <em>exists</em> to be re-pulled by name; it does not put that data in the window.</li>
+<li><strong>Staleness check.</strong> Every line carries its <code>retrieved</code> date. The instruction is to prefer a fresh retrieval when the held data looks stale, and the rolled-up older results explicitly say <em>"ask the user before assuming their content."</em> Age is a first-class input to the reuse decision, not an afterthought.</li>
+</ul>
+<p>Together they draw the line: reuse the <em>conclusion</em> a prior turn already reached; re-fetch the <em>evidence</em> whenever the new answer would depend on numbers you are not currently holding.</p>
+<h2 id="the-payoff-in-one-sentence">The Payoff, In One Sentence<a class="headerlink" href="#the-payoff-in-one-sentence" title="Permanent link">&para;</a></h2>
+<p>The manifest is an index over state, not a copy of it: the model sees <em>what it holds</em> — provenance id, shape, and age, in ~100 bytes per line — and decides reuse-versus-refetch at plan time, while the megabyte payload stays parked in <code>source_results</code>, pulled by provenance id only when a step such as <code>run_analysis</code> actually needs it. Context stays small; reuse stays possible; nothing is estimated from memory.</p>
+<h2 id="the-reactive-sibling">The Reactive Sibling<a class="headerlink" href="#the-reactive-sibling" title="Permanent link">&para;</a></h2>
+<p>The reactive/quick path has the same idea under different names — a <code>[Carried data]</code> block, <code>carryover_reuse</code> rules, and an <code>answered_from_carried_data</code> flag — and the same two boundaries. One bug worth remembering (fixed in PR #1161): a turn framed <em>its own</em> same-turn fetch as <em>"[Carried data … earlier turns]"</em>, which is a subtle provenance lie. The manifest filters out the current turn's own results before labeling anything as previously retrieved, so "held earlier" always means <em>actually</em> earlier.</p>
 <h2 id="guardrails">Guardrails<a class="headerlink" href="#guardrails" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Never dedup on the ordering value.</strong> <code>seq</code> is new on every write by design. If you find code treating it as an identity, that is the bug.</li>
-<li><strong>Derive the identity from execution position, never from wall-clock or random.</strong> The whole scheme fails the moment <code>idem_key</code> stops reproducing on replay.</li>
-<li><strong>Keep the durable log duplicate-tolerant.</strong> Dedup lives at read time, per connection. The table's job is to be an append-only, fenced, ordered log — nothing more.</li>
-<li><strong>Isolate any stream whose event count is non-reproducible.</strong> Give it its own counter namespace so it cannot shift a deterministic stream's keys.</li>
-<li><strong>Terminate on run status, not on a sentinel event.</strong> A crashed worker never writes "done"; a detector flips run-state to <code>failed</code> so the reader can end the stream.</li>
+<li><strong>Index, never copy.</strong> Inject pointers plus shape and age. The moment the block contains data rows, you are back to poisoning the window.</li>
+<li><strong>Make the option ambient.</strong> A reuse path the model has to remember to look up is a reuse path it will silently skip. Keep the index in view every turn.</li>
+<li><strong>Cap by attention.</strong> Show the newest N, newest-first, and roll the rest into one honest line — do not let old entries bury fresh ones.</li>
+<li><strong>Forbid estimation from memory.</strong> Prose answers may be reused; numbers must be re-fetched. Put the row count on the line so the model knows data exists to pull, not to invent.</li>
+<li><strong>Carry the age.</strong> Staleness is part of the reuse decision. Every line gets its <code>retrieved</code> date, and old rollups tell the model to ask before assuming.</li>
+<li><strong>Escape your delimiter.</strong> The user-influenced preview must never be able to forge the block boundary. See <a href="../03-context-injection/#two-subtle-ways-it-goes-wrong">Context Injection</a>.</li>
 </ul>
 
 
@@ -1632,7 +1496,7 @@ seq 7 taskC#0 → <span class="ok">show ✓ exactly-once</span></pre>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../09d-reactive-mode-prompt/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Deep dive · Reactive mode prompt">
+          <a href="../09e-event-feed-and-idempotency/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Deep dive · The event feed and idempotency">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1642,20 +1506,20 @@ seq 7 taskC#0 → <span class="ok">show ✓ exactly-once</span></pre>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Deep dive · Reactive mode prompt
+                Deep dive · The event feed and idempotency
               </div>
             </div>
           </a>
         
         
           
-          <a href="../09f-carryover-and-the-data-manifest/" class="md-footer__link md-footer__link--next" aria-label="Next: Deep dive · Carryover and the data manifest">
+          <a href="../lessons/" class="md-footer__link md-footer__link--next" aria-label="Next: Interactive lessons">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Deep dive · Carryover and the data manifest
+                Interactive lessons
               </div>
             </div>
             <div class="md-footer__button md-icon">
