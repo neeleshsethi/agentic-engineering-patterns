@@ -13,27 +13,33 @@
     .sse-col-h { font-size: 0.72rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; color: #815017; margin-bottom: 0.4rem; display: flex; justify-content: space-between; align-items: baseline; }
     .sse-col-h span { color: #60717b; font-weight: 700; letter-spacing: 0; text-transform: none; }
 
-    .sse-wire { background: #102932; border: 1px solid #0b1f26; border-radius: 8px; padding: 0.55rem; min-height: 268px; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.72rem; }
-    .sse-feed { background: rgba(255,255,252,0.94); border: 1px solid #d9d1c5; border-radius: 8px; padding: 0.55rem; min-height: 268px; }
+    .sse-wire { background: #102932; border: 1px solid #0b1f26; border-radius: 8px; padding: 0.55rem; min-height: 300px; max-height: 340px; overflow-y: auto; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.7rem; }
+    .sse-feed { background: rgba(255,255,252,0.94); border: 1px solid #d9d1c5; border-radius: 8px; padding: 0.55rem; min-height: 300px; }
 
-    .sse-frame { display: grid; grid-template-columns: 3.1rem 4.6rem 1fr auto; gap: 0.5rem; align-items: center; padding: 0.32rem 0.4rem; border-bottom: 1px solid #1b3843; color: #dce6e4; animation: sseIn 0.4s ease both; }
-    .sse-frame .sid { color: #6ee7b7; font-weight: 700; }
-    .sse-frame .stype { font-size: 0.6rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; padding: 0.08rem 0.32rem; border-radius: 4px; text-align: center; }
+    .sse-frame { padding: 0.34rem 0.4rem; border-bottom: 1px solid #1b3843; color: #dce6e4; animation: sseIn 0.4s ease both; }
+    .sse-fhead { display: flex; align-items: center; gap: 0.5rem; }
+    .sse-fhead .sid { color: #6ee7b7; font-weight: 700; }
+    .sse-fhead .stype { font-size: 0.58rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; padding: 0.08rem 0.32rem; border-radius: 4px; }
     .stype.status { background: #123a4a; color: #7dd3fc; }
     .stype.artifact { background: #2a2140; color: #c4b5fd; }
     .stype.plan { background: #12402a; color: #86efac; }
     .stype.end { background: #3a2a12; color: #fcd34d; }
-    .sse-frame .stext { color: #eef3f1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .sse-frame .sidem { color: #7c8a94; font-size: 0.66rem; }
-    .sse-frame.dup { opacity: 0.5; }
-    .sse-frame.dup .stext { text-decoration: line-through; }
-    .sse-frame .skipbadge { color: #fca5a5; font-weight: 800; font-size: 0.62rem; }
+    .sse-fhead .sidem { margin-left: auto; color: #7c8a94; font-size: 0.64rem; }
+    .sse-fhead .skipbadge { margin-left: auto; color: #fca5a5; font-weight: 800; font-size: 0.62rem; }
+    .sse-data { margin-top: 0.22rem; color: #9fb2bd; font-size: 0.63rem; line-height: 1.42; white-space: normal; word-break: break-word; }
+    .sse-data .k { color: #7dd3fc; } .sse-data .v { color: #eef3f1; } .sse-data .op { color: #c4b5fd; }
+    .sse-frame.dup .sse-data { text-decoration: line-through; opacity: 0.65; }
+    .sse-frame.dup .sse-fhead .sid { opacity: 0.6; }
 
     .sse-crash { color: #fca5a5; font-weight: 800; font-size: 0.7rem; text-align: center; padding: 0.35rem; border-bottom: 1px dashed #7f3838; animation: sseIn 0.4s ease both; }
 
     .feed-line { display: flex; align-items: center; gap: 0.5rem; padding: 0.42rem 0.4rem; border-bottom: 1px solid #ece5d8; color: #172126; font-size: 0.86rem; animation: feedIn 0.45s ease both; }
     .feed-line .dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; background: #25806f; flex: none; }
     .feed-line.plan .dot { background: #2563a8; } .feed-line.done .dot { background: #b8860b; }
+    .feed-think { padding: 0.5rem 0.55rem; margin-bottom: 0.3rem; border-radius: 8px; border: 1px solid #d6cdea; background: #f5f1fc; color: #4c3f6b; font-size: 0.82rem; font-style: italic; animation: feedIn 0.45s ease both; }
+    .feed-think .tl { display: block; font-style: normal; font-size: 0.6rem; font-weight: 900; letter-spacing: 0.07em; text-transform: uppercase; color: #7c5cc4; margin-bottom: 0.18rem; }
+    .feed-think.pulse { animation: thinkPulse 0.4s ease; }
+    @keyframes thinkPulse { 0% { background: #ece3fb; } 100% { background: #f5f1fc; } }
 
     .sse-controls { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.9rem; flex-wrap: wrap; }
     .sse-btn { border: 1px solid #c9d7d3; border-radius: 8px; background: #fff; color: #172126; min-height: 2.2rem; padding: 0.4rem 0.9rem; font: inherit; font-size: 0.88rem; font-weight: 700; cursor: pointer; }
@@ -107,14 +113,14 @@
     <!-- 5 · ANIMATED SSE STREAM -->
     <section class="slide">
       <p class="eyebrow">Live demo · press play</p>
-      <h2>The writer climbs, the reader collapses</h2>
+      <h2>The wire, the payload, and the <code>~cs</code> split</h2>
       <div class="sse-wrap">
         <div>
-          <div class="sse-col-h">Wire — rows the reader pages <span><code>seq &gt; cursor</code></span></div>
+          <div class="sse-col-h">Wire — <code>id:</code> + <code>data:</code> payload <span><code>seq &gt; cursor</code></span></div>
           <div class="sse-wire" id="sse-wire"></div>
         </div>
         <div>
-          <div class="sse-col-h">User feed — what renders <span>each line once</span></div>
+          <div class="sse-col-h">User feed — what renders <span>deterministic lines once</span></div>
           <div class="sse-feed" id="sse-feed"></div>
         </div>
       </div>
@@ -122,7 +128,7 @@
         <button class="sse-btn primary" id="sse-play">▶ Play stream</button>
         <button class="sse-btn" id="sse-step">Step ›</button>
         <button class="sse-btn" id="sse-reset">⟲ Reset</button>
-        <span class="sse-cap" id="sse-cap">The worker writes feed rows; the API reader tails them and forwards SSE frames to the browser.</span>
+        <span class="sse-cap" id="sse-cap">Each SSE frame is an <code>id:</code> line (the seq) plus a <code>data:</code> JSON payload. Press play.</span>
       </div>
     </section>
 
@@ -195,29 +201,58 @@
   const resetBtn = document.getElementById("sse-reset");
   if (!wire) return;
 
-  // Each entry: a frame emitted by the worker onto the wire.
-  // dup:true means it is a crash-replay re-emission (same idem_key, new seq).
+  // Frames from the real SSE wire (extracted-2 · "Sample SSE"): each is an
+  // `id:` line (the DynamoDB seq / Last-Event-ID) plus a `data:` JSON payload.
+  // think: a cortex_thinking artifact (operation:"replace") — updates one bubble.
+  // dup:   a deterministic frame re-emitted on replay (same idem_key, new seq).
   const TIMELINE = [
-    { seq: 1, type: "status",   idem: "taskA#0", text: "Querying subnational…",  feed: "Querying subnational…",  cap: "① seq <b>1</b> · idem <b>taskA#0</b> — new line, shown." },
-    { seq: 2, type: "status",   idem: "taskA#1", text: "SUBNATIONAL 412 rows",    feed: "SUBNATIONAL 412 rows",    cap: "② seq <b>2</b> · idem <b>taskA#1</b> — new line, shown." },
-    { seq: 3, type: "status",   idem: "taskB#0", text: "Querying CRP…",           feed: "Querying CRP…",           cap: "③ seq <b>3</b> · idem <b>taskB#0</b> — new line, shown." },
-    { seq: 4, type: "status",   idem: "taskB#1", text: "CRP 88 rows",             feed: "CRP 88 rows",             cap: "④ seq <b>4</b> · idem <b>taskB#1</b> — shown. Then the worker crashes." },
-    { crash: true, cap: "💥 Worker crashes before committing. SQS redelivers; a new worker resumes from the last checkpoint." },
-    { seq: 5, type: "status",   idem: "taskB#0", text: "Querying CRP…",           dup: true, cap: "⑤ seq <b>5</b> · idem <b>taskB#0</b> — replay re-emits it at a NEW seq. Reader: <b>seen → skip.</b>" },
-    { seq: 6, type: "status",   idem: "taskB#1", text: "CRP 88 rows",             dup: true, cap: "⑥ seq <b>6</b> · idem <b>taskB#1</b> — duplicate idem_key. <b>Skipped</b>; feed unchanged." },
-    { seq: 7, type: "plan",     idem: "taskC#0", text: "step-1 done ✓",           feed: "step-1 done ✓", feedKind: "plan", cap: "⑦ seq <b>7</b> · idem <b>taskC#0</b> — new work past the crash, shown." },
-    { seq: 8, type: "end",      idem: "taskC#1", text: "Report ready",            feed: "Report ready", feedKind: "done", cap: "⑧ seq <b>8</b> · idem <b>taskC#1</b> — done. At-least-once delivery, exactly-once effect." },
+    { seq: 41, type: "artifact", idem: "taskB~cs#0",
+      data: '{"type":"artifact","data":{"artifact":"cortex_thinking","operation":<span class="op">"replace"</span>,"value":["Considering subnational grain…"]}}',
+      think: "Considering subnational grain…",
+      cap: "① seq <b>41</b> · artifact <b>~cs#0</b> — a live thinking delta. <code>operation:replace</code>, so it fills the panel in place." },
+    { seq: 42, type: "artifact", idem: "taskB~cs#1",
+      data: '{"type":"artifact","data":{"artifact":"cortex_thinking","operation":<span class="op">"replace"</span>,"value":["…weighing CRP vs retail…"]}}',
+      think: "…weighing CRP vs retail…",
+      cap: "② seq <b>42</b> · <b>~cs#1</b> — replaces the panel text (each frame carries the full accumulated string)." },
+    { seq: 43, type: "artifact", idem: "taskB~cs#2",
+      data: '{"type":"artifact","data":{"artifact":"cortex_thinking","operation":<span class="op">"replace"</span>,"value":["…final: retail, non-retail, and CRP channels."]}}',
+      think: "…final: retail, non-retail, and CRP channels.",
+      cap: "③ seq <b>43</b> · <b>~cs#2</b> — terminal thinking. Live deltas count in the <code>~cs</code> bucket." },
+    { seq: 44, type: "status", idem: "taskB#0",
+      data: '{"type":"status","data":{"message":<span class="v">"SUBNATIONAL returned 412 rows"</span>,"state":"completed"}}',
+      feed: "SUBNATIONAL returned 412 rows",
+      cap: "④ seq <b>44</b> · status <b>taskB#0</b> — DETERMINISTIC. Shown." },
+    { seq: 45, type: "plan", idem: "taskB#1",
+      data: '{"type":"plan","data":{"plan_id":<span class="v">"plan-abc-1"</span>,"steps":[{"id":"step-1","status":"done"}]}}',
+      feed: "step-1 done ✓", feedKind: "plan",
+      cap: "⑤ seq <b>45</b> · plan <b>taskB#1</b> — DETERMINISTIC. The checkmark." },
+    { crash: true, cap: "💥 Crash. SQS redelivers; the worker resumes. Cortex re-streams only <b>2</b> deltas this time." },
+    { seq: 58, type: "artifact", idem: "taskB~cs#0",
+      data: '{"type":"artifact","data":{"artifact":"cortex_thinking","operation":<span class="op">"replace"</span>,"value":["Re-considering subnational grain…"]}}',
+      think: "Re-considering subnational grain…",
+      cap: "⑥ seq <b>58</b> · <b>~cs#0</b> — live delta re-shows at a NEW seq. Replace-semantics → the panel just re-fills. Harmless." },
+    { seq: 59, type: "artifact", idem: "taskB~cs#1",
+      data: '{"type":"artifact","data":{"artifact":"cortex_thinking","operation":<span class="op">"replace"</span>,"value":["…final: retail, non-retail, and CRP channels."]}}',
+      think: "…final: retail, non-retail, and CRP channels.",
+      cap: "⑦ seq <b>59</b> · <b>~cs#1</b> — live deltas are not deduped; they overwrite. The count differs (2 vs 3), but that is quarantined in <code>~cs</code>." },
+    { seq: 60, type: "status", idem: "taskB#0", dup: true,
+      data: '{"type":"status","data":{"message":<span class="v">"SUBNATIONAL returned 412 rows"</span>,"state":"completed"}}',
+      cap: "⑧ seq <b>60</b> · status <b>taskB#0</b> — SAME idem_key as seq 44. <b>seen → skip.</b> Status not re-shown." },
+    { seq: 61, type: "plan", idem: "taskB#1", dup: true,
+      data: '{"type":"plan","data":{"plan_id":<span class="v">"plan-abc-1"</span>,"steps":[{"id":"step-1","status":"done"}]}}',
+      cap: "⑨ seq <b>61</b> · plan <b>taskB#1</b> — SAME idem_key as seq 45. <b>seen → skip.</b> Checkmark not re-rendered." },
   ];
 
   let idx = 0;
   let timer = null;
+  let thinkEl = null;
 
   function reset() {
     if (timer) { clearInterval(timer); timer = null; }
-    idx = 0;
+    idx = 0; thinkEl = null;
     wire.innerHTML = "";
     feed.innerHTML = "";
-    cap.innerHTML = "The worker writes feed rows; the API reader tails them and forwards SSE frames to the browser.";
+    cap.innerHTML = "Each SSE frame is an <code>id:</code> line (the seq) plus a <code>data:</code> JSON payload. Press play.";
     playBtn.textContent = "▶ Play stream";
   }
 
@@ -233,14 +268,25 @@
       const row = document.createElement("div");
       row.className = "sse-frame" + (e.dup ? " dup" : "");
       row.innerHTML =
-        '<span class="sid">id: ' + e.seq + '</span>' +
-        '<span class="stype ' + e.type + '">' + e.type + '</span>' +
-        '<span class="stext">' + e.text + '</span>' +
-        (e.dup
-          ? '<span class="skipbadge">seen → skip</span>'
-          : '<span class="sidem">' + e.idem + '</span>');
+        '<div class="sse-fhead">' +
+          '<span class="sid">id: ' + e.seq + '</span>' +
+          '<span class="stype ' + e.type + '">' + e.type + '</span>' +
+          (e.dup ? '<span class="skipbadge">seen → skip</span>'
+                 : '<span class="sidem">' + e.idem + '</span>') +
+        '</div>' +
+        '<div class="sse-data"><span class="k">data:</span> ' + e.data + '</div>';
       wire.appendChild(row);
-      if (e.feed) {
+
+      if (e.think) {
+        // artifact replace → one persistent thinking bubble, updated in place
+        if (!thinkEl) {
+          thinkEl = document.createElement("div");
+          thinkEl.className = "feed-think";
+          feed.appendChild(thinkEl);
+        }
+        thinkEl.innerHTML = '<span class="tl">Cortex thinking · replace</span>' + e.think;
+        thinkEl.classList.remove("pulse"); void thinkEl.offsetWidth; thinkEl.classList.add("pulse");
+      } else if (e.feed) {
         const line = document.createElement("div");
         line.className = "feed-line" + (e.feedKind ? " " + e.feedKind : "");
         line.innerHTML = '<span class="dot"></span><span>' + e.feed + '</span>';
