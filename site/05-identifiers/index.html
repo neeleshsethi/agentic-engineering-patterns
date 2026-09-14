@@ -497,6 +497,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#follow-one-run-where-each-name-appears" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Follow one run: where each name appears
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#identity-of-the-run-thread_id-and-run_id" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -548,6 +559,56 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Identity for truth and audit: provenance id and trace_id">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-deep-runs-need-provenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why deep runs need provenance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-deterministic-provenance-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The deterministic provenance id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-three-ordinals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The three ordinals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#evidence-set-identity-cycle_stamp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidence-set identity: cycle_stamp
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1161,6 +1222,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#follow-one-run-where-each-name-appears" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Follow one run: where each name appears
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#identity-of-the-run-thread_id-and-run_id" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1212,6 +1284,56 @@
       
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Identity for truth and audit: provenance id and trace_id">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#why-deep-runs-need-provenance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Why deep runs need provenance
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-deterministic-provenance-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The deterministic provenance id
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-three-ordinals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The three ordinals
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#evidence-set-identity-cycle_stamp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evidence-set identity: cycle_stamp
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1284,6 +1406,132 @@
 <li><strong>What invariant does it guard?</strong> What breaks if it is wrong?</li>
 </ol>
 <p>Question 3 is the one that catches people, and it is the axis this whole chapter is organized around: <strong>some ids must be identical on replay, and some must change on replay, and confusing the two is the duplicate-report bug above.</strong></p>
+<h2 id="follow-one-run-where-each-name-appears">Follow one run: where each name appears<a class="headerlink" href="#follow-one-run-where-each-name-appears" title="Permanent link">&para;</a></h2>
+<p>Before the categories, walk a single question end to end. Each identifier is <em>minted</em> at one hop and <em>checked</em> or <em>reused</em> at later ones — that hand-off is the whole point of having separate names.</p>
+<pre class="mermaid"><code>sequenceDiagram
+    autonumber
+    participant B as Browser
+    participant A as API
+    participant G as Gate (interrupt)
+    participant Q as SQS
+    participant W as Worker
+    participant S as Sources
+    participant R as Feed reader
+
+    B-&gt;&gt;A: ask (thread_id = T1)
+    Note over A: cycle = 2 → plan_id = plan-T1-2&lt;br/&gt;deep_run_id minted (this turn)
+    A-&gt;&gt;G: submit_plan → interrupt()
+    Note over G: interrupt_id minted (this revision)&lt;br/&gt;step ordinals step-1 … step-N fixed
+    G--&gt;&gt;B: plan card (owner_id = U)
+    B-&gt;&gt;A: Approve (plan_id, interrupt_id)
+    Note over A: check owner_id · interrupt_id (stale?) · plan_id (bind)
+    A-&gt;&gt;Q: enqueue {thread_id, run_id = R1}
+    Q-&gt;&gt;W: deliver (run_id = R1)
+    Note over W: claim_token minted (lock tenure)
+    W-&gt;&gt;S: retrieve step-1
+    Note over S: provenance_id =&lt;br/&gt;cortex:plan-T1-2:step-1:a1b2c3d4
+    W-&gt;&gt;R: write feed line (idem_key = task#n, seq)
+    Note over W: report → cycle_stamp = {plan_id, sorted provenance_ids}
+    W--&gt;&gt;B: report over SSE ([n] via retrieval_ordinal)</code></pre>
+<p>Read the table top to bottom as one run's life; the sections after it are the deep dives.</p>
+<table>
+<thead>
+<tr>
+<th>Hop in the run</th>
+<th>Identifier in play</th>
+<th>Minted or checked</th>
+<th>Stable on replay?</th>
+<th>What it buys you here</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>User opens a chat</td>
+<td><code>thread_id</code></td>
+<td>external, given</td>
+<td>stable forever</td>
+<td>Names the conversation; also the FIFO group key for one-worker-per-thread.</td>
+</tr>
+<tr>
+<td>A new question arrives</td>
+<td><code>cycle</code></td>
+<td>bumped (+1) by the gate</td>
+<td>stable once set</td>
+<td>The question number within the thread. It is the ingredient that makes <code>plan_id</code> deterministic.</td>
+</tr>
+<tr>
+<td>Model proposes a plan</td>
+<td><code>plan_id = plan-{thread}-{cycle}</code> · <code>deep_run_id</code></td>
+<td>both minted</td>
+<td><code>plan_id</code> stable · <code>deep_run_id</code> new per turn</td>
+<td><code>plan_id</code> is the approvable contract; <code>deep_run_id</code> stamps <em>this turn</em> so a stale plan is not re-persisted.</td>
+</tr>
+<tr>
+<td>Plan is written</td>
+<td>step <code>ordinal</code> (<code>step-1</code> … <code>step-N</code>)</td>
+<td>assigned, fixed at lock</td>
+<td>stable</td>
+<td>"The result of step 2" means the same thing on every replay and in every citation.</td>
+</tr>
+<tr>
+<td>Graph pauses at the gate</td>
+<td><code>interrupt_id</code></td>
+<td>minted</td>
+<td>new per pause</td>
+<td>Identifies the exact plan revision on screen — the stale-tab guard.</td>
+</tr>
+<tr>
+<td>User clicks Approve</td>
+<td><code>owner_id</code> · <code>interrupt_id</code> · <code>plan_id</code></td>
+<td>all checked</td>
+<td>—</td>
+<td>Authorization, staleness, and plan-binding, in that order.</td>
+</tr>
+<tr>
+<td>API enqueues to SQS</td>
+<td><code>run_id</code></td>
+<td>minted</td>
+<td>new per attempt</td>
+<td>Distinguishes this execution attempt from a later redelivery.</td>
+</tr>
+<tr>
+<td>Worker claims the run</td>
+<td><code>claim_token</code></td>
+<td>minted</td>
+<td>new per tenure</td>
+<td>Fences the lock so a zombie worker cannot renew or delete it.</td>
+</tr>
+<tr>
+<td>Each retrieval fires</td>
+<td><code>provenance_id = {source}:{plan_id}:{step_id}:{hash(sub_q)}</code></td>
+<td>minted</td>
+<td>stable (deterministic)</td>
+<td>Binds every fact to its retrieval; an identical retry reuses the id, so dedup is free. Note it <em>embeds</em> <code>plan_id</code> and the step ordinal.</td>
+</tr>
+<tr>
+<td>Each feed line is written</td>
+<td><code>idem_key = {task_id}#{n}</code> · <code>seq</code></td>
+<td>minted</td>
+<td><code>idem_key</code> stable · <code>seq</code> new</td>
+<td><code>idem_key</code> lets the reader drop replayed lines; <code>seq</code> only orders them and is the cursor.</td>
+</tr>
+<tr>
+<td>Exit writes the report</td>
+<td><code>cycle_stamp = {plan_id, sorted provenance_ids}</code> · <code>retrieval_ordinal</code></td>
+<td>minted</td>
+<td>stable</td>
+<td>The stamp blocks a duplicate report on redelivery; <code>retrieval_ordinal</code> maps each <code>[n]</code> citation back to its retrieval.</td>
+</tr>
+<tr>
+<td>The whole way through</td>
+<td><code>trace_id</code></td>
+<td>minted once</td>
+<td>—</td>
+<td>Ties every log and span together for debugging. Never touches correctness.</td>
+</tr>
+</tbody>
+</table>
+<p>Two patterns fall out of reading it this way. First, <strong>identity flows downstream</strong>: <code>plan_id</code> is minted at proposal and then reappears inside <code>provenance_id</code> and <code>cycle_stamp</code> — the plan's name is literally a substring of the evidence's name and the report's name, which is what lets the exit path ask "does this evidence belong to this plan?" with a string compare. Second, <strong>the stable-versus-new split alternates by purpose</strong>: naming a <em>thing</em> (thread, plan, step, fact) is stable; naming an <em>attempt</em> at doing something (run, pause, lock tenure, stream position) is new. The rest of the chapter is those two patterns, one category at a time.</p>
 <h2 id="identity-of-the-run-thread_id-and-run_id">Identity of the run: <code>thread_id</code> and <code>run_id</code><a class="headerlink" href="#identity-of-the-run-thread_id-and-run_id" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong><a href="../00-glossary/#thread-thread_id"><code>thread_id</code></a></strong> names one conversation — one logical timeline. It is stable forever. It is also the FIFO group key that makes <a href="../08-queue-and-worker-execution/">"one worker per thread"</a> a property of the queue.</li>
@@ -1328,6 +1576,7 @@
 <li><strong><a href="../00-glossary/#provenance-id">Provenance id</a></strong> is a pointer from a <em>fact</em> back to the tool result that produced it — which <code>query_source</code> call a given figure in the report came from. It turns <a href="../00-glossary/#grounding">grounding</a> from a promise into something <em>auditable</em>: every number carries the id of its retrieval, so a reviewer, or code, can confirm no figure was invented. In a regulated domain this is the difference between a quality issue and a compliance one.</li>
 <li><strong><a href="../00-glossary/#trace_id"><code>trace_id</code></a></strong> ties every log line, span, and model call for one request together for the humans debugging later. Nothing in the run's <em>correctness</em> depends on it — it is pure observability.</li>
 </ul>
+<h3 id="why-deep-runs-need-provenance">Why deep runs need provenance<a class="headerlink" href="#why-deep-runs-need-provenance" title="Permanent link">&para;</a></h3>
 <p>Deep runs need provenance because their evidence is async, resumable, parallel, and reused across turns. A synchronous one-shot agent can treat "the list of tool results in memory" as the answer. A deep agent cannot:</p>
 <ul>
 <li>SQS can redeliver the same work; the report writer must recognize the same evidence set.</li>
@@ -1335,6 +1584,7 @@
 <li>Parallel retrievals can finish in one graph step; retries need deterministic deduplication.</li>
 <li>Citations, cards, charts, and activity logs all need to point to the exact retrieval that produced a fact.</li>
 </ul>
+<h3 id="the-deterministic-provenance-id">The deterministic provenance id<a class="headerlink" href="#the-deterministic-provenance-id" title="Permanent link">&para;</a></h3>
 <p>The production provenance id was deliberately deterministic:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">provenance_id</span> <span class="o">=</span> <span class="s2">"</span><span class="si">{source}</span><span class="s2">:</span><span class="si">{plan_id}</span><span class="s2">:</span><span class="si">{step_id}</span><span class="s2">:{sha1(sub_question)[:8]}"</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># e.g. cortex:plan-thread-123-2:step-1:a1b2c3d4</span>
@@ -1355,6 +1605,7 @@
 <a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    <span class="p">]</span>
 </code></pre></div>
 <p>The state can keep old evidence around for follow-ups, but the report path still has a deterministic answer to "which retrievals belong to this locked plan?" No timestamps, no "last N results," no destructive cleanup.</p>
+<h3 id="the-three-ordinals">The three ordinals<a class="headerlink" href="#the-three-ordinals" title="Permanent link">&para;</a></h3>
 <p>Three ordinal values sit next to provenance, and conflating them is a bug:</p>
 <table>
 <thead>
@@ -1387,6 +1638,7 @@
 </tbody>
 </table>
 <p>The trap is that one retrieval can fan out into multiple cards. Display order and retrieval order then diverge, so joining citations to cards by display ordinal can attach a neighboring retrieval's card.</p>
+<h3 id="evidence-set-identity-cycle_stamp">Evidence-set identity: <code>cycle_stamp</code><a class="headerlink" href="#evidence-set-identity-cycle_stamp" title="Permanent link">&para;</a></h3>
 <p>Finally, a deep report needs an evidence-set identity, not just an id per retrieval:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">cycle_stamp</span> <span class="o">=</span> <span class="p">{</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="s2">"plan_id"</span><span class="p">:</span> <span class="n">plan</span><span class="o">.</span><span class="n">plan_id</span><span class="p">,</span>
