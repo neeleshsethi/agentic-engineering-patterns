@@ -23,7 +23,7 @@
       <p class="eyebrow">Production Deep Agent Engineering</p>
       <h1>Every fact needs a durable name</h1>
       <p class="lead">In a deep agent, retrieval can be parallel, retried, redelivered, and reused. Provenance is the naming scheme that keeps evidence from collapsing into a pile of similar-looking rows.</p>
-      <div class="meta"><span class="pill">7 slides</span><span class="pill">IDs</span><span class="pill">Citations</span><span class="pill">1 quiz</span></div>
+      <div class="meta"><span class="pill">8 slides</span><span class="pill">IDs</span><span class="pill">Citations</span><span class="pill">1 quiz</span></div>
     </section>
 
     <section class="slide">
@@ -91,6 +91,20 @@
       </div>
     </section>
 
+    <section class="slide">
+      <p class="eyebrow">Cycle is not stamp</p>
+      <h2>Three nearby names, three different jobs</h2>
+      <table>
+        <thead><tr><th>Value</th><th>Names</th><th>Why it exists</th></tr></thead>
+        <tbody>
+          <tr><td><code>cycle</code></td><td>Question number within a thread</td><td>Feeds deterministic <code>plan_id</code> creation.</td></tr>
+          <tr><td><code>plan_id</code></td><td>The approved research contract</td><td>Filters current-cycle evidence from accumulating <code>source_results</code>.</td></tr>
+          <tr><td><code>cycle_stamp</code></td><td>The exact delivered evidence set</td><td>Blocks duplicate reports and stale chart anchors.</td></tr>
+        </tbody>
+      </table>
+      <p class="lead">A result belongs to the current cycle only if rebuilding its <code>provenance_id</code> with the locked <code>plan_id</code> reproduces the stored id. No timestamps, no "last N results."</p>
+    </section>
+
     <section class="slide quiz" data-right="Right. source_id is a display fallback; provenance_id is the durable per-retrieval pointer." data-wrong="The important distinction is source_id versus provenance_id. Two Cortex retrievals share source_id but must not share identity.">
       <p class="eyebrow">Check yourself</p>
       <h2>Which value is unsafe as the primary identity for evidence?</h2>
@@ -115,7 +129,7 @@
     </section>
   </main>
 
-  <footer class="footer">Source notes: <code>data/raw/iCloud Photos/1492026/extracted/combined.md</code></footer>
+  <footer class="footer">Source notes: <code>data/raw/iCloud Photos/15092026/extracted-2/findings.md</code></footer>
 </div>
 <script src="lesson.js"></script>
 </body>

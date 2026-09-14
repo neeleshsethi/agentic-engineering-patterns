@@ -106,13 +106,32 @@ provenance_id = "{source}:{plan_id}:{step_id}:{sha1(sub_question)[:8]}"
 
 An identical retry intentionally gets the same id. A changed clarification answer changes the sub-question hash, so the new retrieval gets a new id. Because the `plan_id` is embedded, the system can filter current-cycle evidence by rebuilding the id for the current plan and comparing strings, without relying on timestamps.
 
+That filter is the small trick that keeps accumulating state usable:
+
+```python
+def current_cycle_results(plan, source_results):
+    plan_id = plan["plan_id"]
+    return [
+        result
+        for result in source_results
+        if result["provenance_id"] == build_provenance_id(
+            result["source"],
+            plan_id,
+            result["step_id"],
+            result["sub_question"],
+        )
+    ]
+```
+
+The state can keep old evidence around for follow-ups, but the report path still has a deterministic answer to "which retrievals belong to this locked plan?" No timestamps, no "last N results," no destructive cleanup.
+
 Three ordinal values sit next to provenance, and conflating them is a bug:
 
-| Ordinal | Counts | Purpose |
-|---|---|---|
-| `retrieval_ordinal` | Retrievals in the report | Maps inline citation markers like `[3]` back to `source_results`. |
-| `source_ordinal` | Retrievals in the cycle | Join key on cards and tables so citations attach to the right retrieval. |
-| `card["ordinal"]` | Cards in display order | Display only. It is not a citation join key. |
+| Ordinal | 1-based index of | Scope | Purpose |
+|---|---|---|---|
+| `retrieval_ordinal` | The retrieval a citation marker like `[3]` points at | Per report | Maps inline citation markers back to `source_results`. |
+| `source_ordinal` | The retrieval that produced a card or table | Per cycle | Join key on cards and tables so citations attach to the right retrieval. |
+| `card["ordinal"]` | A card in the global display list | Per render | Display only. It is not a citation join key. |
 
 The trap is that one retrieval can fan out into multiple cards. Display order and retrieval order then diverge, so joining citations to cards by display ordinal can attach a neighboring retrieval's card.
 
@@ -125,7 +144,17 @@ cycle_stamp = {
 }
 ```
 
-`reported_cycle` stores the stamp of the last delivered report; if an SQS redelivery reaches the exit path with the same stamp, report generation is a no-op. `chart_cycle` plays the same role for chart anchors, ensuring stale chart specs cannot attach to a new report.
+`reported_cycle` stores the stamp of the last delivered report; if an SQS redelivery reaches the exit path with the same stamp, report generation is a no-op. The comparison is whole-dict equality: same plan, same sorted set of provenance ids. On that idempotent branch the exit path should avoid even cosmetic writes such as a fresh chat label, because byte-identical retry behavior is the goal.
+
+`chart_cycle` plays the same role for chart anchors. Chart specs are useful only for the evidence set they were built against; anchoring a new report against a stale catalog is just another way to make a correct-looking wrong answer. Comparing the same `cycle_stamp` before anchoring keeps chart references attached to same-cycle evidence.
+
+This is why `cycle` and `cycle_stamp` are different ideas:
+
+| Value | What it names | Why it exists |
+|---|---|---|
+| `cycle` | The question number within a thread | Feeds deterministic `plan_id` creation. |
+| `plan_id` | The approved research contract for that cycle | Filters current-cycle evidence and binds approval. |
+| `cycle_stamp` | The exact delivered evidence set | Blocks duplicate reports and stale chart anchors. |
 
 ## The whole map on one axis
 
