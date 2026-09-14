@@ -85,12 +85,14 @@ The key distinction:
 | Reactive | Deterministic `is_elicitation` flag when the source/client can set it; prompt backstop for question-shaped replies | Prompt rules tell the one-pass router to relay the source question instead of synthesizing. | Results stay available for the next turn. |
 | Deep | Deterministic `is_elicitation` flag on `SourceResult`; deep treats that flag as the source of truth | `DeepExitPathMiddleware` checks `pending_elicitation()` and skips report generation in code. | The step stays open; the report is skipped until the user answers. |
 
-So yes: **clarification handling is deterministic for deep at the report boundary.** The model is still prompted to relay the question politely, but it is not trusted to decide whether a report may be written. If any current-cycle result is an elicitation, `pending_elicitation()` blocks the report.
+So yes: **clarification handling is deterministic for deep at the report boundary.** The model is still prompted to relay the question politely, but it is not trusted to decide whether a report may be written. If a current-cycle step's latest successful result is an elicitation, `pending_elicitation()` blocks the report.
+
+That "latest successful" qualifier matters. A failed retry should not accidentally clear an open source question, and an older elicitation should not block forever after the same step later returns real data. The predicate groups successful results by `step_id`, keeps the latest one per step, then asks whether any of those latest successes still carries `is_elicitation`.
 
 The deterministic deep path has three owners:
 
 1. **Source adapter/client** stamps `SourceResult.is_elicitation`.
-2. **`provenance.py`** owns `pending_elicitation()`, the shared predicate that asks, "is any current-cycle step still waiting on the user?"
+2. **`provenance.py`** owns `pending_elicitation()`, the shared predicate that asks, "is any current-cycle step's latest successful retrieval still waiting on the user?"
 3. **The report gates call that predicate before output is written.** `SufficiencyGateMiddleware` should not grade a report-ready evidence set while elicitation is pending, and `DeepExitPathMiddleware` must skip report generation when `pending_elicitation()` is true.
 
 That is the "middleware gate" in deep: the model may phrase the relayed question, but the sufficiency/exit path code decides whether a report is allowed.

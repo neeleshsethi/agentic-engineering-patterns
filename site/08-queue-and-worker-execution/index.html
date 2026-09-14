@@ -641,6 +641,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Sequence Number Versus Idempotency Key">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#one-stream-must-not-poison-anothers-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One stream must not poison another's keys
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -837,6 +854,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../09e-event-feed-and-idempotency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · The event feed and idempotency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../lessons/" class="md-nav__link">
         
   
@@ -904,10 +948,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_19" >
         
           
-          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="">
+          <label class="md-nav__link" for="__nav_19" id="__nav_19_label" tabindex="">
             
   
   
@@ -925,8 +969,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_18">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_19_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_19">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -981,10 +1025,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_19_2" >
         
           
-          <label class="md-nav__link" for="__nav_18_2" id="__nav_18_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_19_2" id="__nav_19_2_label" tabindex="0">
             
   
   
@@ -1002,8 +1046,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_18_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_18_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_19_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_19_2">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1241,6 +1285,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Sequence Number Versus Idempotency Key">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#one-stream-must-not-poison-anothers-keys" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One stream must not poison another's keys
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1447,25 +1508,37 @@ seq 11, 12 → <span class="bad">duplicate idem_key, skipped</span>   <span clas
   </div>
 </div>
 
-<p>Exactly one of the two must change on replay (the <a href="../00-glossary/#sequence-number-seq">sequence</a>) and exactly one must not (the key). Many frameworks already compute a deterministic per-execution task id; if so, use it and let the framework own the hard part.</p>
+<p>Exactly one of the two must change on replay (the <a href="../00-glossary/#sequence-number-seq">sequence</a>) and exactly one must not (the key). Many frameworks already compute a deterministic per-execution task id; if so, use it and let the framework own the hard part. Here the key is <code>"{task_id}#{n}"</code>, where <code>task_id</code> is parsed out of each streamed event's checkpoint namespace (LangGraph shapes it as <code>"{node}:{task_id}"</code>) and <code>n</code> is a per-<code>task_id</code> counter of the events that task has emitted. The key stays stable across a crash-replay because <code>task_id</code> is derived from the checkpoint the node <em>started from</em>, not the one it writes: a replay resumes from the same input checkpoint (same id), while a genuine loop iteration starts from a newer one (new id). That is exactly the signal that tells "re-run of the interrupted attempt" apart from "the loop legitimately ran this node again."</p>
+<h3 id="one-stream-must-not-poison-anothers-keys">One stream must not poison another's keys<a class="headerlink" href="#one-stream-must-not-poison-anothers-keys" title="Permanent link">&para;</a></h3>
+<p>There is a sharp edge here worth calling out, because it is easy to get wrong. If a single node emits <strong>two interleaved kinds of frame with different reproducibility guarantees</strong>, they must count under <strong>separate</strong> <code>n</code> namespaces. In this system one node calls a downstream model (Cortex) and streams both live "thinking" deltas — whose <em>count</em> is non-reproducible, since a replay re-calls the model and gets a different number of tokens plus wall-clock coalescing variance — and a handful of deterministic frames (a terminal status, a plan-tick checkmark) that <em>must</em> reproduce so the reader can dedup them.</p>
+<p>Put both on one counter and the noisy stream shifts the quiet one's indices: a status that was <code>#5</code> after five deltas on the first attempt becomes <code>#3</code> after three deltas on the replay — a different key, so the reader re-renders the checkmark. The fix is to quarantine the non-reproducible frames under their own suffix (here <code>"{task_id}~cs"</code>) so the deterministic frames keep counting from <code>#0</code> regardless of how many live deltas flew by. The live deltas may re-show after a replay, but they carry replace-semantics (each frame holds the full accumulated text), so the panel simply re-fills — harmless. The rule generalizes: <strong>a counter-derived idempotency key may only count events whose count is itself replay-stable.</strong></p>
 <h2 id="replay-and-live-tail-are-the-same-query">Replay And Live Tail Are The Same Query<a class="headerlink" href="#replay-and-live-tail-are-the-same-query" title="Permanent link">&para;</a></h2>
 <p>The reader is deliberately dumb. It knows nothing about queues, locks, or workers. It reads one table.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">cursor</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Last-Event-ID"</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>    <span class="n">items</span> <span class="o">=</span> <span class="n">events</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">PK</span><span class="o">=</span><span class="n">tid</span><span class="p">,</span> <span class="n">seq_gt</span><span class="o">=</span><span class="n">cursor</span><span class="p">,</span> <span class="n">consistent</span><span class="o">=</span><span class="n">first_pass</span><span class="p">)</span>
-<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">dedup_by_idem_key</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
-<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>        <span class="k">yield</span> <span class="n">sse</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s2">"seq"</span><span class="p">],</span> <span class="n">data</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s2">"event"</span><span class="p">])</span>
-<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>        <span class="n">cursor</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">"seq"</span><span class="p">]</span>
-<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>
-<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>    <span class="n">run</span> <span class="o">=</span> <span class="n">get_run_state</span><span class="p">(</span><span class="n">tid</span><span class="p">)</span>
-<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>    <span class="k">if</span> <span class="n">run</span><span class="o">.</span><span class="n">status</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"failed"</span><span class="p">,</span> <span class="s2">"completed"</span><span class="p">):</span>
-<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>        <span class="k">yield</span> <span class="n">terminal_frame</span><span class="p">(</span><span class="n">run</span><span class="o">.</span><span class="n">status</span><span class="p">,</span> <span class="n">run</span><span class="o">.</span><span class="n">reason</span><span class="p">)</span>
-<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>        <span class="k">return</span>
-<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.25</span><span class="p">)</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">seen</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>          <span class="c1"># per-connection, in API RAM — not in the table</span>
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>    <span class="n">items</span> <span class="o">=</span> <span class="n">events</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">PK</span><span class="o">=</span><span class="n">tid</span><span class="p">,</span> <span class="n">seq_gt</span><span class="o">=</span><span class="n">cursor</span><span class="p">,</span> <span class="n">consistent</span><span class="o">=</span><span class="n">first_pass</span><span class="p">)</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>        <span class="n">cursor</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">"seq"</span><span class="p">]</span>                 <span class="c1"># advance even on a skipped row</span>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>        <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="s2">"idem_key"</span><span class="p">]</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>            <span class="k">continue</span>                         <span class="c1"># a replay duplicate landing ahead of the cursor</span>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>        <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">"idem_key"</span><span class="p">])</span>
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>        <span class="k">yield</span> <span class="n">sse</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s2">"seq"</span><span class="p">],</span> <span class="n">data</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s2">"event"</span><span class="p">])</span>
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>    <span class="n">run</span> <span class="o">=</span> <span class="n">get_run_state</span><span class="p">(</span><span class="n">tid</span><span class="p">)</span>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>    <span class="k">if</span> <span class="n">run</span><span class="o">.</span><span class="n">status</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"failed"</span><span class="p">,</span> <span class="s2">"completed"</span><span class="p">):</span>
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>        <span class="k">yield</span> <span class="n">terminal_frame</span><span class="p">(</span><span class="n">run</span><span class="o">.</span><span class="n">status</span><span class="p">,</span> <span class="n">run</span><span class="o">.</span><span class="n">reason</span><span class="p">)</span>
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>        <span class="k">return</span>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.25</span><span class="p">)</span>
 </code></pre></div>
-<p>Three properties make this robust:</p>
+<p>Two cooperating mechanisms make this robust, and it is worth being precise about which does what — they are not the same:</p>
 <ul>
-<li><strong>Reconnect is free.</strong> The browser's native <code>EventSource</code> resends the last id it saw as <code>Last-Event-ID</code>. That becomes the cursor. Replay and live tail are one query; there is no separate history endpoint and no per-connection server state.</li>
+<li><strong>The cursor</strong> (persisted in the browser as <code>Last-Event-ID</code>) skips already-seen rows <em>across reconnects</em>. A fresh connection resumes from the last <code>seq</code> the browser saw, so it never re-reads history. Replay and live tail are one query; there is no separate history endpoint.</li>
+<li><strong>The <code>seen</code> set</strong> (a <code>set[str]</code> of idempotency keys on the per-connection tail state, in API RAM) skips crash-replay duplicates that land <em>ahead</em> of the cursor <em>within one live connection</em> — the re-emitted lines get <strong>new</strong> <code>seq</code> numbers, so the cursor alone cannot catch them; only the repeated idempotency key does. Note the cursor advances even on a skipped row, so a mid-stream reconnect pages <em>past</em> the duplicates rather than re-examining them.</li>
+</ul>
+<p>The durable table deliberately keeps the duplicate rows; deduplication is a presentation concern done live at read time, in the API process, and it is thrown away when the connection closes.</p>
+<p>Two more properties round it out:</p>
+<ul>
 <li><strong>Termination is on status, not a sentinel.</strong> A crashed worker never writes a "done" event. If the only exit were a sentinel event, the user would watch a spinner forever. The run-state record can be flipped to <code>failed</code> by a detector that is not the worker.</li>
 <li><strong>Dedup makes at-least-once look exactly-once.</strong> Every duplicated feed line from a redelivery collapses on the idempotency key at read time.</li>
 </ul>

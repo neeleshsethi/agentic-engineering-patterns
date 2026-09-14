@@ -94,7 +94,7 @@ address — reads are `GetItem`, never `Query`.
 |---|---|---|
 | `thread_id` | S (PK) | `"abc"` — bare thread id; the partition the SSE tail queries, **nothing else may use it** |
 | `seq` | N (SK) | worker-allocated order (seeded from max, +1 per curated event); **gaps allowed** |
-| `idem_key` | S | `task_id + intra-node index` → read-side dedup of crash-replayed events |
+| `idem_key` | S | `task_id + per-task n` → read-side dedup of crash-replayed events |
 | `event` | M | `{type, label, phase, step_id, …}` — the curated payload the browser renders |
 | `s3_key`, `content_type` | S | payloads > 400 KB become an S3 pointer |
 | `ts` | N | display timestamp (epoch ms) — **never** used for ordering (that's `seq`'s job) |
@@ -258,8 +258,8 @@ the counts are unrelated to checkpoint counts because the audiences differ.
 **`idem_key` identifies the *logical* event, independent of which attempt wrote it:**
 
 ```python
-idem_key = f"{checkpoint_id_the_node_was_launched_from}#{node_name}#{intra_node_index}"
-#            └─ stable across crash-replay ─┘             └─ 0,1,2… within this node run ─┘
+idem_key = f"{task_id}#{n}"
+#            └─ one node in one superstep ─┘ └─ 0,1,2… within that task ─┘
 ```
 
 The defining property, and how each ingredient earns its place:
@@ -267,27 +267,27 @@ The defining property, and how each ingredient earns its place:
 - **Must be identical when a node is crash-replayed** → derived from execution position, never
   from `seq` (which changes on replay) and never random.
 - **Must differ across legitimate re-runs** → our agent node runs many times on purpose (ReAct
-  loop). `checkpoint_id` disambiguates: iteration 7 is launched from a different checkpoint than
-  iteration 2 (`ckpt_0031` vs `ckpt_0007`). Replay of iteration 7 resumes from the *same*
-  `ckpt_0031` → same key. `checkpoint_id` is the one identifier that naturally distinguishes
-  "running again on purpose" from "running again because we crashed."
-- **`intra_node_index`** is the emitter counting emissions within the current node execution:
-  first feed line → `#0`, second → `#1`.
+  loop). LangGraph's `task_id` already folds in the input checkpoint, namespace, superstep, node,
+  and trigger disambiguators. Replay of the same uncommitted task starts from the same input
+  checkpoint → same `task_id`; a real next loop iteration starts from a newer input checkpoint →
+  different `task_id`.
+- **`n`** is the curator's per-`task_id` counter: first deterministic feed line → `#0`, second →
+  `#1`.
 
 **Worked example — node emits two events, worker dies, node replays:**
 
 ```
-Attempt 1 (worker A): (seq  9, "ckpt_0031#tools#0")  (seq 10, "ckpt_0031#tools#1")
+Attempt 1 (worker A): (seq  9, "taskB#0")  (seq 10, "taskB#1")
                        A dies before the post-node checkpoint.
-B resumes FROM ckpt_0031 → node re-runs:
-Attempt 2 (worker B): (seq 11, "ckpt_0031#tools#0")  (seq 12, "ckpt_0031#tools#1")
+B resumes from the same input checkpoint → node re-runs:
+Attempt 2 (worker B): (seq 11, "taskB#0")  (seq 12, "taskB#1")
                        same keys, new seqs.
 Reader dedups on idem_key → the user sees each line exactly once.
 ```
 
 Exactly one of the two must change on replay (`seq`); the other must not (`idem_key`).
 
-#### Where `checkpoint_id` comes from (verified against the venv)
+#### Where `task_id` comes from (verified against the pinned LangGraph)
 
 Minted by LangGraph core — checkpoint creation in `langgraph.checkpoint.base` (ships in the
 separate `langgraph-checkpoint` package). The id is `str(uuid6(clock_seq=-2))`; checkpoint ids
@@ -295,8 +295,8 @@ sort chronologically (the `Checkpoint` TypedDict docstring guarantees "unique an
 increasing"). Our DynamoDB saver just persists it with every snapshot — we never generate or
 manage it.
 
-**Even better: LangGraph already computes our exact recipe — the `task_id`.** In
-`langgraph/pregel/_algo.py`, every node execution is assigned a deterministic task id:
+LangGraph computes the hard part for us. In `langgraph/pregel/_algo.py`, every node execution is
+assigned a deterministic task id:
 
 ```python
 task_id = task_id_func(
@@ -308,14 +308,13 @@ task_id = task_id_func(
 )   # xxhash (ckpt v>1) or uuid5 — both deterministic
 ```
 
-That is literally the recipe — "checkpoint the node was launched from + node + disambiguator" —
-computed and maintained by the framework itself. It's what makes `put_writes` idempotent
-internally: a crash-replay from the same checkpoint gets the same `task_id`, while a legitimate
-next loop iteration (new checkpoint, new step) gets a different one. So the emitter shouldn't
-hand-assemble the prefix at all:
+That is the recipe — "input checkpoint + node + disambiguator" — computed and maintained by the
+framework itself. It is what makes `put_writes` idempotent internally: a crash-replay from the
+same input checkpoint gets the same `task_id`, while a legitimate next loop iteration gets a
+different one. The emitter should read this id, not hand-assemble a surrogate:
 
 ```python
-idem_key = f"{task_id}#{intra_node_index}"   # task_id from the debug stream event
+idem_key = f"{task_id}#{n}"   # task_id from the streamed event; n from the per-task counter
 ```
 
 Same guarantees, zero assembly logic to get wrong.
@@ -349,7 +348,7 @@ def my_node(state, config):
 ```
 
 **Which to use?** The debug stream, as default and primary: the emitter already lives on the
-stream, so the whole event-identity contract (`task_id` + `intra_node_index` + `seq`) is
+stream, so the whole event-identity contract (`task_id` + per-task `n` + `seq`) is
 assembled in one component, the run behaves identically whether anyone watches (projection
 principle), and the intra-node counter gets clean lifecycle brackets (`task` start → count →
 `task_result` end, per id, safe under parallel tasks). The in-node surface matters only for a
@@ -393,9 +392,12 @@ while True:
         ConsistentRead=first_pass,   # strong on catch-up (must not miss a fresh write);
     )                                # eventual on the steady tail (halves RCU)
     first_pass = False
-    for item in dedup_by_idem_key(items):
+    for item in items:
+        cursor = item["seq"]  # advance even if this row is skipped
+        if item["idem_key"] in seen:
+            continue
+        seen.add(item["idem_key"])
         yield f'id: {item["seq"]}\ndata: {json.dumps(item["event"])}\n\n'
-        cursor = item["seq"]
 
     run = get_run_state(tid)         # termination on STATUS, not a sentinel
     if run.status in ("failed", "completed"):
@@ -412,7 +414,9 @@ Three design points:
 - **Termination on run status.** A crashed worker never writes a "done" event — if the only exit
   were a sentinel, the user would watch a spinner forever. The run-state record can be flipped by
   someone other than the worker (a detector), so it's the reliable terminator.
-- **`dedup_by_idem_key`** makes at-least-once writes look exactly-once to the user.
+- **The per-connection `seen` set** makes at-least-once writes look exactly-once to the user.
+  It lives in API RAM, not DynamoDB, and the cursor advances even for skipped duplicate rows so a
+  reconnect pages past them.
 
 ### Step 5: Completion
 

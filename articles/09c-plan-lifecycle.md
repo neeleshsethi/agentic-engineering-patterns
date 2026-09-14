@@ -12,6 +12,8 @@ write_todos -> submit_plan -> interrupt() -> approve/refine -> execute
 
 That workflow is expensive and state-changing. It creates a plan, exposes it to a human, waits for approval, locks the plan, and only then lets retrieval run.
 
+When it does run, the shape is fixed: write todos with routing tags, submit the plan, let the gate interrupt, loop on refine if the human asks for changes, execute only after approval, then classify the next message into a follow-up lane. The approval gate is therefore a question-level boundary, not a turn-level reflex.
+
 ## When We Replan
 
 Replanning means the system opens a new cycle and mints a fresh `plan_id`.
@@ -77,6 +79,10 @@ The critical case is source elicitation. If the user answers "retail" after a so
 Once a plan is locked, nothing short of a genuinely new question should reopen approval.
 
 Replanning an elicitation reply would detach already-fetched evidence from the current cycle because current-cycle evidence is filtered by `plan_id`. Keeping the locked plan is what allows partial results to carry forward safely.
+
+That filter is deliberately string-based: a result belongs to the current cycle if rebuilding its `provenance_id` with the current locked `plan_id` reproduces the stored id. A new `plan_id` is not a harmless label change; it changes which accumulated `source_results` are considered current evidence.
+
+Entity and metric gaps are the opposite case. They happen before a safe plan exists, so the system asks one terminal clarification and avoids writing todos at all. Source ambiguity can ride the plan gate only when approving the plan is itself enough to resolve the ambiguity.
 
 ---
 
