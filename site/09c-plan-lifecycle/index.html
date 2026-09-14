@@ -782,6 +782,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../09e-event-feed-and-idempotency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · The event feed and idempotency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../lessons/" class="md-nav__link">
         
   
@@ -849,10 +876,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_19" >
         
           
-          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="">
+          <label class="md-nav__link" for="__nav_19" id="__nav_19_label" tabindex="">
             
   
   
@@ -870,8 +897,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_18">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_19_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_19">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -926,10 +953,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_19_2" >
         
           
-          <label class="md-nav__link" for="__nav_18_2" id="__nav_18_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_19_2" id="__nav_19_2_label" tabindex="0">
             
   
   
@@ -947,8 +974,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_18_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_18_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_19_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_19_2">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1209,6 +1236,7 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>write_todos -&gt; submit_plan -&gt; interrupt() -&gt; approve/refine -&gt; execute
 </code></pre></div>
 <p>That workflow is expensive and state-changing. It creates a plan, exposes it to a human, waits for approval, locks the plan, and only then lets retrieval run.</p>
+<p>When it does run, the shape is fixed: write todos with routing tags, submit the plan, let the gate interrupt, loop on refine if the human asks for changes, execute only after approval, then classify the next message into a follow-up lane. The approval gate is therefore a question-level boundary, not a turn-level reflex.</p>
 <h2 id="when-we-replan">When We Replan<a class="headerlink" href="#when-we-replan" title="Permanent link">&para;</a></h2>
 <p>Replanning means the system opens a new cycle and mints a fresh <code>plan_id</code>.</p>
 <p>Use a new plan when:</p>
@@ -1314,6 +1342,8 @@
 <h2 id="the-invariant">The Invariant<a class="headerlink" href="#the-invariant" title="Permanent link">&para;</a></h2>
 <p>Once a plan is locked, nothing short of a genuinely new question should reopen approval.</p>
 <p>Replanning an elicitation reply would detach already-fetched evidence from the current cycle because current-cycle evidence is filtered by <code>plan_id</code>. Keeping the locked plan is what allows partial results to carry forward safely.</p>
+<p>That filter is deliberately string-based: a result belongs to the current cycle if rebuilding its <code>provenance_id</code> with the current locked <code>plan_id</code> reproduces the stored id. A new <code>plan_id</code> is not a harmless label change; it changes which accumulated <code>source_results</code> are considered current evidence.</p>
+<p>Entity and metric gaps are the opposite case. They happen before a safe plan exists, so the system asks one terminal clarification and avoids writing todos at all. Source ambiguity can ride the plan gate only when approving the plan is itself enough to resolve the ambiguity.</p>
 <hr />
 <div class="admonition check">
 <p class="admonition-title">You should now understand</p>

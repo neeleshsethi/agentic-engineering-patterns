@@ -815,6 +815,33 @@
   
   
     <li class="md-nav__item">
+      <a href="../09e-event-feed-and-idempotency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deep dive · The event feed and idempotency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../lessons/" class="md-nav__link">
         
   
@@ -882,10 +909,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_19" >
         
           
-          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="">
+          <label class="md-nav__link" for="__nav_19" id="__nav_19_label" tabindex="">
             
   
   
@@ -903,8 +930,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_18">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_19_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_19">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -959,10 +986,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_19_2" >
         
           
-          <label class="md-nav__link" for="__nav_18_2" id="__nav_18_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_19_2" id="__nav_19_2_label" tabindex="0">
             
   
   
@@ -980,8 +1007,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_18_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_18_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_19_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_19_2">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1405,11 +1432,12 @@
 </tr>
 </tbody>
 </table>
-<p>So yes: <strong>clarification handling is deterministic for deep at the report boundary.</strong> The model is still prompted to relay the question politely, but it is not trusted to decide whether a report may be written. If any current-cycle result is an elicitation, <code>pending_elicitation()</code> blocks the report.</p>
+<p>So yes: <strong>clarification handling is deterministic for deep at the report boundary.</strong> The model is still prompted to relay the question politely, but it is not trusted to decide whether a report may be written. If a current-cycle step's latest successful result is an elicitation, <code>pending_elicitation()</code> blocks the report.</p>
+<p>That "latest successful" qualifier matters. A failed retry should not accidentally clear an open source question, and an older elicitation should not block forever after the same step later returns real data. The predicate groups successful results by <code>step_id</code>, keeps the latest one per step, then asks whether any of those latest successes still carries <code>is_elicitation</code>.</p>
 <p>The deterministic deep path has three owners:</p>
 <ol>
 <li><strong>Source adapter/client</strong> stamps <code>SourceResult.is_elicitation</code>.</li>
-<li><strong><code>provenance.py</code></strong> owns <code>pending_elicitation()</code>, the shared predicate that asks, "is any current-cycle step still waiting on the user?"</li>
+<li><strong><code>provenance.py</code></strong> owns <code>pending_elicitation()</code>, the shared predicate that asks, "is any current-cycle step's latest successful retrieval still waiting on the user?"</li>
 <li><strong>The report gates call that predicate before output is written.</strong> <code>SufficiencyGateMiddleware</code> should not grade a report-ready evidence set while elicitation is pending, and <code>DeepExitPathMiddleware</code> must skip report generation when <code>pending_elicitation()</code> is true.</li>
 </ol>
 <p>That is the "middleware gate" in deep: the model may phrase the relayed question, but the sufficiency/exit path code decides whether a report is allowed.</p>

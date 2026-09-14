@@ -637,8 +637,13 @@ with sse_manager.open(run_id) as stream:
   KeyConditionExpression=
     Key("thread_id").eq(thread_id) &amp;
     Key("seq").gt(cursor))   # seq &gt; cursor
-for it in dedup_by_idem_key(items):
-    yield it   # at-least-once → exactly-once</code></pre>
+seen = set()
+for it in items:
+    cursor = it["seq"]   # advances even when skipped
+    if it["idem_key"] in seen:
+        continue
+    seen.add(it["idem_key"])
+    yield it</code></pre>
       </div>
       <div class="box tip"><span class="box-label tip">Why seq &gt; cursor</span>The browser stores the last <code>seq</code> it saw. On reconnect it asks for <code>seq &gt; cursor</code> — so a dropped SSE connection resumes exactly where it left off, losslessly. The worker and browser never talk directly.</div>
     </div>
