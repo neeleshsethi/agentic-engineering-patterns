@@ -1340,41 +1340,88 @@
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="c1"># e.g. cortex:plan-thread-123-2:step-1:a1b2c3d4</span>
 </code></pre></div>
 <p>An identical retry intentionally gets the same id. A changed clarification answer changes the sub-question hash, so the new retrieval gets a new id. Because the <code>plan_id</code> is embedded, the system can filter current-cycle evidence by rebuilding the id for the current plan and comparing strings, without relying on timestamps.</p>
+<p>That filter is the small trick that keeps accumulating state usable:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">current_cycle_results</span><span class="p">(</span><span class="n">plan</span><span class="p">,</span> <span class="n">source_results</span><span class="p">):</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">plan_id</span> <span class="o">=</span> <span class="n">plan</span><span class="p">[</span><span class="s2">"plan_id"</span><span class="p">]</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="k">return</span> <span class="p">[</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>        <span class="n">result</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>        <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">source_results</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>        <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s2">"provenance_id"</span><span class="p">]</span> <span class="o">==</span> <span class="n">build_provenance_id</span><span class="p">(</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>            <span class="n">result</span><span class="p">[</span><span class="s2">"source"</span><span class="p">],</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>            <span class="n">plan_id</span><span class="p">,</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>            <span class="n">result</span><span class="p">[</span><span class="s2">"step_id"</span><span class="p">],</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>            <span class="n">result</span><span class="p">[</span><span class="s2">"sub_question"</span><span class="p">],</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>        <span class="p">)</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    <span class="p">]</span>
+</code></pre></div>
+<p>The state can keep old evidence around for follow-ups, but the report path still has a deterministic answer to "which retrievals belong to this locked plan?" No timestamps, no "last N results," no destructive cleanup.</p>
 <p>Three ordinal values sit next to provenance, and conflating them is a bug:</p>
 <table>
 <thead>
 <tr>
 <th>Ordinal</th>
-<th>Counts</th>
+<th>1-based index of</th>
+<th>Scope</th>
 <th>Purpose</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>retrieval_ordinal</code></td>
-<td>Retrievals in the report</td>
-<td>Maps inline citation markers like <code>[3]</code> back to <code>source_results</code>.</td>
+<td>The retrieval a citation marker like <code>[3]</code> points at</td>
+<td>Per report</td>
+<td>Maps inline citation markers back to <code>source_results</code>.</td>
 </tr>
 <tr>
 <td><code>source_ordinal</code></td>
-<td>Retrievals in the cycle</td>
+<td>The retrieval that produced a card or table</td>
+<td>Per cycle</td>
 <td>Join key on cards and tables so citations attach to the right retrieval.</td>
 </tr>
 <tr>
 <td><code>card["ordinal"]</code></td>
-<td>Cards in display order</td>
+<td>A card in the global display list</td>
+<td>Per render</td>
 <td>Display only. It is not a citation join key.</td>
 </tr>
 </tbody>
 </table>
 <p>The trap is that one retrieval can fan out into multiple cards. Display order and retrieval order then diverge, so joining citations to cards by display ordinal can attach a neighboring retrieval's card.</p>
 <p>Finally, a deep report needs an evidence-set identity, not just an id per retrieval:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">cycle_stamp</span> <span class="o">=</span> <span class="p">{</span>
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="s2">"plan_id"</span><span class="p">:</span> <span class="n">plan</span><span class="o">.</span><span class="n">plan_id</span><span class="p">,</span>
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="s2">"provenance_ids"</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">({</span><span class="n">r</span><span class="o">.</span><span class="n">provenance_id</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results</span><span class="p">}),</span>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="p">}</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">cycle_stamp</span> <span class="o">=</span> <span class="p">{</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="s2">"plan_id"</span><span class="p">:</span> <span class="n">plan</span><span class="o">.</span><span class="n">plan_id</span><span class="p">,</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="s2">"provenance_ids"</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">({</span><span class="n">r</span><span class="o">.</span><span class="n">provenance_id</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results</span><span class="p">}),</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="p">}</span>
 </code></pre></div>
-<p><code>reported_cycle</code> stores the stamp of the last delivered report; if an SQS redelivery reaches the exit path with the same stamp, report generation is a no-op. <code>chart_cycle</code> plays the same role for chart anchors, ensuring stale chart specs cannot attach to a new report.</p>
+<p><code>reported_cycle</code> stores the stamp of the last delivered report; if an SQS redelivery reaches the exit path with the same stamp, report generation is a no-op. The comparison is whole-dict equality: same plan, same sorted set of provenance ids. On that idempotent branch the exit path should avoid even cosmetic writes such as a fresh chat label, because byte-identical retry behavior is the goal.</p>
+<p><code>chart_cycle</code> plays the same role for chart anchors. Chart specs are useful only for the evidence set they were built against; anchoring a new report against a stale catalog is just another way to make a correct-looking wrong answer. Comparing the same <code>cycle_stamp</code> before anchoring keeps chart references attached to same-cycle evidence.</p>
+<p>This is why <code>cycle</code> and <code>cycle_stamp</code> are different ideas:</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>What it names</th>
+<th>Why it exists</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cycle</code></td>
+<td>The question number within a thread</td>
+<td>Feeds deterministic <code>plan_id</code> creation.</td>
+</tr>
+<tr>
+<td><code>plan_id</code></td>
+<td>The approved research contract for that cycle</td>
+<td>Filters current-cycle evidence and binds approval.</td>
+</tr>
+<tr>
+<td><code>cycle_stamp</code></td>
+<td>The exact delivered evidence set</td>
+<td>Blocks duplicate reports and stale chart anchors.</td>
+</tr>
+</tbody>
+</table>
 <h2 id="the-whole-map-on-one-axis">The whole map on one axis<a class="headerlink" href="#the-whole-map-on-one-axis" title="Permanent link">&para;</a></h2>
 <p>The single most useful way to hold all of these is by the replay question:</p>
 <table>

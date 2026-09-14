@@ -1182,10 +1182,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#where-checkpoint_id-comes-from-verified-against-the-venv" class="md-nav__link">
+  <a href="#where-task_id-comes-from-verified-against-the-pinned-langgraph" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Where checkpoint_id comes from (verified against the venv)
+        Where task_id comes from (verified against the pinned LangGraph)
       
     </span>
   </a>
@@ -1559,10 +1559,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#where-checkpoint_id-comes-from-verified-against-the-venv" class="md-nav__link">
+  <a href="#where-task_id-comes-from-verified-against-the-pinned-langgraph" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Where checkpoint_id comes from (verified against the venv)
+        Where task_id comes from (verified against the pinned LangGraph)
       
     </span>
   </a>
@@ -1902,7 +1902,7 @@ address — reads are <code>GetItem</code>, never <code>Query</code>.</p>
 <tr>
 <td><code>idem_key</code></td>
 <td>S</td>
-<td><code>task_id + intra-node index</code> → read-side dedup of crash-replayed events</td>
+<td><code>task_id + per-task n</code> → read-side dedup of crash-replayed events</td>
 </tr>
 <tr>
 <td><code>event</code></td>
@@ -2181,38 +2181,38 @@ the counts are unrelated to checkpoint counts because the audiences differ.</p>
   leave holes. The reader only ever asks <code>seq &gt; cursor</code>, so holes cost nothing.</li>
 </ul>
 <p><strong><code>idem_key</code> identifies the <em>logical</em> event, independent of which attempt wrote it:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">idem_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">checkpoint_id_the_node_was_launched_from</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">node_name</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">intra_node_index</span><span class="si">}</span><span class="s2">"</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="c1">#            └─ stable across crash-replay ─┘             └─ 0,1,2… within this node run ─┘</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">idem_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">task_id</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">"</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="c1">#            └─ one node in one superstep ─┘ └─ 0,1,2… within that task ─┘</span>
 </code></pre></div>
 <p>The defining property, and how each ingredient earns its place:</p>
 <ul>
 <li><strong>Must be identical when a node is crash-replayed</strong> → derived from execution position, never
   from <code>seq</code> (which changes on replay) and never random.</li>
 <li><strong>Must differ across legitimate re-runs</strong> → our agent node runs many times on purpose (ReAct
-  loop). <code>checkpoint_id</code> disambiguates: iteration 7 is launched from a different checkpoint than
-  iteration 2 (<code>ckpt_0031</code> vs <code>ckpt_0007</code>). Replay of iteration 7 resumes from the <em>same</em>
-  <code>ckpt_0031</code> → same key. <code>checkpoint_id</code> is the one identifier that naturally distinguishes
-  "running again on purpose" from "running again because we crashed."</li>
-<li><strong><code>intra_node_index</code></strong> is the emitter counting emissions within the current node execution:
-  first feed line → <code>#0</code>, second → <code>#1</code>.</li>
+  loop). LangGraph's <code>task_id</code> already folds in the input checkpoint, namespace, superstep, node,
+  and trigger disambiguators. Replay of the same uncommitted task starts from the same input
+  checkpoint → same <code>task_id</code>; a real next loop iteration starts from a newer input checkpoint →
+  different <code>task_id</code>.</li>
+<li><strong><code>n</code></strong> is the curator's per-<code>task_id</code> counter: first deterministic feed line → <code>#0</code>, second →
+  <code>#1</code>.</li>
 </ul>
 <p><strong>Worked example — node emits two events, worker dies, node replays:</strong></p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>Attempt 1 (worker A): (seq  9, "ckpt_0031#tools#0")  (seq 10, "ckpt_0031#tools#1")
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>Attempt 1 (worker A): (seq  9, "taskB#0")  (seq 10, "taskB#1")
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>                       A dies before the post-node checkpoint.
-<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>B resumes FROM ckpt_0031 → node re-runs:
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>Attempt 2 (worker B): (seq 11, "ckpt_0031#tools#0")  (seq 12, "ckpt_0031#tools#1")
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>B resumes from the same input checkpoint → node re-runs:
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>Attempt 2 (worker B): (seq 11, "taskB#0")  (seq 12, "taskB#1")
 <a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>                       same keys, new seqs.
 <a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>Reader dedups on idem_key → the user sees each line exactly once.
 </code></pre></div>
 <p>Exactly one of the two must change on replay (<code>seq</code>); the other must not (<code>idem_key</code>).</p>
-<h4 id="where-checkpoint_id-comes-from-verified-against-the-venv">Where <code>checkpoint_id</code> comes from (verified against the venv)<a class="headerlink" href="#where-checkpoint_id-comes-from-verified-against-the-venv" title="Permanent link">&para;</a></h4>
+<h4 id="where-task_id-comes-from-verified-against-the-pinned-langgraph">Where <code>task_id</code> comes from (verified against the pinned LangGraph)<a class="headerlink" href="#where-task_id-comes-from-verified-against-the-pinned-langgraph" title="Permanent link">&para;</a></h4>
 <p>Minted by LangGraph core — checkpoint creation in <code>langgraph.checkpoint.base</code> (ships in the
 separate <code>langgraph-checkpoint</code> package). The id is <code>str(uuid6(clock_seq=-2))</code>; checkpoint ids
 sort chronologically (the <code>Checkpoint</code> TypedDict docstring guarantees "unique and monotonically
 increasing"). Our DynamoDB saver just persists it with every snapshot — we never generate or
 manage it.</p>
-<p><strong>Even better: LangGraph already computes our exact recipe — the <code>task_id</code>.</strong> In
-<code>langgraph/pregel/_algo.py</code>, every node execution is assigned a deterministic task id:</p>
+<p>LangGraph computes the hard part for us. In <code>langgraph/pregel/_algo.py</code>, every node execution is
+assigned a deterministic task id:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">task_id</span> <span class="o">=</span> <span class="n">task_id_func</span><span class="p">(</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    <span class="n">checkpoint_id_bytes</span><span class="p">,</span>   <span class="c1"># the checkpoint the task was launched from</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="n">checkpoint_ns</span><span class="p">,</span>         <span class="c1"># subgraph namespace (sub-agents isolated for free)</span>
@@ -2221,12 +2221,11 @@ manage it.</p>
 <a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="n">PULL</span><span class="p">,</span> <span class="o">*</span><span class="n">triggers</span><span class="p">,</span>       <span class="c1"># or PUSH + index for Send()-spawned parallel tasks</span>
 <a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="p">)</span>   <span class="c1"># xxhash (ckpt v&gt;1) or uuid5 — both deterministic</span>
 </code></pre></div>
-<p>That is literally the recipe — "checkpoint the node was launched from + node + disambiguator" —
-computed and maintained by the framework itself. It's what makes <code>put_writes</code> idempotent
-internally: a crash-replay from the same checkpoint gets the same <code>task_id</code>, while a legitimate
-next loop iteration (new checkpoint, new step) gets a different one. So the emitter shouldn't
-hand-assemble the prefix at all:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">idem_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">task_id</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">intra_node_index</span><span class="si">}</span><span class="s2">"</span>   <span class="c1"># task_id from the debug stream event</span>
+<p>That is the recipe — "input checkpoint + node + disambiguator" — computed and maintained by the
+framework itself. It is what makes <code>put_writes</code> idempotent internally: a crash-replay from the
+same input checkpoint gets the same <code>task_id</code>, while a legitimate next loop iteration gets a
+different one. The emitter should read this id, not hand-assemble a surrogate:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">idem_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">task_id</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">"</span>   <span class="c1"># task_id from the streamed event; n from the per-task counter</span>
 </code></pre></div>
 <p>Same guarantees, zero assembly logic to get wrong.</p>
 <h4 id="how-to-actually-get-the-task_id-verified-on-the-pinned-langgraph">How to actually get the <code>task_id</code> (verified on the pinned LangGraph)<a class="headerlink" href="#how-to-actually-get-the-task_id-verified-on-the-pinned-langgraph" title="Permanent link">&para;</a></h4>
@@ -2252,7 +2251,7 @@ tagged with its mode, if you need feed content <em>and</em> task ids.</p>
 <a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>                                       <span class="c1"># f"{node_name}:{task_id}" (_algo.py)</span>
 </code></pre></div>
 <p><strong>Which to use?</strong> The debug stream, as default and primary: the emitter already lives on the
-stream, so the whole event-identity contract (<code>task_id</code> + <code>intra_node_index</code> + <code>seq</code>) is
+stream, so the whole event-identity contract (<code>task_id</code> + per-task <code>n</code> + <code>seq</code>) is
 assembled in one component, the run behaves identically whether anyone watches (projection
 principle), and the intra-node counter gets clean lifecycle brackets (<code>task</code> start → count →
 <code>task_result</code> end, per id, safe under parallel tasks). The in-node surface matters only for a
@@ -2289,15 +2288,18 @@ redundant, not stronger. Condition + write are atomic server-side — no check-t
 <a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>        <span class="n">ConsistentRead</span><span class="o">=</span><span class="n">first_pass</span><span class="p">,</span>   <span class="c1"># strong on catch-up (must not miss a fresh write);</span>
 <a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>    <span class="p">)</span>                                <span class="c1"># eventual on the steady tail (halves RCU)</span>
 <a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>    <span class="n">first_pass</span> <span class="o">=</span> <span class="kc">False</span>
-<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">dedup_by_idem_key</span><span class="p">(</span><span class="n">items</span><span class="p">):</span>
-<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>        <span class="k">yield</span> <span class="sa">f</span><span class="s1">'id: </span><span class="si">{</span><span class="n">item</span><span class="p">[</span><span class="s2">"seq"</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s1">data: </span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">"event"</span><span class="p">])</span><span class="si">}</span><span class="se">\n\n</span><span class="s1">'</span>
-<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>        <span class="n">cursor</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">"seq"</span><span class="p">]</span>
-<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>
-<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>    <span class="n">run</span> <span class="o">=</span> <span class="n">get_run_state</span><span class="p">(</span><span class="n">tid</span><span class="p">)</span>         <span class="c1"># termination on STATUS, not a sentinel</span>
-<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>    <span class="k">if</span> <span class="n">run</span><span class="o">.</span><span class="n">status</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"failed"</span><span class="p">,</span> <span class="s2">"completed"</span><span class="p">):</span>
-<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>        <span class="k">yield</span> <span class="n">terminal_frame</span><span class="p">(</span><span class="n">run</span><span class="o">.</span><span class="n">status</span><span class="p">,</span> <span class="n">run</span><span class="o">.</span><span class="n">reason</span><span class="p">)</span>
-<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>        <span class="k">return</span>
-<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.25</span><span class="p">)</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>        <span class="n">cursor</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="s2">"seq"</span><span class="p">]</span>  <span class="c1"># advance even if this row is skipped</span>
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>        <span class="k">if</span> <span class="n">item</span><span class="p">[</span><span class="s2">"idem_key"</span><span class="p">]</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>            <span class="k">continue</span>
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a>        <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">"idem_key"</span><span class="p">])</span>
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a>        <span class="k">yield</span> <span class="sa">f</span><span class="s1">'id: </span><span class="si">{</span><span class="n">item</span><span class="p">[</span><span class="s2">"seq"</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s1">data: </span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">"event"</span><span class="p">])</span><span class="si">}</span><span class="se">\n\n</span><span class="s1">'</span>
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a>
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a>    <span class="n">run</span> <span class="o">=</span> <span class="n">get_run_state</span><span class="p">(</span><span class="n">tid</span><span class="p">)</span>         <span class="c1"># termination on STATUS, not a sentinel</span>
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>    <span class="k">if</span> <span class="n">run</span><span class="o">.</span><span class="n">status</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"failed"</span><span class="p">,</span> <span class="s2">"completed"</span><span class="p">):</span>
+<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>        <span class="k">yield</span> <span class="n">terminal_frame</span><span class="p">(</span><span class="n">run</span><span class="o">.</span><span class="n">status</span><span class="p">,</span> <span class="n">run</span><span class="o">.</span><span class="n">reason</span><span class="p">)</span>
+<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a>        <span class="k">return</span>
+<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a>    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.25</span><span class="p">)</span>
 </code></pre></div>
 <p>Three design points:</p>
 <ul>
@@ -2307,7 +2309,9 @@ redundant, not stronger. Condition + write are atomic server-side — no check-t
 <li><strong>Termination on run status.</strong> A crashed worker never writes a "done" event — if the only exit
   were a sentinel, the user would watch a spinner forever. The run-state record can be flipped by
   someone other than the worker (a detector), so it's the reliable terminator.</li>
-<li><strong><code>dedup_by_idem_key</code></strong> makes at-least-once writes look exactly-once to the user.</li>
+<li><strong>The per-connection <code>seen</code> set</strong> makes at-least-once writes look exactly-once to the user.
+  It lives in API RAM, not DynamoDB, and the cursor advances even for skipped duplicate rows so a
+  reconnect pages past them.</li>
 </ul>
 <h3 id="step-5-completion">Step 5: Completion<a class="headerlink" href="#step-5-completion" title="Permanent link">&para;</a></h3>
 <p>Final report lands as events (large payloads → S3 object with a pointer in the event item;

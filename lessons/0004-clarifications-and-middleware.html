@@ -45,7 +45,7 @@
       <h2>Detection is deterministic and shared</h2>
       <div class="grid">
         <div class="panel accent"><span class="label">Cortex</span>The source marks a text item with <code>is_elicitation: true</code>. Deep trusts the flag.</div>
-        <div class="panel warn"><span class="label">IQVIA/GMI</span>A deterministic outcome ladder catches native <code>input-required</code>, clarification phrases, and question-shaped no-table replies.</div>
+        <div class="panel warn"><span class="label">IQVIA/GMI</span>A deterministic outcome ladder checks errors, failed state, native <code>input-required</code>, explicit markers, question-shaped no-table replies, and no-data phrases in order.</div>
       </div>
       <p class="lead">The legacy quick graph had an LLM-based classifier. The reactive and deep paths do not depend on that classifier.</p>
     </section>
@@ -67,7 +67,7 @@
       <h2>One source asks back, the whole report waits</h2>
       <div class="timeline">
         <div class="step"><span class="num">1</span><div><strong>Two sources run.</strong> IQVIA returns data. Cortex asks for retail versus non-retail.</div></div>
-        <div class="step"><span class="num">2</span><div><strong>The report is blocked.</strong> <code>pending_elicitation</code> is whole-cycle, so deep does not ship a partial report.</div></div>
+        <div class="step"><span class="num">2</span><div><strong>The report is blocked.</strong> <code>pending_elicitation</code> checks each step's latest successful result, so deep does not ship a partial report.</div></div>
         <div class="step"><span class="num">3</span><div><strong>Data is not lost.</strong> The IQVIA result remains in accumulating <code>source_results</code>.</div></div>
         <div class="step"><span class="num">4</span><div><strong>The reply re-queries only Cortex.</strong> The user's answer is folded into the open step's sub-question.</div></div>
       </div>
@@ -125,7 +125,7 @@
     </section>
   </main>
 
-  <footer class="footer">Source notes: <code>data/raw/iCloud Photos/1492026/extracted/combined.md</code></footer>
+  <footer class="footer">Source notes: <code>data/raw/iCloud Photos/15092026/extracted/findings.md</code></footer>
 </div>
 <script src="lesson.js"></script>
 </body>
