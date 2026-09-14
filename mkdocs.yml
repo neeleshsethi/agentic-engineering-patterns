@@ -92,6 +92,11 @@ markdown_extensions:
 plugins:
   - search
 
+# Single-source the interactive lessons: publish repo-root lessons/ directly,
+# instead of keeping a hand-synced copy under articles/lessons/.
+hooks:
+  - mkdocs_hooks.py
+
 # Custom styling + the interactive step-through ("scrubber") component.
 # Files live under articles/assets/ so MkDocs serves them from docs_dir.
 extra_css:
