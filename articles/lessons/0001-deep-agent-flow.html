@@ -194,6 +194,68 @@ pre  { background: #131720; border: 1px solid #1e2433; border-radius: 8px; paddi
 }
 .between-arrow { text-align: center; color: #38bdf8; font-size: 1rem; line-height: 1; margin: 0.1rem 0 -0.4rem; }
 
+/* ── Scenario steppers (branch behaviors) ───────────────── */
+.scenario-wrap { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.scenario-svg  { width: 100%; height: auto; max-height: calc(100vh - 250px); }
+.scenario-footer { display: flex; align-items: center; gap: 1rem; margin-top: 0.5rem; }
+.scenario-caption { font-size: 0.83rem; color: #e2e8f0; flex: 1; line-height: 1.4; min-height: 2.6em; }
+.scenario-phase { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; }
+.flow-steplabel { font-size: 0.7rem; color: #4b5563; font-family: monospace; white-space: nowrap; }
+
+/* ── Approve guard note (server truth vs client claim) ──── */
+.guard-note { margin-top: 0.65rem; border: 1px solid #2a3040; border-radius: 8px; padding: 0.6rem 0.85rem; background: #0f131c; }
+.guard-head { display: flex; align-items: center; gap: 0.7rem; font-size: 0.72rem; font-weight: 700; margin-bottom: 0.4rem; }
+.guard-col.srv { color: #4ade80; } .guard-col.cli { color: #60a5fa; } .guard-vs { color: #475569; font-weight: 600; }
+.guard-note > p { font-size: 0.76rem; margin: 0 0 0.45rem; color: #94a3b8; line-height: 1.5; }
+.guard-note > p code { font-size: 0.85em; }
+.guard-rows { display: flex; flex-direction: column; gap: 0.32rem; }
+.guard-row { display: grid; grid-template-columns: 6.5rem 11rem 1fr; gap: 0.55rem; align-items: baseline; font-size: 0.76rem; }
+.guard-row > code { color: #93c5fd; }
+.guard-row .verdict { color: #94a3b8; }
+.guard-row .verdict b.c409 { color: #fbbf24; } .guard-row .verdict b.c403 { color: #f87171; }
+.guard-row .gwhy { color: #64748b; font-size: 0.7rem; }
+
+/* ── State-channel reducers ─────────────────────────────── */
+.reducers { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; margin-top: 0.5rem; }
+.rcard { border: 1px solid #1e2433; border-left-width: 3px; border-radius: 10px; padding: 0.7rem 0.9rem; background: #0f131c; }
+.rcard.append { border-left-color: #4ade80; }
+.rcard.dict   { border-left-color: #60a5fa; }
+.rcard.delta  { border-left-color: #c084fc; }
+.rcard.swap   { border-left-color: #fbbf24; }
+.rcard-h { display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.15rem; }
+.rcard-name { font-size: 0.92rem; font-weight: 700; color: #e2e8f0; }
+.rcard-op { font-family: 'SF Mono',monospace; font-size: 0.64rem; font-weight: 700; border-radius: 3px; padding: 0.12em 0.4em; border: 1px solid #2a3040; color: #93c5fd; background: #131720; }
+.rcard-sem { font-size: 0.73rem; color: #94a3b8; line-height: 1.45; margin-bottom: 0.5rem; }
+.rex { font-family: 'SF Mono',monospace; font-size: 0.71rem; background: #0a0e16; border: 1px solid #161b26; border-radius: 6px; padding: 0.45rem 0.6rem; display: grid; grid-template-columns: 2.4rem 1fr; gap: 0.15rem 0.5rem; align-items: baseline; }
+.rex .k { color: #4b5563; text-align: right; }
+.rex .v { color: #cbd5e1; }
+.rex .v.upd { color: #93c5fd; } .rex .v.res { color: #4ade80; }
+.rcard-chan { font-size: 0.66rem; color: #64748b; margin-top: 0.5rem; }
+.rcard-chan code { font-size: 0.9em; }
+
+/* ── id-contrast chips (run_id vs deep_run_id) ──────────── */
+.idnote { display: flex; gap: 0.7rem; flex-wrap: wrap; margin: 0.15rem 0 0.25rem; }
+.idnote-item { font-family: 'SF Mono',monospace; font-size: 0.68rem; font-weight: 600; border-radius: 4px; padding: 0.2em 0.55em; border: 1px solid; }
+.idnote-item.stable { color: #4ade80; border-color: rgba(74,222,128,0.4); background: rgba(74,222,128,0.08); }
+.idnote-item.change { color: #60a5fa; border-color: rgba(96,165,250,0.4); background: rgba(96,165,250,0.08); }
+
+/* ── deep-events table (seq inserts) ────────────────────── */
+.evtbl-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 1.4rem; align-items: start; margin-top: 0.5rem; }
+.evtbl { border: 1px solid #1e2433; border-radius: 8px; overflow: hidden; font-family: 'SF Mono','Fira Code',monospace; }
+.etr { display: grid; grid-template-columns: 4.9rem 2.1rem 5.6rem 5.6rem 1fr; font-size: 0.7rem; }
+.etr > div { padding: 0.36rem 0.55rem; border-bottom: 1px solid #161b26; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.etr.head > div { background: #131720; color: #64748b; font-weight: 700; text-transform: uppercase; font-size: 0.56rem; letter-spacing: 0.05em; }
+.etr .c-pk { color: #64748b; } .etr .c-seq { color: #4ade80; font-weight: 700; text-align: center; }
+.etr .c-idem { color: #fbbf24; } .etr .c-kind { color: #93c5fd; } .etr .c-pl { color: #8b96a8; }
+.etr.newrow { animation: rowIn 0.45s ease both; }
+.slide.active .etr.d1 { animation-delay: 0.15s; } .slide.active .etr.d2 { animation-delay: 0.45s; }
+.slide.active .etr.d3 { animation-delay: 0.75s; } .slide.active .etr.d4 { animation-delay: 1.05s; }
+.slide.active .etr.d5 { animation-delay: 1.35s; }
+@keyframes rowIn { from { opacity: 0; transform: translateY(-7px); } to { opacity: 1; transform: none; } }
+.evt-cursor { margin-top: 0.55rem; font-family: 'SF Mono',monospace; font-size: 0.72rem; color: #60a5fa; display: flex; align-items: center; gap: 0.5rem; }
+.evt-cursor .curline { flex: 1; height: 1px; background: repeating-linear-gradient(90deg,#60a5fa 0 6px,transparent 6px 10px); }
+@media (prefers-reduced-motion: reduce) { .etr.newrow { animation: none; } }
+
 /* ── Quiz ───────────────────────────────────────────────── */
 .quiz-wrap { max-width: 680px; }
 .quiz-question { font-size: 1rem; font-weight: 600; margin-bottom: 0.9rem; line-height: 1.4; color: #e2e8f0; }
@@ -223,6 +285,23 @@ pre  { background: #131720; border: 1px solid #1e2433; border-radius: 8px; paddi
 </head>
 <body>
 
+<!-- Global SVG defs — always present (not display:none) so scenario SVGs can
+     reference markers/filters even when the flow slide is hidden. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <marker id="g-ah-blue"   markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,1 L7,4 L0,7 L2,4Z" fill="#60a5fa"/></marker>
+  <marker id="g-ah-red"    markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,1 L7,4 L0,7 L2,4Z" fill="#f87171"/></marker>
+  <marker id="g-ah-yellow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,1 L7,4 L0,7 L2,4Z" fill="#fbbf24"/></marker>
+  <marker id="g-ah-green"  markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,1 L7,4 L0,7 L2,4Z" fill="#4ade80"/></marker>
+  <marker id="g-ah-purple" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,1 L7,4 L0,7 L2,4Z" fill="#c084fc"/></marker>
+  <marker id="g-ah-cyan"   markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,1 L7,4 L0,7 L2,4Z" fill="#38bdf8"/></marker>
+  <filter id="g-glow-blue"><feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#60a5fa" flood-opacity="0.9"/></filter>
+  <filter id="g-glow-green"><feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#4ade80" flood-opacity="0.8"/></filter>
+  <filter id="g-glow-yellow"><feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#fbbf24" flood-opacity="0.8"/></filter>
+  <filter id="g-glow-purple"><feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#c084fc" flood-opacity="0.8"/></filter>
+  <filter id="g-glow-cyan"><feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#38bdf8" flood-opacity="0.8"/></filter>
+  <filter id="g-glow-red"><feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#f87171" flood-opacity="0.9"/></filter>
+</defs></svg>
+
 <div id="deck">
 
 <!-- ── SLIDE 1: TITLE ───────────────────────────────── -->
@@ -234,7 +313,7 @@ pre  { background: #131720; border: 1px solid #1e2433; border-radius: 8px; paddi
     tracing every hop: API, checkpoint, approve gate, SQS queue, worker,
     data sources, sub-agents, and SSE stream.
   </p>
-  <div class="meta-row"><span>~15 min</span><span>11 animated steps</span><span>3 quizzes</span></div>
+  <div class="meta-row"><span>~15 min</span><span>12 animated steps</span><span>3 quizzes</span></div>
 </div>
 
 <!-- ── SLIDE 2: FIVE HARD PARTS ─────────────────────── -->
@@ -400,6 +479,44 @@ pre  { background: #131720; border: 1px solid #1e2433; border-radius: 8px; paddi
   </div>
 </div>
 
+<!-- ── SLIDE 3d: SUFFICIENCYGATE GAP-FILL ────────────── -->
+<div class="slide" id="s3d" style="padding-top:1.4rem;">
+  <span class="badge">Branch behavior · SufficiencyGate finds a gap</span>
+  <h2 style="margin-bottom:0.2rem;">When the completeness check injects a gap-fill round</h2>
+  <p style="max-width:840px; font-size:0.8rem; margin-bottom:0.3rem;">The gate runs <em>after</em> the agent thinks it's done but <em>before</em> the report is built. If evidence doesn't cover the plan, it forces exactly <strong>one</strong> more retrieval round — bounded, so it can never loop forever.</p>
+  <div id="sc1-wrap" class="scenario-wrap">
+    <svg id="sc1-svg" class="scenario-svg" viewBox="0 0 720 300" preserveAspectRatio="xMidYMid meet">
+      <g class="sc-nodes"></g><g class="sc-paths"></g>
+    </svg>
+    <div class="scenario-footer">
+      <button class="flow-btn" id="sc1-prev" onclick="SC1.step(-1)" disabled>‹ Prev</button>
+      <div class="scenario-caption" id="sc1-cap">Click › to begin</div>
+      <span class="scenario-phase" id="sc1-phase"></span>
+      <span class="flow-steplabel" id="sc1-count">0 / 6</span>
+      <button class="flow-btn" id="sc1-next" onclick="SC1.step(1)">Next ›</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 3e: MID-RETRIEVAL ELICITATION ───────────── -->
+<div class="slide" id="s3e" style="padding-top:1.4rem;">
+  <span class="badge">Branch behavior · one source asks a question</span>
+  <h2 style="margin-bottom:0.2rem;">Cortex returns a clarification — IQVIA returns complete data</h2>
+  <p style="max-width:940px; font-size:0.8rem; margin-bottom:0.3rem;">Detection is <strong>deterministic and shared</strong> — a flag or a fixed classifier ladder sets <code>is_elicitation</code>, never an LLM. The prompt tells the model to relay, but the <strong>exit middleware is the real guard</strong>: it runs <code>pending_elicitation()</code> and skips the report <em>in code</em> — even if the model tried to synthesize an answer over the open question.</p>
+  <div id="sc2-wrap" class="scenario-wrap">
+    <svg id="sc2-svg" class="scenario-svg" viewBox="0 0 880 300" preserveAspectRatio="xMidYMid meet">
+      <g class="sc-nodes"></g><g class="sc-paths"></g>
+    </svg>
+    <div class="scenario-footer">
+      <button class="flow-btn" id="sc2-prev" onclick="SC2.step(-1)" disabled>‹ Prev</button>
+      <div class="scenario-caption" id="sc2-cap">Click › to begin</div>
+      <span class="scenario-phase" id="sc2-phase"></span>
+      <span class="flow-steplabel" id="sc2-count">0 / 8</span>
+      <button class="flow-btn" id="sc2-next" onclick="SC2.step(1)">Next ›</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── SLIDE 4: interrupt() ──────────────────────────── -->
 <div class="slide" id="s4">
   <span class="badge">Step 3 deep-dive · interrupt()</span>
@@ -443,6 +560,17 @@ persist_resume_decision(thread_id, {"type": "approve"})
 put_run_state(thread_id, run_id, status="queued")
 enqueue_deep_run(thread_id, run_id)        # SQS FIFO enqueue
 return Response(status_code=202)           # returns immediately</code></pre>
+
+  <div class="guard-note">
+    <div class="guard-head"><span class="guard-col srv">gate.* — server truth</span><span class="guard-vs">vs</span><span class="guard-col cli">req.* — client claim</span></div>
+    <p><code>read_pending_interrupt</code> returns what's <em>actually pending now</em>, read from the checkpoint. <code>req.*</code> is what the tab POSTed — the ids baked into the plan card it rendered. Each line asks: <strong>does this tab still match reality?</strong></p>
+    <div class="guard-rows">
+      <div class="guard-row"><code>plan_id</code><span class="verdict">wrong cycle → <b class="c409">409</b></span><span class="gwhy">a new question bumps <code>cycle</code> → new <code>plan-{thread}-{cycle}</code></span></div>
+      <div class="guard-row"><code>interrupt_id</code><span class="verdict">stale refine round → <b class="c409">409</b></span><span class="gwhy">minted fresh on <em>every</em> pause — catches what <code>plan_id</code> can't</span></div>
+      <div class="guard-row"><code>owner_id</code><span class="verdict">not your gate → <b class="c403">403</b></span><span class="gwhy">authorization, not staleness</span></div>
+    </div>
+  </div>
+
   <div class="cols" style="gap:0.8rem; margin-top:0.6rem;">
     <div class="box accent"><span class="box-label accent">Why 202?</span>The graph doesn't run in this request. We just made approval durable and queued work. Returning 200 would imply the run completed — it hasn't.</div>
     <div class="box danger"><span class="box-label danger">Double-approve race</span>Two tabs click Approve 50ms apart. Both try to write <code>CLAIM#thread-123</code>. DynamoDB conditional write — second loses, gets 409. Exactly one run proceeds.</div>
@@ -469,6 +597,131 @@ with sse_manager.open(run_id) as stream:
     put_run_state(thread_id, run_id, status="complete")
     release_claim(thread_id)</code></pre>
   <div class="box tip" style="margin-top:0.5rem;"><span class="box-label tip">Key</span><code>input=None</code> means resume. LangGraph reads the staged resume decision from DynamoDB automatically — the worker doesn't pass it.</div>
+</div>
+
+<!-- ── SLIDE 6b: DEEP-EVENTS TABLE ───────────────────── -->
+<div class="slide" id="s6b">
+  <span class="badge">Steps 11–12 deep-dive · the deep-events table</span>
+  <h2 style="margin-bottom:0.3rem;">How the browser reads without ever touching the worker</h2>
+  <p style="max-width:900px; font-size:0.82rem; margin-bottom:0.2rem;">As the worker runs, each graph event becomes a numbered row. <code>seq</code> is a <strong>monotonic counter</strong> the worker seeds once (from the partition's current max) and climbs — it answers <em>"in what order?"</em>, so it is <strong>new on every write</strong>. Each row also carries an <code>idem_key = {task_id}#{n}</code> derived from the graph's execution position — it answers <em>"have I shown this?"</em>, so it <strong>survives a replay unchanged</strong>. The fence keys on <code>thread_id</code> (see the write), and the SSE reader dedups by <code>idem_key</code> — so a retried run never double-writes evidence. (See why a retry happens on the next slide.)</p>
+
+  <div class="evtbl-grid">
+    <div>
+      <div class="evtbl">
+        <div class="etr head"><div>pk (thread)</div><div>seq</div><div>idem_key</div><div>kind</div><div>payload</div></div>
+        <div class="etr newrow d1"><div class="c-pk">thread-7f3a</div><div class="c-seq">1</div><div class="c-idem">t0#0</div><div class="c-kind">plan.locked</div><div class="c-pl">{cycle:1, steps:4}</div></div>
+        <div class="etr newrow d2"><div class="c-pk">thread-7f3a</div><div class="c-seq">2</div><div class="c-idem">t1#0</div><div class="c-kind">tool.start</div><div class="c-pl">{tool:"query_cortex"}</div></div>
+        <div class="etr newrow d3"><div class="c-pk">thread-7f3a</div><div class="c-seq">3</div><div class="c-idem">t1#1</div><div class="c-kind">tool.result</div><div class="c-pl">{rows:1204, src:"cortex"}</div></div>
+        <div class="etr newrow d4"><div class="c-pk">thread-7f3a</div><div class="c-seq">4</div><div class="c-idem">t2#0</div><div class="c-kind">report.chunk</div><div class="c-pl">{md:"## NZ share…"}</div></div>
+        <div class="etr newrow d5"><div class="c-pk">thread-7f3a</div><div class="c-seq">5</div><div class="c-idem">t3#0</div><div class="c-kind">run.complete</div><div class="c-pl">{status:"ok"}</div></div>
+      </div>
+      <div class="evt-cursor"><span>SSE tail resumes here → <code>seq &gt; 3</code></span><span class="curline"></span><span>reads 4, 5</span></div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:0.7rem;">
+      <div>
+        <div class="panel-h" style="margin-bottom:0.4rem;">Write (worker side)</div>
+        <pre style="margin:0;"><code>events.put_item(
+  Item={"thread_id": thread_id,
+        "seq": self._seq + 1,   # monotonic; new each write
+        "idem_key": idem_key,   # {task_id}#{n} — survives replay
+        "kind": frame.kind,
+        "payload": frame.json},
+  # fence: is this (thread_id, seq) slot empty?
+  ConditionExpression=
+    "attribute_not_exists(thread_id)")</code></pre>
+      </div>
+      <div>
+        <div class="panel-h" style="margin-bottom:0.4rem;">Read (API SSE tail)</div>
+        <pre style="margin:0;"><code>items = events.query(
+  KeyConditionExpression=
+    Key("thread_id").eq(thread_id) &amp;
+    Key("seq").gt(cursor))   # seq &gt; cursor
+for it in dedup_by_idem_key(items):
+    yield it   # at-least-once → exactly-once</code></pre>
+      </div>
+      <div class="box tip"><span class="box-label tip">Why seq &gt; cursor</span>The browser stores the last <code>seq</code> it saw. On reconnect it asks for <code>seq &gt; cursor</code> — so a dropped SSE connection resumes exactly where it left off, losslessly. The worker and browser never talk directly.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 6c: SQS REDELIVERY ──────────────────────── -->
+<div class="slide" id="s6c" style="padding-top:1.4rem;">
+  <span class="badge">Why a retry happens · SQS is at-least-once</span>
+  <h2 style="margin-bottom:0.2rem;">Redelivery: the same run executes twice, safely</h2>
+  <p style="max-width:940px; font-size:0.8rem; margin-bottom:0.2rem;">SQS guarantees <em>at-least-once</em> delivery, not exactly-once. If a worker stalls past the visibility timeout or crashes before deleting the message, SQS hands the same message to another worker. The replay does <strong>not</strong> reproduce the same <code>seq</code> — <code>seq</code> is re-seeded from the table max and climbs to <em>new</em> numbers. What it <em>does</em> reproduce is each event's <strong><code>idem_key</code></strong> (derived from the checkpointed execution position). The write fence (<code>attribute_not_exists(thread_id)</code>) no-ops any collision on a matching key, and the SSE reader dedups by <code>idem_key</code> — so the duplicate is invisible. <em>seq = ordering; idem_key = identity.</em></p>
+  <div class="idnote">
+    <span class="idnote-item stable">🔒 deep_run_id — same across the retry (identifies the question)</span>
+    <span class="idnote-item stable">🔒 idem_key — same across the replay (identifies the event)</span>
+    <span class="idnote-item change">run_id — R1 → R2 (new per delivery attempt)</span>
+    <span class="idnote-item change">seq — re-seeded, climbs to new numbers (ordering, not identity)</span>
+  </div>
+  <div id="sc3-wrap" class="scenario-wrap">
+    <svg id="sc3-svg" class="scenario-svg" viewBox="0 0 860 300" preserveAspectRatio="xMidYMid meet">
+      <g class="sc-nodes"></g><g class="sc-paths"></g>
+    </svg>
+    <div class="scenario-footer">
+      <button class="flow-btn" id="sc3-prev" onclick="SC3.step(-1)" disabled>‹ Prev</button>
+      <div class="scenario-caption" id="sc3-cap">Click › to begin</div>
+      <span class="scenario-phase" id="sc3-phase"></span>
+      <span class="flow-steplabel" id="sc3-count">0 / 7</span>
+      <button class="flow-btn" id="sc3-next" onclick="SC3.step(1)">Next ›</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SLIDE 6d: STATE-CHANNEL REDUCERS ──────────────── -->
+<div class="slide" id="s6d">
+  <span class="badge">The graph state · how updates combine</span>
+  <h2 style="margin-bottom:0.2rem;">Four ways a node's update merges into state</h2>
+  <p style="max-width:940px; font-size:0.8rem; margin-bottom:0.2rem;">Every channel has a <strong>reducer</strong> — the function that folds a node's returned update into the existing value. A node returns a <em>delta</em>, not the whole state; the reducer decides how it combines. Pick the wrong one and parallel branches clobber each other.</p>
+
+  <div class="reducers">
+    <div class="rcard append">
+      <div class="rcard-h"><span class="rcard-name">Delta-append</span><span class="rcard-op">operator.add</span></div>
+      <div class="rcard-sem">Concatenate new items onto a list. Append-only — never replaces or removes. Order-independent, so a parallel fan-out merges losslessly.</div>
+      <div class="rex">
+        <span class="k">old</span><span class="v">[cortex:r1]</span>
+        <span class="k">+ Δ</span><span class="v upd">[iqvia:r2]</span>
+        <span class="k">= new</span><span class="v res">[cortex:r1, iqvia:r2]</span>
+      </div>
+      <div class="rcard-chan">used by <code>source_results</code> — accumulates across turns</div>
+    </div>
+
+    <div class="rcard dict">
+      <div class="rcard-h"><span class="rcard-name">Dict-merge</span><span class="rcard-op">operator.or_</span></div>
+      <div class="rcard-sem">Union of keys — <code>{**old, **new}</code>. The unit is the key, so parallel branches writing <em>different</em> keys never clobber. Same key → last wins.</div>
+      <div class="rex">
+        <span class="k">old</span><span class="v">{step-1: done}</span>
+        <span class="k">+ Δ</span><span class="v upd">{step-2: done}</span>
+        <span class="k">= new</span><span class="v res">{step-1: done, step-2: done}</span>
+      </div>
+      <div class="rcard-chan">used by <code>step_status</code>, <code>step_validation_failures</code></div>
+    </div>
+
+    <div class="rcard delta">
+      <div class="rcard-h"><span class="rcard-name">Delta-merge</span><span class="rcard-op">DeltaChannel</span></div>
+      <div class="rcard-sem">Apply an <em>encoded diff</em> to a structure. Append semantics, but only the increment is persisted — keeps the checkpoint <strong>O(N), not O(N²)</strong>.</div>
+      <div class="rex">
+        <span class="k">old</span><span class="v">[msg-1, msg-2]</span>
+        <span class="k">+ Δ</span><span class="v upd">append msg-3</span>
+        <span class="k">= new</span><span class="v res">[msg-1, msg-2, msg-3]</span>
+      </div>
+      <div class="rcard-chan">used by <code>messages</code>, <code>files</code> (per-file diff)</div>
+    </div>
+
+    <div class="rcard swap">
+      <div class="rcard-h"><span class="rcard-name">Atomic swap</span><span class="rcard-op">no reducer</span></div>
+      <div class="rcard-sem">Each write replaces the whole value. Used where the value must stay internally consistent as a set — all-or-nothing, never half-merged.</div>
+      <div class="rex">
+        <span class="k">old</span><span class="v">{c1, c2}</span>
+        <span class="k">+ Δ</span><span class="v upd">{c3, c4}</span>
+        <span class="k">= new</span><span class="v res">{c3, c4}</span>
+      </div>
+      <div class="rcard-chan">used by <code>chart_catalog</code>, <code>chart_specs</code></div>
+    </div>
+  </div>
+  <p style="font-size:0.72rem; color:#64748b; margin-top:0.5rem;">Rule of thumb: <span style="color:#4ade80;">append</span> = add to the end · <span style="color:#60a5fa;">dict-merge</span> = union by key · <span style="color:#c084fc;">delta-merge</span> = apply a diff · <span style="color:#fbbf24;">swap</span> = replace wholesale.</p>
 </div>
 
 <!-- ── SLIDE 7: REFINE ───────────────────────────────── -->
@@ -636,13 +889,15 @@ const COMP = [
   { id:'browser', x:18,  y:18, w:98,  h:46, label:['Browser','UI'],              stroke:'#60a5fa', glow:'glow-blue'   },
   { id:'api',     x:174, y:18, w:100, h:46, label:['API','Server'],               stroke:'#60a5fa', glow:'glow-blue'   },
   { id:'agent',   x:330, y:18, w:108, h:46, label:['LangGraph','Agent'],          stroke:'#a78bfa', glow:'glow-purple'  },
-  { id:'dynamo',  x:224, y:152,w:140, h:40, label:['DynamoDB','Checkpoint'],      stroke:'#4ade80', glow:'glow-green'  },
-  { id:'dlock',   x:224, y:202,w:140, h:36, label:['DynamoDB','Dist. Lock'],      stroke:'#4ade80', glow:'glow-green'  },
+  { id:'dynamo',  x:206, y:144,w:150, h:32, label:['DynamoDB','Checkpoint'],      stroke:'#4ade80', glow:'glow-green'  },
+  { id:'runstate',x:206, y:182,w:150, h:32, label:['DynamoDB','Run-state'],       stroke:'#4ade80', glow:'glow-green'  },
+  { id:'dlock',   x:206, y:220,w:150, h:32, label:['DynamoDB','Dist. Lock'],      stroke:'#4ade80', glow:'glow-green'  },
   { id:'sqs',     x:486, y:18, w:108, h:46, label:['SQS FIFO','Queue'],           stroke:'#fbbf24', glow:'glow-yellow'  },
   { id:'worker',  x:642, y:18, w:100, h:46, label:['Worker','Process'],           stroke:'#60a5fa', glow:'glow-blue'   },
   { id:'cortex',  x:642, y:152,w:93,  h:36, label:['Cortex','API'],               stroke:'#c084fc', glow:'glow-purple'  },
   { id:'iqvia',   x:642, y:198,w:93,  h:36, label:['IQVIA','GMI'],                stroke:'#c084fc', glow:'glow-purple'  },
   { id:'report',  x:746, y:152,w:95,  h:36, label:['Assembly','Subgraph'],        stroke:'#38bdf8', glow:'glow-cyan'   },
+  { id:'events',  x:430, y:210,w:160, h:40, label:['deep-events','DynamoDB · seq'], stroke:'#4ade80', glow:'glow-green' },
 ];
 
 const G = {}; // id → {x,y,w,h,cx,cy,r,l,t,b}
@@ -671,9 +926,11 @@ const STEPS = [
   { caption:'⑥ API reads checkpoint, validates plan_id + interrupt_id, stages the resume decision', phase:'PHASE 2: APPROVE', phaseClass:'phase-approve',
     paths:[{ d:`M${G.api.cx},${G.api.b} L${G.api.cx},${G.dynamo.t}`, color:'#4ade80', marker:'ah-green', label:'resume_decision', labelOffset:'50%' }],
     hi:['api','dynamo'] },
-  { caption:'⑦ Approved run enqueued to SQS FIFO with thread_id — API returns 202 immediately', phase:'PHASE 2: APPROVE', phaseClass:'phase-approve',
-    paths:[{ d:`M${G.api.r},${G.api.cy-9} C${G.api.r+70},6 ${G.sqs.l-70},6 ${G.sqs.l},${G.sqs.cy-9}`, color:'#fbbf24', marker:'ah-yellow', label:'{thread_id, run_id}', labelOffset:'50%' }],
-    hi:['api','sqs'] },
+  { caption:'⑦ API writes a Run-state row (status=queued), then enqueues the run to SQS FIFO — returns 202 immediately', phase:'PHASE 2: APPROVE', phaseClass:'phase-approve',
+    paths:[
+      { d:`M${G.api.cx},${G.api.b} C${G.api.cx-40},120 ${G.runstate.l-45},${G.runstate.cy} ${G.runstate.l},${G.runstate.cy}`, color:'#4ade80', marker:'ah-green', label:'status=queued', labelOffset:'58%' },
+      { d:`M${G.api.r},${G.api.cy-9} C${G.api.r+70},6 ${G.sqs.l-70},6 ${G.sqs.l},${G.sqs.cy-9}`, color:'#fbbf24', marker:'ah-yellow', label:'{thread_id, run_id}', labelOffset:'50%' }
+    ], hi:['api','runstate','sqs'] },
   { caption:'⑧ Worker dequeues message, writes CLAIM#{thread_id} to Dist. Lock table, resumes graph (input=None)', phase:'PHASE 3: EXECUTE', phaseClass:'phase-execute',
     paths:[
       { d:`M${G.sqs.r},${G.sqs.cy} L${G.worker.l},${G.worker.cy}`, color:'#fbbf24', marker:'ah-yellow', label:'{thread_id, run_id}' },
@@ -689,9 +946,14 @@ const STEPS = [
     paths:[
       { d:`M${G.agent.r},${G.agent.cy-3} C${G.agent.r+80},8 ${G.report.l-40},95 ${G.report.l},${G.report.cy}`, color:'#38bdf8', marker:'ah-cyan', label:'evidence', labelOffset:'45%' }
     ], hi:['agent','report'] },
-  { caption:'⑪ Final report and charts stream back via SSE — the run is complete ✓', phase:'PHASE 3: EXECUTE', phaseClass:'phase-execute',
-    paths:[{ d:`M${G.worker.cx},${G.worker.b} Q${(G.worker.cx+G.browser.cx)/2},265 ${G.browser.cx},${G.browser.b}`, color:'#4ade80', marker:'ah-green', label:'SSE stream', labelOffset:'50%' }],
-    hi:['worker','browser'] },
+  { caption:'⑪ The worker never replies to the browser. It writes render frames to the deep-events table — curator renders each event, event_log writes it with a monotonic per-thread seq.', phase:'PHASE 3: EXECUTE', phaseClass:'phase-execute',
+    paths:[{ d:`M${G.worker.cx},${G.worker.b} C${G.worker.cx},150 ${G.events.r+40},${G.events.cy-60} ${G.events.r},${G.events.cy}`, color:'#4ade80', marker:'ah-green', label:'write frames · seq++', labelOffset:'55%' }],
+    hi:['worker','events'] },
+  { caption:'⑫ The browser\'s SSE stream is held by the API, which tails deep-events with seq > cursor. A dropped connection reconnects and resumes from the last seq — losslessly. ✓', phase:'PHASE 3: EXECUTE', phaseClass:'phase-execute',
+    paths:[
+      { d:`M${G.events.l},${G.events.cy} C${G.events.l-60},${G.events.cy} ${G.api.cx+30},${G.api.b+70} ${G.api.cx},${G.api.b}`, color:'#4ade80', marker:'ah-green', label:'tail · seq > cursor', labelOffset:'50%' },
+      { d:`M${G.api.l},${G.api.cy+6} L${G.browser.r},${G.browser.cy+6}`, color:'#4ade80', marker:'ah-green', label:'SSE frames', labelOffset:'50%' }
+    ], hi:['events','api','browser'] },
 ];
 
 let flowCurrent = 0;
@@ -834,6 +1096,209 @@ function check(qid) {
   fb.textContent = ok ? '✓ Correct.' : '✗ Not quite — see highlighted answer.';
   fb.className = 'quiz-fb show ' + (ok ? 'ok' : 'wrong');
 }
+
+// ─── Scenario stepper engine (branch behaviors) ─────────────────────────────
+
+function makeScenario(cfg) {
+  const svg = document.getElementById(cfg.svg);
+  const gN = svg.querySelector('.sc-nodes');
+  const gP = svg.querySelector('.sc-paths');
+  const N = {};
+  cfg.nodes.forEach(n => {
+    N[n.id] = { ...n, cx: n.x + n.w/2, cy: n.y + n.h/2 };
+    const y0 = n.y + n.h/2 + (n.label[1] ? -4 : 4);
+    const sub = n.label[1] ? `<text class="comp-text comp-sub" x="${n.x + n.w/2}" y="${n.y + n.h/2 + 9}">${n.label[1]}</text>` : '';
+    gN.insertAdjacentHTML('beforeend',
+      `<g id="${cfg.svg}-${n.id}" data-glow="${n.glow}" style="opacity:0.28;transition:opacity .3s,filter .3s;">
+        <rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="8" fill="#0d1117" stroke="${n.stroke}" stroke-width="1.5"/>
+        <text class="comp-text" x="${n.x + n.w/2}" y="${y0}">${n.label[0]}</text>${sub}
+      </g>`);
+  });
+
+  function borderPt(node, tx, ty) {
+    const dx = tx - node.cx, dy = ty - node.cy, hw = node.w/2, hh = node.h/2;
+    const s = Math.min(dx ? hw/Math.abs(dx) : 1e9, dy ? hh/Math.abs(dy) : 1e9);
+    return { x: node.cx + dx*s, y: node.cy + dy*s };
+  }
+
+  let _eid = 0;
+  function addEdge(e) {
+    const a = N[e.from], b = N[e.to];
+    let p1 = borderPt(a, b.cx, b.cy), p2 = borderPt(b, a.cx, a.cy);
+    const off = e.off || 0;
+    if (off) {
+      const dx = p2.x - p1.x, dy = p2.y - p1.y, len = Math.hypot(dx, dy) || 1;
+      const ox = -dy/len*off, oy = dx/len*off;
+      p1 = { x: p1.x + ox, y: p1.y + oy }; p2 = { x: p2.x + ox, y: p2.y + oy };
+    }
+    const path = document.createElementNS(SVGNS, 'path');
+    path.setAttribute('id', `${cfg.svg}-e${++_eid}`);
+    path.setAttribute('d', `M${p1.x},${p1.y} L${p2.x},${p2.y}`);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', e.color);
+    path.setAttribute('stroke-width', '2');
+    path.setAttribute('marker-end', `url(#${e.marker})`);
+    if (e.dash) path.setAttribute('stroke-dasharray', '5 3');
+    gP.appendChild(path);
+    if (!e.dash) {
+      const L = path.getTotalLength();
+      path.style.strokeDasharray = L; path.style.strokeDashoffset = L;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        path.style.transition = 'stroke-dashoffset .5s ease-out';
+        path.style.strokeDashoffset = '0';
+      }));
+    }
+    if (e.label) {
+      const pt = path.getPointAtLength(path.getTotalLength() * (e.labelAt || 0.5));
+      addLabelChip(gP, e.label, pt.x, pt.y, e.color);
+    }
+  }
+
+  function setNode(id, state) {
+    const el = document.getElementById(`${cfg.svg}-${id}`); if (!el) return;
+    const rect = el.querySelector('rect');
+    if (state === 'dim')     { el.style.opacity = '0.28'; el.style.filter = ''; rect.style.stroke = ''; }
+    if (state === 'visited') { el.style.opacity = '0.6';  el.style.filter = ''; rect.style.stroke = ''; }
+    if (state === 'active')  { el.style.opacity = '1';    el.style.filter = `url(#${el.dataset.glow})`; rect.style.stroke = ''; }
+    if (state === 'blocked') { el.style.opacity = '1';    el.style.filter = 'url(#g-glow-red)'; rect.style.stroke = '#f87171'; }
+  }
+
+  let cur = 0;
+  function render(t) {
+    gP.innerHTML = '';
+    cfg.nodes.forEach(n => setNode(n.id, 'dim'));
+    for (let i = 0; i < t - 1; i++) (cfg.steps[i].on || []).forEach(id => setNode(id, 'visited'));
+    const cap = document.getElementById(cfg.cap), ph = document.getElementById(cfg.phase);
+    if (t > 0) {
+      const s = cfg.steps[t - 1];
+      (s.edges || []).forEach(addEdge);
+      (s.on || []).forEach(id => setNode(id, 'active'));
+      (s.blocked || []).forEach(id => setNode(id, 'blocked'));
+      cap.textContent = s.caption;
+      ph.textContent = s.phase || ''; ph.style.color = s.phaseColor || '#94a3b8';
+    } else {
+      cap.textContent = 'Click › to begin'; ph.textContent = '';
+    }
+    document.getElementById(cfg.count).textContent = `${t} / ${cfg.steps.length}`;
+    document.getElementById(cfg.prev).disabled = t === 0;
+    document.getElementById(cfg.next).disabled = t === cfg.steps.length;
+  }
+
+  render(0);
+  return { step(d) { const n = cur + d; if (n < 0 || n > cfg.steps.length) return; cur = n; render(cur); } };
+}
+
+// Scenario 1 — SufficiencyGate gap-fill
+const SC1 = makeScenario({
+  svg: 'sc1-svg', cap: 'sc1-cap', phase: 'sc1-phase', count: 'sc1-count', prev: 'sc1-prev', next: 'sc1-next',
+  nodes: [
+    { id:'agent',  x:40,  y:118, w:150, h:60, label:['LangGraph','Agent'],           stroke:'#a78bfa', glow:'g-glow-purple' },
+    { id:'sgate',  x:290, y:30,  w:160, h:56, label:['SufficiencyGate','after_agent'], stroke:'#38bdf8', glow:'g-glow-cyan' },
+    { id:'src',    x:290, y:210, w:160, h:56, label:['Cortex / IQVIA','gap-fill query'], stroke:'#c084fc', glow:'g-glow-purple' },
+    { id:'exit',   x:540, y:30,  w:150, h:56, label:['DeepExitPath','build report'],  stroke:'#38bdf8', glow:'g-glow-cyan' },
+    { id:'report', x:540, y:210, w:150, h:56, label:['Report ✓','Assembly Subgraph'], stroke:'#4ade80', glow:'g-glow-green' },
+  ],
+  steps: [
+    { caption:'① Agent thinks it is done. after_agent fires → SufficiencyGate runs before any report is built.',
+      phase:'EXIT CHECK', phaseColor:'#38bdf8', on:['agent','sgate'],
+      edges:[{ from:'agent', to:'sgate', color:'#38bdf8', marker:'g-ah-cyan', label:'after_agent' }] },
+    { caption:'② SufficiencyGate inspects the held evidence against the plan\'s declared scope — every entity, market, and period the plan promised.',
+      phase:'EXIT CHECK', phaseColor:'#38bdf8', on:['sgate'], edges:[] },
+    { caption:'③ Gap found: the NZ market slice is missing. Rather than ship an incomplete report, it injects exactly ONE bounded gap-fill round.',
+      phase:'GAP-FILL', phaseColor:'#fbbf24', on:['sgate','src'],
+      edges:[{ from:'sgate', to:'src', color:'#fbbf24', marker:'g-ah-yellow', label:'inject 1 gap-fill round' }] },
+    { caption:'④ The gap-fill round retrieves only the missing slice — query_cortex(market=NZ). Held evidence from earlier rounds is reused, not re-fetched.',
+      phase:'GAP-FILL', phaseColor:'#fbbf24', on:['src','sgate'],
+      edges:[{ from:'src', to:'sgate', color:'#4ade80', marker:'g-ah-green', label:'NZ slice → evidence complete' }] },
+    { caption:'⑤ Gate passes. The single gap-fill round is spent, so it cannot loop again — if evidence were still short, it would ship with a declared gap instead of looping.',
+      phase:'PASS', phaseColor:'#4ade80', on:['sgate','exit'],
+      edges:[{ from:'sgate', to:'exit', color:'#4ade80', marker:'g-ah-green', label:'complete → proceed' }] },
+    { caption:'⑥ Only now does DeepExitPath build the report → hand off to the Assembly Subgraph. The reverse-order rule is what guaranteed the check ran first.',
+      phase:'REPORT', phaseColor:'#4ade80', on:['exit','report'],
+      edges:[{ from:'exit', to:'report', color:'#4ade80', marker:'g-ah-green', label:'generate report' }] },
+  ],
+});
+
+// Scenario 2 — Cortex clarification, IQVIA complete (mid-retrieval elicitation)
+const SC2 = makeScenario({
+  svg: 'sc2-svg', cap: 'sc2-cap', phase: 'sc2-phase', count: 'sc2-count', prev: 'sc2-prev', next: 'sc2-next',
+  nodes: [
+    { id:'agent',  x:30,  y:120, w:140, h:60, label:['LangGraph','Agent'],           stroke:'#a78bfa', glow:'g-glow-purple' },
+    { id:'cortex', x:250, y:22,  w:150, h:54, label:['Cortex','is_elicitation=true'], stroke:'#c084fc', glow:'g-glow-purple' },
+    { id:'iqvia',  x:250, y:224, w:150, h:54, label:['IQVIA / GMI','complete'],       stroke:'#c084fc', glow:'g-glow-purple' },
+    { id:'exit',   x:470, y:118, w:200, h:64, label:['DeepExitPathMiddleware','pending_elicitation()'], stroke:'#38bdf8', glow:'g-glow-cyan' },
+    { id:'report', x:730, y:22,  w:120, h:54, label:['Report','skipped'],             stroke:'#64748b', glow:'g-glow-red' },
+    { id:'user',   x:730, y:224, w:120, h:54, label:['User','browser'],               stroke:'#60a5fa', glow:'g-glow-blue' },
+  ],
+  steps: [
+    { caption:'① The retrieval round fans out in parallel: query_cortex ∥ query_iqvia_gmi — one round, same locked plan_id.',
+      phase:'RETRIEVAL', phaseColor:'#c084fc', on:['agent','cortex','iqvia'],
+      edges:[
+        { from:'agent', to:'cortex', color:'#c084fc', marker:'g-ah-purple', label:'query_cortex' },
+        { from:'agent', to:'iqvia',  color:'#c084fc', marker:'g-ah-purple', label:'query_iqvia_gmi' },
+      ] },
+    { caption:'② IQVIA returns complete data — held as evidence. Its step is marked done.',
+      phase:'RETRIEVAL', phaseColor:'#4ade80', on:['iqvia','agent'],
+      edges:[{ from:'iqvia', to:'agent', color:'#4ade80', marker:'g-ah-green', label:'complete ✓', off:12 }] },
+    { caption:'③ Cortex answers with a question, not data. Detection is deterministic and shared — a flag (Cortex) or the classify_outcome() ladder (IQVIA) sets is_elicitation. No LLM judges this.',
+      phase:'DETECT', phaseColor:'#fbbf24', on:['cortex','agent'],
+      edges:[{ from:'cortex', to:'agent', color:'#fbbf24', marker:'g-ah-yellow', label:'is_elicitation = true', off:12 }] },
+    { caption:'④ The agent\'s loop ends. after_agent fires → DeepExitPathMiddleware. The query tool already refused to mark Cortex\'s step done, so the step stays OPEN.',
+      phase:'EXIT CHECK', phaseColor:'#38bdf8', on:['agent','exit'],
+      edges:[{ from:'agent', to:'exit', color:'#38bdf8', marker:'g-ah-cyan', label:'after_agent' }] },
+    { caption:'⑤ The deterministic backstop: the middleware runs pending_elicitation(). An open elicitation exists → it SKIPS the report in code — even if the model tried to synthesize an answer over the question. A deep report is too expensive to write over nothing.',
+      phase:'GUARD', phaseColor:'#f87171', on:['exit'], blocked:['report'],
+      edges:[{ from:'exit', to:'report', color:'#f87171', marker:'g-ah-red', label:'✗ report skipped', dash:true }] },
+    { caption:'⑥ Instead, the prompt relays Cortex\'s actual question up to the user verbatim (elicitation_relay) — never a guessed answer.',
+      phase:'RELAY', phaseColor:'#fbbf24', on:['exit','user'],
+      edges:[{ from:'exit', to:'user', color:'#fbbf24', marker:'g-ah-yellow', label:'relay question' }] },
+    { caption:'⑦ User replies "Parent brand." The agent re-queries ONLY the still-open step under the locked plan_id. IQVIA\'s evidence is reused untouched — no second IQVIA call.',
+      phase:'RESUME', phaseColor:'#60a5fa', on:['user','agent','cortex'],
+      edges:[
+        { from:'user',  to:'agent',  color:'#60a5fa', marker:'g-ah-blue',   label:'reply', off:12 },
+        { from:'agent', to:'cortex', color:'#c084fc', marker:'g-ah-purple', label:'re-query Cortex only', off:20 },
+      ] },
+    { caption:'⑧ Cortex returns complete data → its step closes → pending_elicitation() is now false, so the report is finally built. One gate, one plan, no wasted re-fetch.',
+      phase:'REPORT', phaseColor:'#4ade80', on:['cortex','agent','exit','report'],
+      edges:[
+        { from:'cortex', to:'agent', color:'#4ade80', marker:'g-ah-green', label:'complete ✓', off:32 },
+        { from:'exit',   to:'report', color:'#4ade80', marker:'g-ah-green', label:'build report ✓' },
+      ] },
+  ],
+});
+
+// Scenario 3 — SQS redelivery is safe (fenced idempotent writes)
+const SC3 = makeScenario({
+  svg: 'sc3-svg', cap: 'sc3-cap', phase: 'sc3-phase', count: 'sc3-count', prev: 'sc3-prev', next: 'sc3-next',
+  nodes: [
+    { id:'sqs',     x:30,  y:120, w:150, h:60, label:['SQS FIFO','at-least-once'], stroke:'#fbbf24', glow:'g-glow-yellow' },
+    { id:'wa',      x:255, y:24,  w:160, h:56, label:['Worker A','run_id = R1'],    stroke:'#60a5fa', glow:'g-glow-blue' },
+    { id:'wb',      x:255, y:222, w:160, h:56, label:['Worker B','run_id = R2'],    stroke:'#60a5fa', glow:'g-glow-blue' },
+    { id:'events',  x:560, y:118, w:270, h:66, label:['deep-events','seq climbs · idem_key = id'], stroke:'#4ade80', glow:'g-glow-green' },
+  ],
+  steps: [
+    { caption:'① SQS delivers the run message to Worker A (run_id = R1). The worker takes the lease and resumes the graph.',
+      phase:'DELIVER', phaseColor:'#fbbf24', on:['sqs','wa'],
+      edges:[{ from:'sqs', to:'wa', color:'#fbbf24', marker:'g-ah-yellow', label:'deliver · R1' }] },
+    { caption:'② Worker A streams events into deep-events — seq 1, 2, 3, each tagged with an idem_key (ek1, ek2, ek3) derived from its checkpointed execution position.',
+      phase:'WRITE', phaseColor:'#4ade80', on:['wa','events'],
+      edges:[{ from:'wa', to:'events', color:'#4ade80', marker:'g-ah-green', label:'put seq 1,2,3 (ek1–ek3)' }] },
+    { caption:'③ Worker A stalls past the SQS visibility timeout (a slow IQVIA call, a GC pause — or it crashes). It never deletes the message.',
+      phase:'STALL', phaseColor:'#f87171', on:['sqs'], blocked:['wa'], edges:[] },
+    { caption:'④ SQS assumes the message was lost and redelivers it — same message, new attempt (run_id = R2) — to Worker B.',
+      phase:'REDELIVER', phaseColor:'#fbbf24', on:['sqs','wb'],
+      edges:[{ from:'sqs', to:'wb', color:'#fbbf24', marker:'g-ah-yellow', label:'redeliver · R2' }] },
+    { caption:'⑤ Worker B replays the un-checkpointed tail. seq is re-seeded from the table max → it writes NEW numbers (4, 5, 6) — but the re-emitted events carry the SAME idem_key (ek1–ek3), because that is derived from execution position, not seq.',
+      phase:'REPLAY', phaseColor:'#c084fc', on:['wb','events'],
+      edges:[{ from:'wb', to:'events', color:'#c084fc', marker:'g-ah-purple', label:'replay · same idem_key', off:14 }] },
+    { caption:'⑥ Two backstops collapse the duplicate: the write fence (attribute_not_exists(thread_id)) no-ops any collision whose idem_key matches, and the SSE reader dedups by idem_key. seq is ordering; idem_key is identity — the browser sees each line once.',
+      phase:'DEDUP', phaseColor:'#f87171', on:['wb','events'],
+      edges:[{ from:'events', to:'wb', color:'#f87171', marker:'g-ah-red', label:'✗ idem_key seen → dedup', dash:true, off:14 }] },
+    { caption:'⑦ Worker B continues past where A stopped — new, unseen events climb the seq, it deletes the message, done. At-least-once delivery, exactly-once effect.',
+      phase:'COMPLETE', phaseColor:'#4ade80', on:['wb','events'],
+      edges:[{ from:'wb', to:'events', color:'#4ade80', marker:'g-ah-green', label:'put new events ✓', off:32 }] },
+  ],
+});
 
 // ─── Init ──────────────────────────────────────────────────────────────────
 initFlow();

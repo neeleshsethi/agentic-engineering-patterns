@@ -23,7 +23,7 @@
       <p class="eyebrow">Production Deep Agent Engineering</p>
       <h1>State is the product</h1>
       <p class="lead">A deep run is not just a model loop. It is a checkpointed state machine where each field has a merge rule, a lifetime, and a failure mode.</p>
-      <div class="meta"><span class="pill">7 slides</span><span class="pill">Reducers</span><span class="pill">Turn routing</span><span class="pill">1 quiz</span></div>
+      <div class="meta"><span class="pill">8 slides</span><span class="pill">Reducers</span><span class="pill">Turn routing</span><span class="pill">1 quiz</span></div>
     </section>
 
     <section class="slide">
@@ -49,6 +49,46 @@
           <tr><td><code>files</code></td><td>Delta merge</td><td>Playbook filesystem changes accumulate like a small workspace.</td></tr>
         </tbody>
       </table>
+    </section>
+
+    <section class="slide">
+      <p class="eyebrow">Reducers, concretely</p>
+      <h2>The same update, four merge rules</h2>
+      <p class="lead">A node returns a <em>delta</em>, not the whole state. The channel's reducer decides how it folds in. Choose wrong and parallel branches clobber each other.</p>
+      <div class="grid">
+        <div class="panel accent">
+          <span class="label">Delta-append · operator.add</span>
+          <strong>Concatenate onto a list</strong> — append-only, order-independent, so parallel fan-out merges losslessly.
+          <pre><code>old   [cortex:r1]
++ Δ   [iqvia:r2]
+= new [cortex:r1, iqvia:r2]</code></pre>
+          <span class="label" style="color:#4a6b64;">source_results — accumulates across turns</span>
+        </div>
+        <div class="panel">
+          <span class="label">Dict-merge · operator.or_</span>
+          <strong>Union of keys</strong> — <code>{**old, **new}</code>. Different keys never clobber; same key, last wins.
+          <pre><code>old   {step-1: done}
++ Δ   {step-2: done}
+= new {step-1: done, step-2: done}</code></pre>
+          <span class="label" style="color:#4a6b64;">step_status, step_validation_failures</span>
+        </div>
+        <div class="panel">
+          <span class="label">Delta-merge · DeltaChannel</span>
+          <strong>Apply an encoded diff</strong> — append semantics, but only the increment persists, keeping checkpoints O(N) not O(N²).
+          <pre><code>old   [msg-1, msg-2]
++ Δ   append msg-3
+= new [msg-1, msg-2, msg-3]</code></pre>
+          <span class="label" style="color:#4a6b64;">messages, files (per-file diff)</span>
+        </div>
+        <div class="panel warn">
+          <span class="label">Atomic swap · no reducer</span>
+          <strong>Replace the whole value</strong> — used where the value must stay consistent as a set: all-or-nothing, never half-merged.
+          <pre><code>old   {c1, c2}
++ Δ   {c3, c4}
+= new {c3, c4}</code></pre>
+          <span class="label" style="color:#7a5b1a;">chart_catalog, chart_specs</span>
+        </div>
+      </div>
     </section>
 
     <section class="slide">
