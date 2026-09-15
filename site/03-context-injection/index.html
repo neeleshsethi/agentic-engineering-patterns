@@ -1258,8 +1258,9 @@
 </code></pre></div>
 <p>This is <em>useful</em>: "my sales" is meaningless without the account context. It is <em>dangerous</em> because stale or over-salient context can quietly override a later user correction — exactly the France/Australia bug above. Note the continuity with <a href="../02-state-and-checkpoints/">LangGraph State</a>: a stale <code>user_context</code> value doesn't just sit in state, it gets <strong>composed into the prompt</strong> and steers the answer.</p>
 <h2 id="what-we-assemble-into-each-model-call">What we assemble into each model call<a class="headerlink" href="#what-we-assemble-into-each-model-call" title="Permanent link">&para;</a></h2>
-<p>The deep orchestrator does not send the raw message list to the model. Every model call is <em>assembled</em> by a chain of <code>wrap_model_call</code> middlewares, each of which rebuilds its slice from state and frames it onto the latest genuine human message — transiently, so nothing accumulates in the checkpoint. Six components go in; a single composed prompt comes out.</p>
+<p>The deep orchestrator does not send the raw message list to the model. Every model call is <em>assembled</em> by a chain of <code>wrap_model_call</code> middlewares, each of which rebuilds its slice from state and frames it onto the latest genuine human message — transiently, so nothing accumulates in the checkpoint. Seven kinds of context go in — one of them, the <strong>source catalog</strong>, rides <em>inside</em> the system prompt rather than through its own middleware — and a single composed prompt comes out.</p>
 <pre class="mermaid"><code>flowchart TB
+    SC["Source cards / catalog&lt;br/&gt;what each source answers:&lt;br/&gt;questions · KPIs · domains · out-of-scope · relationships"]
     SP["System / orchestrator prompt&lt;br/&gt;plan · submit · refine · execute rules"]
     UC["[User context]&lt;br/&gt;persona · prior entities"]
     HD["[Held data] manifest&lt;br/&gt;pointers to prior results, not rows"]
@@ -1267,6 +1268,7 @@
     TL["Tool set&lt;br/&gt;the 7-tool frozenset"]
     Q["User question&lt;br/&gt;this turn's words"]
 
+    SC --&gt; SP
     SP --&gt; ASM
     UC --&gt; ASM
     HD --&gt; ASM
@@ -1293,6 +1295,12 @@
 <td>base prompt (<code>orchestrator_prompts.py</code>)</td>
 <td>static</td>
 <td>The rules the model plans and reuses under; see <a href="../09-orchestrator-prompt/">Orchestrator Prompt</a>.</td>
+</tr>
+<tr>
+<td>Source cards / catalog</td>
+<td><strong>within the system prompt</strong> — what each source answers: questions, KPIs, domains, out-of-scope, inter-source relationships</td>
+<td>static</td>
+<td>The model routes a step to the wrong source, attempts an out-of-scope question, or fans out redundantly; see <a href="../09a-clarifications/">Clarifications</a>.</td>
 </tr>
 <tr>
 <td><code>[User context]</code></td>

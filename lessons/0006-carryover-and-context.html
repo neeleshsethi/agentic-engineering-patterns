@@ -93,14 +93,15 @@
     <section class="slide">
       <p class="eyebrow">The full picture · press play</p>
       <h2>Everything we assemble into a model call</h2>
-      <p class="lead" style="margin-bottom:0.2rem;">The orchestrator never sends the raw message list. A chain of <code>wrap_model_call</code> middlewares rebuilds each slice from state and composes one prompt. The <strong>[held data] manifest</strong> is one of six — the component this lesson dives into.</p>
+      <p class="lead" style="margin-bottom:0.2rem;">The orchestrator never sends the raw message list. A chain of <code>wrap_model_call</code> middlewares rebuilds each slice from state and composes one prompt. The <strong>[held data] manifest</strong> is one of seven — the component this lesson dives into.</p>
       <div class="ca-comps" id="ca-comps">
         <div class="ca-chip" data-i="0"><span class="cn">System prompt</span><span class="cs">plan · submit · refine · execute rules</span><span class="cmw">base prompt</span></div>
-        <div class="ca-chip" data-i="1"><span class="cn">[User context]</span><span class="cs">persona · prior entities</span><span class="cmw">UserContextMiddleware</span></div>
-        <div class="ca-chip" data-i="2"><span class="cn">[Held data] manifest</span><span class="cs">pointers to prior results, not rows</span><span class="cmw">DataManifestMiddleware · this lesson</span></div>
-        <div class="ca-chip" data-i="3"><span class="cn">Conversation messages</span><span class="cs">the running transcript</span><span class="cmw">graph state</span></div>
-        <div class="ca-chip" data-i="4"><span class="cn">7 allowed tools</span><span class="cs">the tool frozenset</span><span class="cmw">AllowedToolsMiddleware</span></div>
-        <div class="ca-chip" data-i="5"><span class="cn">User question</span><span class="cs">this turn's words</span><span class="cmw">framed onto latest human msg</span></div>
+        <div class="ca-chip" data-i="1"><span class="cn">Source cards</span><span class="cs">what each source answers · KPIs · domains · out-of-scope · relationships</span><span class="cmw">source catalog · in the system prompt</span></div>
+        <div class="ca-chip" data-i="2"><span class="cn">[User context]</span><span class="cs">persona · prior entities</span><span class="cmw">UserContextMiddleware</span></div>
+        <div class="ca-chip" data-i="3"><span class="cn">[Held data] manifest</span><span class="cs">pointers to prior results, not rows</span><span class="cmw">DataManifestMiddleware · this lesson</span></div>
+        <div class="ca-chip" data-i="4"><span class="cn">Conversation messages</span><span class="cs">the running transcript</span><span class="cmw">graph state</span></div>
+        <div class="ca-chip" data-i="5"><span class="cn">7 allowed tools</span><span class="cs">the tool frozenset</span><span class="cmw">AllowedToolsMiddleware</span></div>
+        <div class="ca-chip" data-i="6"><span class="cn">User question</span><span class="cs">this turn's words</span><span class="cmw">framed onto latest human msg</span></div>
       </div>
       <div class="ca-flow">
         <span class="ca-arrowdown">↓</span>
@@ -391,9 +392,10 @@
   const resetBtn = document.getElementById("ca-reset");
   if (!chips.length) return;
 
-  const NAMES = ["System prompt", "[User context]", "[Held data] manifest", "Conversation messages", "7 allowed tools", "User question"];
+  const NAMES = ["System prompt", "Source cards", "[User context]", "[Held data] manifest", "Conversation messages", "7 allowed tools", "User question"];
   const NOTES = [
     "the base rules the model plans and reuses under.",
+    "the source catalog — what each source answers: KPIs, domains, out-of-scope, and how sources relate. Rides inside the system prompt.",
     "persona + prior entities — transient, rebuilt every call.",
     "the manifest: pointers to prior results, never the rows — this lesson.",
     "the running transcript, from graph state.",
@@ -402,7 +404,7 @@
   ];
 
   const STEPS = [];
-  for (let i = 0; i < 6; i++) {
+  for (let i = 0; i < 7; i++) {
     STEPS.push((function (i) {
       return function () {
         chips.forEach(c => c.classList.remove("focus"));
