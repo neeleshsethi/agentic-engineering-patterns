@@ -443,6 +443,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#what-we-assemble-into-each-model-call" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What we assemble into each model call
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#two-subtle-ways-it-goes-wrong" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1155,6 +1166,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#what-we-assemble-into-each-model-call" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What we assemble into each model call
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#two-subtle-ways-it-goes-wrong" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1235,6 +1257,76 @@
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>     Give me my sales
 </code></pre></div>
 <p>This is <em>useful</em>: "my sales" is meaningless without the account context. It is <em>dangerous</em> because stale or over-salient context can quietly override a later user correction — exactly the France/Australia bug above. Note the continuity with <a href="../02-state-and-checkpoints/">LangGraph State</a>: a stale <code>user_context</code> value doesn't just sit in state, it gets <strong>composed into the prompt</strong> and steers the answer.</p>
+<h2 id="what-we-assemble-into-each-model-call">What we assemble into each model call<a class="headerlink" href="#what-we-assemble-into-each-model-call" title="Permanent link">&para;</a></h2>
+<p>The deep orchestrator does not send the raw message list to the model. Every model call is <em>assembled</em> by a chain of <code>wrap_model_call</code> middlewares, each of which rebuilds its slice from state and frames it onto the latest genuine human message — transiently, so nothing accumulates in the checkpoint. Six components go in; a single composed prompt comes out.</p>
+<pre class="mermaid"><code>flowchart TB
+    SP["System / orchestrator prompt&lt;br/&gt;plan · submit · refine · execute rules"]
+    UC["[User context]&lt;br/&gt;persona · prior entities"]
+    HD["[Held data] manifest&lt;br/&gt;pointers to prior results, not rows"]
+    MSG["Conversation messages&lt;br/&gt;the running transcript"]
+    TL["Tool set&lt;br/&gt;the 7-tool frozenset"]
+    Q["User question&lt;br/&gt;this turn's words"]
+
+    SP --&gt; ASM
+    UC --&gt; ASM
+    HD --&gt; ASM
+    MSG --&gt; ASM
+    TL --&gt; ASM
+    Q --&gt; ASM
+
+    ASM["Context assembly&lt;br/&gt;wrap_model_call chain · delimiters escaped"]
+    ASM --&gt; M["Model call"]
+    M --&gt; OUT["plan · tool calls · report"]</code></pre>
+<p>Each component has a different source, lifetime, and failure mode — and that is the whole point of assembling rather than concatenating:</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Injected by</th>
+<th>Lifetime</th>
+<th>If it goes wrong</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>System / orchestrator prompt</td>
+<td>base prompt (<code>orchestrator_prompts.py</code>)</td>
+<td>static</td>
+<td>The rules the model plans and reuses under; see <a href="../09-orchestrator-prompt/">Orchestrator Prompt</a>.</td>
+</tr>
+<tr>
+<td><code>[User context]</code></td>
+<td><code>UserContextMiddleware</code></td>
+<td>transient, rebuilt per call</td>
+<td>A stale value overrides a live correction — the France/Australia bug below.</td>
+</tr>
+<tr>
+<td><code>[Held data]</code> manifest</td>
+<td><code>DataManifestMiddleware</code></td>
+<td>transient, rebuilt per call</td>
+<td>Inject the rows instead of the pointers and you poison the window; see <a href="../09f-carryover-and-the-data-manifest/">Carryover and the Data Manifest</a>.</td>
+</tr>
+<tr>
+<td>Conversation messages</td>
+<td>graph state (<code>messages</code>)</td>
+<td>durable, delta-checkpointed</td>
+<td>Attach context to a synthetic summary message instead of the user's — see below.</td>
+</tr>
+<tr>
+<td>Tool set</td>
+<td><code>AllowedToolsMiddleware</code></td>
+<td>per call</td>
+<td>The model reaches for a tool that isn't structurally reachable; see <a href="../09b-code-components-and-organization/">Middleware</a>.</td>
+</tr>
+<tr>
+<td>User question</td>
+<td>framed onto the latest <code>HumanMessage</code></td>
+<td>this turn</td>
+<td>Framed onto the wrong (synthetic) message, or the injected text forges the closing delimiter — both covered next.</td>
+</tr>
+</tbody>
+</table>
+<p>The two transient blocks (<code>[User context]</code> and <code>[Held data]</code>) are the ones that carry the sharpest edges, because they are user-influenced and re-composed every turn. Both are wrapped in delimited blocks, and both must escape their own closing tag so held text cannot forge the boundary — the discipline the rest of this chapter is about.</p>
 <h2 id="two-subtle-ways-it-goes-wrong">Two subtle ways it goes wrong<a class="headerlink" href="#two-subtle-ways-it-goes-wrong" title="Permanent link">&para;</a></h2>
 <p>Most context-injection bugs are not "we forgot the context." They are "we attached it to the wrong thing." Two that bite hard:</p>
 <p><strong>1. Attaching context to a synthetic message, not the user's.</strong> Some frameworks insert synthetic messages during history summarization. They may still be <code>HumanMessage</code> objects, but they are not user-authored. If you blindly compose context onto "the last human message," you may be labeling a machine-written summary as the user's latest words. Walk back to the <em>real</em> one:</p>

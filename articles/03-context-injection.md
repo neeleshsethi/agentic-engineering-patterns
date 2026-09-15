@@ -29,6 +29,44 @@ Injected model input (what the model sees)
 
 This is *useful*: "my sales" is meaningless without the account context. It is *dangerous* because stale or over-salient context can quietly override a later user correction — exactly the France/Australia bug above. Note the continuity with [LangGraph State](02-state-and-checkpoints.md): a stale `user_context` value doesn't just sit in state, it gets **composed into the prompt** and steers the answer.
 
+## What we assemble into each model call
+
+The deep orchestrator does not send the raw message list to the model. Every model call is *assembled* by a chain of `wrap_model_call` middlewares, each of which rebuilds its slice from state and frames it onto the latest genuine human message — transiently, so nothing accumulates in the checkpoint. Six components go in; a single composed prompt comes out.
+
+```mermaid
+flowchart TB
+    SP["System / orchestrator prompt<br/>plan · submit · refine · execute rules"]
+    UC["[User context]<br/>persona · prior entities"]
+    HD["[Held data] manifest<br/>pointers to prior results, not rows"]
+    MSG["Conversation messages<br/>the running transcript"]
+    TL["Tool set<br/>the 7-tool frozenset"]
+    Q["User question<br/>this turn's words"]
+
+    SP --> ASM
+    UC --> ASM
+    HD --> ASM
+    MSG --> ASM
+    TL --> ASM
+    Q --> ASM
+
+    ASM["Context assembly<br/>wrap_model_call chain · delimiters escaped"]
+    ASM --> M["Model call"]
+    M --> OUT["plan · tool calls · report"]
+```
+
+Each component has a different source, lifetime, and failure mode — and that is the whole point of assembling rather than concatenating:
+
+| Component | Injected by | Lifetime | If it goes wrong |
+|---|---|---|---|
+| System / orchestrator prompt | base prompt (`orchestrator_prompts.py`) | static | The rules the model plans and reuses under; see [Orchestrator Prompt](09-orchestrator-prompt.md). |
+| `[User context]` | `UserContextMiddleware` | transient, rebuilt per call | A stale value overrides a live correction — the France/Australia bug below. |
+| `[Held data]` manifest | `DataManifestMiddleware` | transient, rebuilt per call | Inject the rows instead of the pointers and you poison the window; see [Carryover and the Data Manifest](09f-carryover-and-the-data-manifest.md). |
+| Conversation messages | graph state (`messages`) | durable, delta-checkpointed | Attach context to a synthetic summary message instead of the user's — see below. |
+| Tool set | `AllowedToolsMiddleware` | per call | The model reaches for a tool that isn't structurally reachable; see [Middleware](09b-code-components-and-organization.md). |
+| User question | framed onto the latest `HumanMessage` | this turn | Framed onto the wrong (synthetic) message, or the injected text forges the closing delimiter — both covered next. |
+
+The two transient blocks (`[User context]` and `[Held data]`) are the ones that carry the sharpest edges, because they are user-influenced and re-composed every turn. Both are wrapped in delimited blocks, and both must escape their own closing tag so held text cannot forge the boundary — the discipline the rest of this chapter is about.
+
 ## Two subtle ways it goes wrong
 
 Most context-injection bugs are not "we forgot the context." They are "we attached it to the wrong thing." Two that bite hard:
