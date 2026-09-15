@@ -31,10 +31,11 @@ This is *useful*: "my sales" is meaningless without the account context. It is *
 
 ## What we assemble into each model call
 
-The deep orchestrator does not send the raw message list to the model. Every model call is *assembled* by a chain of `wrap_model_call` middlewares, each of which rebuilds its slice from state and frames it onto the latest genuine human message — transiently, so nothing accumulates in the checkpoint. Six components go in; a single composed prompt comes out.
+The deep orchestrator does not send the raw message list to the model. Every model call is *assembled* by a chain of `wrap_model_call` middlewares, each of which rebuilds its slice from state and frames it onto the latest genuine human message — transiently, so nothing accumulates in the checkpoint. Seven kinds of context go in — one of them, the **source catalog**, rides *inside* the system prompt rather than through its own middleware — and a single composed prompt comes out.
 
 ```mermaid
 flowchart TB
+    SC["Source cards / catalog<br/>what each source answers:<br/>questions · KPIs · domains · out-of-scope · relationships"]
     SP["System / orchestrator prompt<br/>plan · submit · refine · execute rules"]
     UC["[User context]<br/>persona · prior entities"]
     HD["[Held data] manifest<br/>pointers to prior results, not rows"]
@@ -42,6 +43,7 @@ flowchart TB
     TL["Tool set<br/>the 7-tool frozenset"]
     Q["User question<br/>this turn's words"]
 
+    SC --> SP
     SP --> ASM
     UC --> ASM
     HD --> ASM
@@ -59,6 +61,7 @@ Each component has a different source, lifetime, and failure mode — and that i
 | Component | Injected by | Lifetime | If it goes wrong |
 |---|---|---|---|
 | System / orchestrator prompt | base prompt (`orchestrator_prompts.py`) | static | The rules the model plans and reuses under; see [Orchestrator Prompt](09-orchestrator-prompt.md). |
+| Source cards / catalog | **within the system prompt** — what each source answers: questions, KPIs, domains, out-of-scope, inter-source relationships | static | The model routes a step to the wrong source, attempts an out-of-scope question, or fans out redundantly; see [Clarifications](09a-clarifications.md). |
 | `[User context]` | `UserContextMiddleware` | transient, rebuilt per call | A stale value overrides a live correction — the France/Australia bug below. |
 | `[Held data]` manifest | `DataManifestMiddleware` | transient, rebuilt per call | Inject the rows instead of the pointers and you poison the window; see [Carryover and the Data Manifest](09f-carryover-and-the-data-manifest.md). |
 | Conversation messages | graph state (`messages`) | durable, delta-checkpointed | Attach context to a synthetic summary message instead of the user's — see below. |
