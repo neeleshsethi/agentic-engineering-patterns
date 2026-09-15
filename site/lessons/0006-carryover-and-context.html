@@ -49,6 +49,23 @@
     .cm-cap b { color: #172126; }
 
     @keyframes cmIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+    /* ── Context assembly visual (scoped) ─────────────────────────── */
+    .ca-comps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.55rem; margin-top: 0.6rem; }
+    @media (max-width: 760px) { .ca-comps { grid-template-columns: 1fr 1fr; } }
+    .ca-chip { border: 1px solid #d3ccbf; border-radius: 8px; background: #fbfaf6; padding: 0.5rem 0.6rem; opacity: 0.32; transition: opacity 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease, transform 0.35s ease; }
+    .ca-chip.on { opacity: 1; border-color: #25806f; box-shadow: 0 2px 10px rgba(37,128,111,0.12); }
+    .ca-chip.focus { border-color: #b8860b; box-shadow: 0 0 0 2px #f2c14e; transform: translateY(-2px); }
+    .ca-chip .cn { display: block; font-weight: 800; font-size: 0.82rem; color: #172126; }
+    .ca-chip .cs { display: block; font-size: 0.71rem; color: #60717b; margin-top: 0.1rem; }
+    .ca-chip .cmw { display: inline-block; margin-top: 0.28rem; font-family: "SF Mono", Menlo, monospace; font-size: 0.58rem; color: #7c5cc4; }
+    .ca-flow { margin-top: 0.6rem; display: grid; gap: 0.35rem; justify-items: center; }
+    .ca-arrowdown { color: #9aa7b0; font-size: 1.05rem; line-height: 1; }
+    .ca-box { width: 100%; max-width: 540px; text-align: center; border-radius: 10px; padding: 0.55rem 0.8rem; border: 1px solid #cfc8ba; background: #f4f1ea; transition: all 0.4s ease; }
+    .ca-box .bt { font-weight: 800; color: #172126; } .ca-box .bs { font-size: 0.73rem; color: #60717b; }
+    .ca-box.asm.active { border-color: #1f6680; background: linear-gradient(90deg,#eafaf1,#eef7fb); box-shadow: 0 2px 14px rgba(31,102,128,0.15); }
+    .ca-box.model.active { border-color: #7c5cc4; background: #f3effc; }
+    .ca-box.out.active { border-color: #25806f; background: #eefbf7; }
   </style>
 </head>
 <body>
@@ -69,10 +86,39 @@
       <p class="eyebrow">Production Deep Agent Engineering</p>
       <h1>Reuse the answer, not the megabytes</h1>
       <p class="lead">A Cortex call returns a prose answer <em>and</em> a data table that can be a thousand rows. You want the model to reuse a prior turn's answer instead of re-querying — but you cannot paste a thousand rows back into the window every turn. So you inject an index of metadata, never the data.</p>
-      <div class="meta"><span class="pill">9 slides</span><span class="pill">Data manifest</span><span class="pill">Anti-poisoning</span><span class="pill">Live demo</span></div>
+      <div class="meta"><span class="pill">10 slides</span><span class="pill">Data manifest</span><span class="pill">Anti-poisoning</span><span class="pill">Live demo</span></div>
     </section>
 
-    <!-- 2 · Two ways to lose -->
+    <!-- 2 · Context assembly (everything we inject) -->
+    <section class="slide">
+      <p class="eyebrow">The full picture · press play</p>
+      <h2>Everything we assemble into a model call</h2>
+      <p class="lead" style="margin-bottom:0.2rem;">The orchestrator never sends the raw message list. A chain of <code>wrap_model_call</code> middlewares rebuilds each slice from state and composes one prompt. The <strong>[held data] manifest</strong> is one of six — the component this lesson dives into.</p>
+      <div class="ca-comps" id="ca-comps">
+        <div class="ca-chip" data-i="0"><span class="cn">System prompt</span><span class="cs">plan · submit · refine · execute rules</span><span class="cmw">base prompt</span></div>
+        <div class="ca-chip" data-i="1"><span class="cn">[User context]</span><span class="cs">persona · prior entities</span><span class="cmw">UserContextMiddleware</span></div>
+        <div class="ca-chip" data-i="2"><span class="cn">[Held data] manifest</span><span class="cs">pointers to prior results, not rows</span><span class="cmw">DataManifestMiddleware · this lesson</span></div>
+        <div class="ca-chip" data-i="3"><span class="cn">Conversation messages</span><span class="cs">the running transcript</span><span class="cmw">graph state</span></div>
+        <div class="ca-chip" data-i="4"><span class="cn">7 allowed tools</span><span class="cs">the tool frozenset</span><span class="cmw">AllowedToolsMiddleware</span></div>
+        <div class="ca-chip" data-i="5"><span class="cn">User question</span><span class="cs">this turn's words</span><span class="cmw">framed onto latest human msg</span></div>
+      </div>
+      <div class="ca-flow">
+        <span class="ca-arrowdown">↓</span>
+        <div class="ca-box asm" id="ca-asm"><span class="bt">Context assembly</span> · <span class="bs">wrap_model_call chain · delimiters escaped</span></div>
+        <span class="ca-arrowdown">↓</span>
+        <div class="ca-box model" id="ca-model"><span class="bt">Model call</span> <span class="bs">one flat prompt</span></div>
+        <span class="ca-arrowdown">↓</span>
+        <div class="ca-box out" id="ca-out"><span class="bt">plan · tool calls · report</span></div>
+      </div>
+      <div class="cm-controls">
+        <button class="cm-btn primary" id="ca-play">▶ Play</button>
+        <button class="cm-btn" id="ca-step">Step ›</button>
+        <button class="cm-btn" id="ca-reset">⟲ Reset</button>
+        <span class="cm-cap" id="ca-cap">Six components, each rebuilt from state and framed onto the latest human message.</span>
+      </div>
+    </section>
+
+    <!-- 3 · Two ways to lose -->
     <section class="slide">
       <p class="eyebrow">The problem</p>
       <h2>Two ways to lose, and the manifest avoids both</h2>
@@ -331,6 +377,85 @@
   });
   resetBtn.addEventListener("click", reset);
   meter();
+})();
+
+/* ── Context-assembly animation (self-contained) ─────────────────── */
+(function () {
+  const chips = [...document.querySelectorAll("#ca-comps .ca-chip")];
+  const asm = document.getElementById("ca-asm");
+  const model = document.getElementById("ca-model");
+  const out = document.getElementById("ca-out");
+  const cap = document.getElementById("ca-cap");
+  const playBtn = document.getElementById("ca-play");
+  const stepBtn = document.getElementById("ca-step");
+  const resetBtn = document.getElementById("ca-reset");
+  if (!chips.length) return;
+
+  const NAMES = ["System prompt", "[User context]", "[Held data] manifest", "Conversation messages", "7 allowed tools", "User question"];
+  const NOTES = [
+    "the base rules the model plans and reuses under.",
+    "persona + prior entities — transient, rebuilt every call.",
+    "the manifest: pointers to prior results, never the rows — this lesson.",
+    "the running transcript, from graph state.",
+    "the 7-tool frozenset; everything else is structurally unreachable.",
+    "this turn's words, framed onto the latest human message.",
+  ];
+
+  const STEPS = [];
+  for (let i = 0; i < 6; i++) {
+    STEPS.push((function (i) {
+      return function () {
+        chips.forEach(c => c.classList.remove("focus"));
+        chips[i].classList.add("on", "focus");
+        cap.innerHTML = "<b>" + NAMES[i] + "</b> — " + NOTES[i];
+      };
+    })(i));
+  }
+  STEPS.push(function () {
+    chips.forEach(c => c.classList.remove("focus"));
+    asm.classList.add("active");
+    cap.innerHTML = "<b>Context assembly</b> — all six composed into one prompt; each delimited block escapes its own closing tag so held text can't forge the boundary.";
+  });
+  STEPS.push(function () {
+    model.classList.add("active");
+    cap.innerHTML = "<b>Model call</b> — the model sees one flat prompt; it never learns which slice came from where.";
+  });
+  STEPS.push(function () {
+    out.classList.add("active");
+    cap.innerHTML = "Out comes a plan, tool calls, or a report — and next turn the whole context is reassembled fresh from state.";
+  });
+
+  let idx = 0, timer = null;
+  function reset() {
+    if (timer) { clearInterval(timer); timer = null; }
+    idx = 0;
+    chips.forEach(c => c.classList.remove("on", "focus"));
+    [asm, model, out].forEach(b => b.classList.remove("active"));
+    cap.innerHTML = "Six components, each rebuilt from state and framed onto the latest human message.";
+    playBtn.textContent = "▶ Play";
+  }
+  function renderStep() {
+    if (idx >= STEPS.length) return false;
+    STEPS[idx]();
+    idx++;
+    return idx < STEPS.length;
+  }
+  function play() {
+    if (timer) { clearInterval(timer); timer = null; playBtn.textContent = "▶ Play"; return; }
+    if (idx >= STEPS.length) reset();
+    playBtn.textContent = "⏸ Pause";
+    timer = setInterval(function () {
+      const more = renderStep();
+      if (!more) { clearInterval(timer); timer = null; playBtn.textContent = "▶ Replay"; }
+    }, 950);
+  }
+  playBtn.addEventListener("click", play);
+  stepBtn.addEventListener("click", function () {
+    if (timer) { clearInterval(timer); timer = null; playBtn.textContent = "▶ Play"; }
+    if (idx >= STEPS.length) reset();
+    renderStep();
+  });
+  resetBtn.addEventListener("click", reset);
 })();
 </script>
 </body>
