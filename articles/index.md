@@ -40,6 +40,7 @@ The articles follow the order you would build the system in. Read them as if you
 
 ### Finally, review the scars
 16. [Nine Silent Failures](10-nine-silent-failures.md) — the final case study. Each failure should now feel recognizable, not mysterious.
+17. [When the Score Passes and the Work Fails](11-when-the-score-passes.md) — the second capstone: tool success that isn't task success, and evaluations that hide a tradeoff.
 
 ## Reference
 - [Glossary](00-glossary.md) — every term, defined once.

@@ -6,7 +6,7 @@ Use this as the final review exercise: a deep agent can look healthy, return `20
 
 This article is written for the engineer who has built normal Python APIs and is now trying to understand production agents. If that is you, the hardest adjustment is this: with agent systems, "the request succeeded" is not the same as "the work was correct."
 
-We learned this while building a research agent for pharma business questions. The agent takes a question, proposes a multi-step research plan, pauses for human approval, then executes the approved plan and writes a report. On paper, the stack was ordinary enough: LangGraph for orchestration, middleware for context injection, DynamoDB for persistence, and Server-Sent Events for streaming progress to the browser.
+We learned this while building a commercial-strategy agent that helps commercial leaders answer where-to-play, what-to-play and how-to-win questions. The agent takes a question, proposes a multi-step research plan, pauses for human approval, then executes the approved plan and writes a report. On paper, the stack was ordinary enough: LangGraph for orchestration, middleware for context injection, DynamoDB for persistence, and Server-Sent Events for streaming progress to the browser.
 
 Before one release, code review found nine bugs. None crashed the app. None produced scary logs. None would have paged anyone. Each one completed successfully while corrupting the meaning of the run.
 
@@ -782,3 +782,7 @@ The `plan` channel is `LastValue`. The exit path persisted the plan onto every c
 The fix: stamp `plan.minted_run_id = deep_run_id` at plan creation and persist only when `plan.minted_run_id` matches the current turn's `deep_run_id`. Fail open when either is absent.
 
 The lesson: a sticky `LastValue` channel written only at plan time, combined with end-of-run persistence on every turn, silently re-persists the old value. The turn's own run id is the only safe discriminator.
+
+---
+
+**Next:** [Capstone 2 · When the score passes and the work fails](11-when-the-score-passes.md) moves up one layer, to tool results that aren't task results and evaluations that hide a tradeoff.

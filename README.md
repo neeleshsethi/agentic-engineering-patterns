@@ -25,6 +25,7 @@ The series follows the order you would actually **build** a production deep agen
 9. [Queue and Worker Execution](articles/08-queue-and-worker-execution.md) — approved work leaves the API process and becomes replay-safe.
 10. [The Orchestrator Prompt](articles/09-orchestrator-prompt.md) — prompt shapes judgment; code enforces boundaries.
 11. [Nine Silent Failures](articles/10-nine-silent-failures.md) — the capstone: nine real bugs caught before release.
+12. [When the Score Passes and the Work Fails](articles/11-when-the-score-passes.md) — the second capstone: model–tool contract failures and evaluations that don't lie.
 
 ## Repository Structure
 
