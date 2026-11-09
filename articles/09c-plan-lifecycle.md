@@ -1,6 +1,6 @@
 # Deep Dive · Plan Lifecycle
 
-The deep plan lifecycle is not "plan on every user message." A plan is a durable, approved execution contract. Once it is locked, follow-up turns either open a new plan cycle, extend the current cycle, or avoid planning altogether.
+A deep plan is a durable, approved execution contract, and the agent does not create one for every user message. Once it is locked, follow-up turns either open a new plan cycle, extend the current cycle, or avoid planning altogether.
 
 ## The Full Plan Workflow
 
@@ -32,7 +32,7 @@ Turn 2: "Now analyze launch uptake in Japan."
   -> plan-thread-123-2
 ```
 
-The second turn is not a small addition to the first approved question. It needs a fresh cycle, fresh todos, fresh approval, and a new `plan_id`.
+The second turn asks a different question from the first approved one, so it needs a fresh cycle, fresh todos, fresh approval, and a new `plan_id`.
 
 ## When We Extend The Locked Plan
 
@@ -78,9 +78,9 @@ The critical case is source elicitation. If the user answers "retail" after a so
 
 Once a plan is locked, nothing short of a genuinely new question should reopen approval.
 
-Replanning an elicitation reply would detach already-fetched evidence from the current cycle because current-cycle evidence is filtered by `plan_id`. Keeping the locked plan is what allows partial results to carry forward safely.
+Replanning an elicitation reply would detach already-fetched evidence from the current cycle because current-cycle evidence is filtered by `plan_id`. Keeping the locked plan lets partial results carry forward safely.
 
-That filter is deliberately string-based: a result belongs to the current cycle if rebuilding its `provenance_id` with the current locked `plan_id` reproduces the stored id. A new `plan_id` is not a harmless label change; it changes which accumulated `source_results` are considered current evidence.
+That filter is deliberately string-based: a result belongs to the current cycle if rebuilding its `provenance_id` with the current locked `plan_id` reproduces the stored id. Changing the `plan_id` changes which accumulated `source_results` count as current evidence.
 
 Entity and metric gaps are the opposite case. They happen before a safe plan exists, so the system asks one terminal clarification and avoids writing todos at all. Source ambiguity can ride the plan gate only when approving the plan is itself enough to resolve the ambiguity.
 

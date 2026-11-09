@@ -1,21 +1,21 @@
 # Step 8 · Orchestrator Prompt
 
-Once an agent's control flow lives in code — a gate, a state machine, a set of endpoints — a question sharpens: what is the prompt still *for*? The answer is a dividing line worth stating up front.
+Once an agent's control flow lives in code (a gate, a state machine, a set of endpoints), the prompt has a narrower job.
 
 > The prompt shapes judgment. The code enforces boundaries.
 
-The prompt decides what the model should *think about* — how to break a question into steps, how to interpret feedback, what counts as evidence. The code decides what the model is *allowed to do* — which tools exist, when execution may start, who may approve. Every time you find yourself writing a prompt sentence that tries to guarantee a boundary, you have found something that belongs in code instead.
+The prompt decides what the model should *think about*: how to break a question into steps, how to interpret feedback, what counts as evidence. The code decides what the model is *allowed to do*: which tools exist, when execution may start, who may approve. Every time you find yourself writing a prompt sentence that tries to guarantee a boundary, you have found something that belongs in code instead.
 
 The running example is a pharmaceutical commercial-analytics orchestrator. Identifiers are generic (`BRAND_A`, `SOURCE_A..D`, `query_source`), but the domain matters here: in regulated analytics, some of these rules are law, not style, and that changes where they have to live.
 
-> Terms used below — [gate](00-glossary.md#gate), [middleware](00-glossary.md#middleware), [ToolMessage](00-glossary.md#toolmessage), [grounding](00-glossary.md#grounding), [entity resolution](00-glossary.md#entity-resolution) — are in the [glossary](00-glossary.md). This article builds on [Human-in-the-Loop Approval](04-planning-and-human-approval.md).
+> Terms used below ([gate](00-glossary.md#gate), [middleware](00-glossary.md#middleware), [ToolMessage](00-glossary.md#toolmessage), [grounding](00-glossary.md#grounding), [entity resolution](00-glossary.md#entity-resolution)) are in the [glossary](00-glossary.md). This article builds on [Human-in-the-Loop Approval](04-planning-and-human-approval.md).
 
 ## The Test: Prompt Or Structure?
 
 For any rule the agent must follow, ask one question: **can code enforce it deterministically?**
 
 - If yes, put it in code and spend zero prompt tokens on it. Prompt instructions compete with the model's other instincts and occasionally lose. Structure does not.
-- If no — because enforcement would require reading the model's mind — the prompt is the only surface available, and the sentence has to be exact.
+- If no, because enforcement would require reading the model's mind, the prompt is the only surface available, and the sentence has to be exact.
 
 ```text
                     ┌─────────────────────────────────────┐
@@ -44,7 +44,7 @@ The rest of this article is that test applied to a real orchestrator, in both di
 
 Start with the boundaries, because they are the easy calls. None of these appear in the prompt at all.
 
-**Tool availability.** The agent framework injects several built-in tools by default, including one that spawns sub-agents. A sub-agent would run its retrievals *outside* the approval gate — exactly the thing the whole design exists to prevent.
+**Tool availability.** The agent framework injects several built-in tools by default, including one that spawns sub-agents. A sub-agent would run its retrievals *outside* the approval gate, which is what the gate exists to prevent.
 
 ```text
 ❌ WRONG — using the prompt to forbid a tool:
@@ -77,7 +77,7 @@ class AllowedToolsMiddleware(AgentMiddleware):
         return request.override(tools=tools)   # the model never sees the rest
 ```
 
-The production orchestrator allowed exactly seven tools — the rest were invisible:
+The production orchestrator allowed exactly seven tools, and the rest were invisible:
 
 ```text
 write_todos      ← planning only (before approval)
@@ -103,9 +103,9 @@ In the production deep graph, seven middlewares formed the runtime contract arou
 | 6 | `SufficiencyGateMiddleware` | Check completeness and allow one bounded gap-fill round before reporting. |
 | 7 | `RetrievalBudgetMiddleware` | Meter retrieval rounds and route to exit when the budget is spent. |
 
-The order is not decorative. LangChain runs `after_agent` hooks in reverse registration order, so the sufficiency gate must run before the exit path writes the report. The retrieval budget uses model-call hooks, so it can meter loop depth without perturbing that exit ordering.
+Registration order matters. LangChain runs `after_agent` hooks in reverse registration order, so the sufficiency gate must run before the exit path writes the report. The retrieval budget uses model-call hooks, so it can meter loop depth without perturbing that exit ordering.
 
-**Gate sequencing, status, concurrency.** Whether the plan is approved, when it locks, how many times it was refined, whether two requests raced — all of that is code (the gate's `interrupt()`, `model_copy` on the plan status, a DynamoDB claim). See [Human-in-the-Loop Plan Approval](./04-planning-and-human-approval.md) for the mechanism. Here the point is only that these were *not* delegated to the prompt.
+**Gate sequencing, status, concurrency.** Whether the plan is approved, when it locks, how many times it was refined, whether two requests raced: all of that is code (the gate's `interrupt()`, `model_copy` on the plan status, a DynamoDB claim). See [Human-in-the-Loop Plan Approval](./04-planning-and-human-approval.md) for the mechanism. None of it was delegated to the prompt.
 
 | Rule | Where it lives | Why not the prompt |
 |------|----------------|--------------------|
@@ -120,7 +120,7 @@ Now the other side: the judgments no code can make. These are where prompt wordi
 
 ### The phase machine
 
-The workflow is written as five numbered, labeled steps — PLAN, SUBMIT, REFINE, EXECUTE, FOLLOW-UP — not as prose. The numbering is not decoration. It gives the model a phase machine it can locate itself in: at any point in a long conversation it matches its situation ("I just received refine feedback") to a step and reads off what to do.
+The workflow is written as five numbered, labeled steps (PLAN, SUBMIT, REFINE, EXECUTE, FOLLOW-UP) instead of prose. The numbering gives the model a phase machine it can locate itself in: at any point in a long conversation it matches its situation ("I just received refine feedback") to a step and reads off what to do.
 
 ```text
 ┌──────────────────────────────────────────────────────────┐
@@ -147,7 +147,7 @@ The workflow is written as five numbered, labeled steps — PLAN, SUBMIT, REFINE
    - re-runs old plan at ③ instead of updating todos first
 ```
 
-Unnumbered prose loses this — models skip phases when the phases have no names.
+Unnumbered prose loses this, because models skip phases when the phases have no names.
 
 ### Ordering the model's reasoning
 
@@ -211,11 +211,11 @@ What the model actually sees (one flat prompt):
    Model reads GERMANY in the question → applies priority rule → plans for GERMANY
 ```
 
-The code never sees the defaults — the context block is injected into the model request by middleware and never checkpointed — so only the model can apply the precedence, and only if told to.
+The code never sees the defaults, because middleware injects the context block into the model request and never checkpoints it. Only the model can apply the precedence, and only if told to.
 
 ## The Case That Has To Be Both
 
-The sharpest example is a rule that is enforced by *neither* side cleanly. During execution, middleware still injects defaults on every model call — it does not know what phase the run is in. But the human already approved a plan with specific entities.
+The sharpest example is a rule that is enforced by *neither* side cleanly. During execution, middleware still injects defaults on every model call; it does not know what phase the run is in. But the human already approved a plan with specific entities.
 
 Quick vocabulary check:
 
@@ -272,7 +272,7 @@ Germany did not appear randomly. It entered the run when the user explicitly ask
 
 There is no code that can detect "the model re-resolved an entity mid-execution." The prompt is the only thing holding this invariant. When this line was missing, the model produced a confident, well-formatted report for the wrong country.
 
-The lesson: **know which invariants have no structural enforcement, and treat those prompt lines as load-bearing — nothing else is holding the weight.**
+**Know which invariants have no structural enforcement, and treat those prompt lines as load-bearing.**
 
 ## Clarification Is A Control-Flow Event
 
@@ -297,7 +297,7 @@ This is the boundary between prompt and code again:
 
 ## Budgets Meter Depth, Not Breadth
 
-A deep agent needs a real loop bound that fits its execution shape. Counting individual tool calls punishes parallel fan-out, which is exactly what a research agent should use to reduce wall-clock time. The production design instead meters retrieval rounds:
+A deep agent needs a real loop bound that fits its execution shape. Counting individual tool calls punishes parallel fan-out, which a research agent should use to reduce wall-clock time. The production design instead meters retrieval rounds:
 
 | Bound | Default | Behavior |
 |---|---:|---|
@@ -309,7 +309,7 @@ A round is one model turn that issued one or more retrieval calls. A turn that q
 
 ## Grounding: The Purely-Prompt Invariant
 
-The clearest case of a prompt-only rule is grounding — making sure every number in the report came from a real tool call, not from the model's memory.
+The clearest case of a prompt-only rule is grounding: making sure every number in the report came from a real tool call, not from the model's memory.
 
 ```text
 ❌ WITHOUT grounding rule:
@@ -345,7 +345,7 @@ The clearest case of a prompt-only rule is grounding — making sure every numbe
                     honest, auditable, compliant
 ```
 
-Why this cannot be code: there is no way to detect at inference time whether a specific sentence in the model's output came from a tool result or from its training data. The enforcement surface is the prompt only.
+This cannot be code, because there is no way to detect at inference time whether a specific sentence in the model's output came from a tool result or from its training data. The enforcement surface is the prompt only.
 
 Two wording details, each scar tissue from a real failure:
 
@@ -415,7 +415,7 @@ Ship the prompt with a version string (`PROMPT_VERSION = "2.2"`) carried as trac
 - Remove forbidden tools from the request instead of forbidding them in prose
 - Keep gate sequencing, status transitions, and concurrency entirely in code
 - Reserve the prompt for judgment and for invariants with no structural enforcement
-- Treat those unenforceable prompt lines as load-bearing — they are the only thing holding the invariant
+- Treat those unenforceable prompt lines as load-bearing; they are the only thing holding the invariant
 - Enumerate the exact misbehaviors when the model negotiates around a rule
 - Number and name workflow phases so the model can locate itself
 - Deliver post-decision instructions as tool results, not only as system-prompt text

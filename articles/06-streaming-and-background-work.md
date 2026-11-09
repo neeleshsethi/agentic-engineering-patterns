@@ -2,17 +2,17 @@
 
 The agent can now hold state, inject context, pause for approval, and name the pieces of a run. The next step is user experience: the browser should see progress while the system works.
 
-That does not mean the browser owns the work. The first rule of streaming production agents is this: **required work must outlive the HTTP connection showing its progress.** Here is what breaks when it cannot.
+The browser still does not own the work. **Required work must outlive the HTTP connection showing its progress.** Here is what breaks when it cannot.
 
 ## The problem: the user closes the tab, and the save never happens
 
-An agent finishes a run. Your code streams a final `end` event to the browser, then saves the turn to the database. It works every time you test it — because you sit and watch the stream finish.
+An agent finishes a run. Your code streams a final `end` event to the browser, then saves the turn to the database. It works every time you test it, because you sit and watch the stream finish.
 
 In production, the browser is not so patient. The moment it receives the `end` event, it closes the connection. That disconnect cancels your server code *before the save runs*. The user got their answer, the request returned `200 OK`, and the turn was never written to history. Nothing threw. Nothing logged. This is a [silent failure](00-glossary.md#transport-success-vs-semantic-success).
 
 > **[SSE (Server-Sent Events)](00-glossary.md#sse-server-sent-events)** — a long-lived HTTP response where the server sends small text frames over time, instead of one final body. It is how an agent streams progress to a browser.
 
-## What actually happens on disconnect
+## What happens on disconnect
 
 [SSE](00-glossary.md#sse-server-sent-events) is a generator on the server: it `yield`s frames, and between yields it `await`s. When the browser closes the connection, the server framework (Starlette, FastAPI) cancels that generator at its **next `await`**.
 
@@ -28,7 +28,7 @@ sequenceDiagram
     S-xD: await save_to_database()  ✗ never runs
 ```
 
-So any `await` placed *after* the terminal frame is a race against the client hanging up — and the client usually wins.
+So any `await` placed *after* the terminal frame is a race against the client hanging up, and the client usually wins.
 
 ```python
 # BEFORE — the save is cancelled before it starts
@@ -51,7 +51,7 @@ The save is cancelled, the `except` never fires, and you have no log line tellin
 
 ## The fix: own the work before the terminal frame
 
-The rule is simple: **required work must be started before the terminal frame is yielded.**
+**Start required work before the terminal frame is yielded.**
 
 ```text
 BROKEN                              FIXED
@@ -85,7 +85,7 @@ This does not make the save infallible. It changes the failure mode from *"a cli
 
 ## Test it with a forced disconnect
 
-The happy-path test never catches this bug — you have to hang up early.
+The happy-path test never catches this bug. You have to hang up early.
 
 ```text
 1. Open the stream.
@@ -99,7 +99,7 @@ The happy-path test never catches this bug — you have to hang up early.
 
 - Treat a client disconnect as a first-class cancellation path, not an edge case
 - Never place a required write after a terminal `yield`; start it before, as an owned task
-- Remember `CancelledError` is a `BaseException` — a bare `except Exception` will not see it
+- Remember `CancelledError` is a `BaseException`; a bare `except Exception` will not see it
 - Propagate cancellation through every task boundary you spawn
 - Test with forced early disconnects, not only happy-path streams
 

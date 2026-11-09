@@ -2,7 +2,7 @@
 
 Before building state, prompts, queues, or locks one at a time, hold the whole run in your head.
 
-A production deep agent is not one request that calls a model. It is a handoff chain:
+A production deep agent is a handoff chain across several requests and processes:
 
 ```text
 API plans -> checkpoint pauses -> human approves -> API queues -> worker resumes -> SSE tails events
@@ -27,7 +27,7 @@ If you blur these together, the system becomes hard to repair after a crash. A l
 
 ## The deep-agent package map
 
-The codebase mirrors those records and phases. In the production implementation, `agent/deep/` was not one giant "agent" file; it was a set of small modules grouped by job:
+The codebase mirrors those records and phases. In the production implementation, `agent/deep/` was a set of small modules grouped by job:
 
 | Group | Modules | Responsibility |
 |---|---|---|
@@ -55,7 +55,7 @@ POST /chat/stream?mode=deep
   -> API streams a plan event and closes at interrupt
 ```
 
-The plan phase is allowed to be synchronous because it ends quickly at the gate. The browser watches it over SSE, but the important artifact is the checkpoint: it now contains state plus a pending interrupt payload.
+The plan phase is allowed to be synchronous because it ends quickly at the gate. The browser watches it over SSE, but the artifact that matters is the checkpoint, which now contains state plus a pending interrupt payload.
 
 The `submit_plan` tool is deliberately split by concern:
 
@@ -63,11 +63,11 @@ The `submit_plan` tool is deliberately split by concern:
 - The resolved entities arrive as an explicit `entities` tool argument.
 - The gate sanitizes those entities and persists them to `state["entity_groups"]`.
 
-That split matters. The model authors the raw planning intent. Code projects and sanitizes the approved shape.
+The model authors the raw planning intent. Code projects and sanitizes the approved shape.
 
 ## Phase 2: approval stages intent, then queues work
 
-Approval is not where research execution happens in the production path.
+In the production path, the approval request does not run research.
 
 ```text
 POST /deep/{thread_id}/approve/async
@@ -79,7 +79,7 @@ POST /deep/{thread_id}/approve/async
   -> return 202 queued
 ```
 
-The resume decision is not a normal state field. It is not `LastValue`, and it is not a reducer. It is a LangGraph pending write placed in the checkpoint's resume slot so the paused `interrupt()` can consume it later.
+The resume decision is a LangGraph pending write placed in the checkpoint's resume slot so the paused `interrupt()` can consume it later. It is not a normal state field, so neither `LastValue` nor a reducer applies.
 
 The write order is the contract:
 
@@ -89,7 +89,7 @@ checkpoint resume decision -> run-state queued -> queue message
 
 A queue message can be re-sent. A human approval decision cannot be reconstructed safely after the fact, so it is written first.
 
-An earlier design had the approve request itself stream execution synchronously in the HTTP response — useful for local testing, but not the production target. The production path returns `202 queued` and lets a separate background worker own the long run.
+An earlier design had the approve request itself stream execution synchronously in the HTTP response. That helped with local testing but was never the production target. The production path returns `202 queued` and lets a separate background worker own the long run.
 
 ## Phase 3: the worker resumes with no input
 
@@ -107,7 +107,7 @@ SQS receive
   -> delete SQS message last
 ```
 
-The `None` is not a placeholder. It is the design. Approval was already staged in the checkpoint as a pending resume write, so LangGraph reloads the checkpoint, re-enters the paused `interrupt()`, drains the pending resume value, and continues.
+The `None` is deliberate. Approval was already staged in the checkpoint as a pending resume write, so LangGraph reloads the checkpoint, re-enters the paused `interrupt()`, drains the pending resume value, and continues.
 
 Deleting the SQS message is last because loss is worse than duplication. If the worker crashes before terminal status, the message redelivers and another worker resumes from the checkpoint.
 
@@ -139,7 +139,7 @@ RESEARCH PHASE
   Browser
 ```
 
-During research, **the API and the worker never talk to each other directly.** The worker writes to the event log. The API reads from it. The browser's `Last-Event-ID` header is the cursor — if the browser reconnects after a network blip, it sends the last `seq` it saw, and the API picks up from there. No events are lost.
+During research, **the API and the worker never talk to each other directly.** The worker writes to the event log. The API reads from it. The browser's `Last-Event-ID` header is the cursor. If the browser reconnects after a network blip, it sends the last `seq` it saw, and the API picks up from there. No events are lost.
 
 Termination is status-based, not sentinel-based:
 
@@ -162,7 +162,7 @@ Do not rely only on a final `done` event. A crash can skip a sentinel. A run-sta
 
 ## The orchestrator's real tool surface
 
-The public lessons sometimes use `query_source` as a teaching simplification. The production shape is richer: the orchestrator had seven allowed tools.
+The public lessons sometimes use `query_source` as a teaching simplification. In production, the orchestrator had seven allowed tools:
 
 ```text
 write_todos
@@ -174,7 +174,7 @@ rebuild_artifacts
 read_file
 ```
 
-The important boundary is not the exact names. It is the allow-list: only plan-safe planning tools are reachable before approval, and only plan-gated retrieval or synthesis tools are reachable after approval. Sub-agent tools are not directly reachable by the orchestrator.
+The allow-list enforces the boundary. Only plan-safe planning tools are reachable before approval, and only plan-gated retrieval or synthesis tools are reachable after approval. Sub-agent tools are not directly reachable by the orchestrator.
 
 ## The whole run
 

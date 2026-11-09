@@ -1,16 +1,16 @@
 # Step 2 · Context Injection
 
-A user types: "Actually, give me sales for **France**." The agent replies about Australia — because somewhere before the model call, your code helpfully attached "user's default country is Australia," and that injected line sat closer to the model's attention than the correction the user just typed.
+A user types: "Actually, give me sales for **France**." The agent replies about Australia, because somewhere before the model call your code helpfully attached "user's default country is Australia," and that injected line sat closer to the model's attention than the correction the user just typed.
 
-The prompt looked complete. Every field was populated. The request returned `200 OK`. And the answer was wrong, because the *right* context was attached at the *wrong* boundary. That is context injection, and it is one of the easiest ways to build a system that looks stable and answers incorrectly.
+The prompt looked complete. Every field was populated. The request returned `200 OK`. And the answer was wrong, because the *right* context was attached at the *wrong* boundary. Context injection is one of the easiest ways to build a system that looks stable and answers incorrectly.
 
-> New to the vocabulary here — [middleware](00-glossary.md#middleware), [checkpoint](00-glossary.md#checkpoint), [state](00-glossary.md#state)? Each term is defined once in the [glossary](00-glossary.md).
+> New to [middleware](00-glossary.md#middleware), [checkpoint](00-glossary.md#checkpoint), or [state](00-glossary.md#state)? Each term is defined once in the [glossary](00-glossary.md).
 
 ## What context injection is
 
 Context injection is adding text or data to the model input that the user did **not** type in that exact request: user defaults, account permissions, previously mentioned entities, retrieved documents, tool results, an approved plan.
 
-The critical fact is what the model actually receives. Your code *knows* which parts came from memory, tools, or the user. The model does not — it sees **one flat, composed prompt**. Unless you label the boundaries, "trusted memory" and "the user's words" are indistinguishable to it:
+Your code *knows* which parts came from memory, tools, or the user. The model does not. It sees **one flat, composed prompt**. Unless you label the boundaries, "trusted memory" and "the user's words" are indistinguishable to it:
 
 ```text
 Database memory
@@ -27,11 +27,11 @@ Injected model input (what the model sees)
      Give me my sales
 ```
 
-This is *useful*: "my sales" is meaningless without the account context. It is *dangerous* because stale or over-salient context can quietly override a later user correction — exactly the France/Australia bug above. Note the continuity with [LangGraph State](02-state-and-checkpoints.md): a stale `user_context` value doesn't just sit in state, it gets **composed into the prompt** and steers the answer.
+This is *useful*: "my sales" is meaningless without the account context. It is *dangerous* because stale or over-salient context can quietly override a later user correction, as in the France/Australia bug above. This connects back to [LangGraph State](02-state-and-checkpoints.md): a stale `user_context` value gets **composed into the prompt** and steers the answer.
 
 ## What we assemble into each model call
 
-The deep orchestrator does not send the raw message list to the model. Every model call is *assembled* by a chain of `wrap_model_call` middlewares, each of which rebuilds its slice from state and frames it onto the latest genuine human message — transiently, so nothing accumulates in the checkpoint. Seven kinds of context go in — one of them, the **source catalog**, rides *inside* the system prompt rather than through its own middleware — and a single composed prompt comes out.
+The deep orchestrator does not send the raw message list to the model. Every model call is *assembled* by a chain of `wrap_model_call` middlewares, each of which rebuilds its slice from state and frames it onto the latest genuine human message. The framing is transient, so nothing accumulates in the checkpoint. Seven kinds of context go in and a single composed prompt comes out. One of the seven, the **source catalog**, rides *inside* the system prompt instead of going through its own middleware.
 
 ```mermaid
 flowchart TB
@@ -56,23 +56,23 @@ flowchart TB
     M --> OUT["plan · tool calls · report"]
 ```
 
-Each component has a different source, lifetime, and failure mode — and that is the whole point of assembling rather than concatenating:
+Each component has a different source, lifetime, and failure mode, which is why the prompt is assembled instead of concatenated:
 
 | Component | Injected by | Lifetime | If it goes wrong |
 |---|---|---|---|
 | System / orchestrator prompt | base prompt (`orchestrator_prompts.py`) | static | The rules the model plans and reuses under; see [Orchestrator Prompt](09-orchestrator-prompt.md). |
 | Source cards / catalog | **within the system prompt** — what each source answers: questions, KPIs, domains, out-of-scope, inter-source relationships | static | The model routes a step to the wrong source, attempts an out-of-scope question, or fans out redundantly; see [Clarifications](09a-clarifications.md). |
-| `[User context]` | `UserContextMiddleware` | transient, rebuilt per call | A stale value overrides a live correction — the France/Australia bug below. |
+| `[User context]` | `UserContextMiddleware` | transient, rebuilt per call | A stale value overrides a live correction (the France/Australia bug). |
 | `[Held data]` manifest | `DataManifestMiddleware` | transient, rebuilt per call | Inject the rows instead of the pointers and you poison the window; see [Carryover and the Data Manifest](09f-carryover-and-the-data-manifest.md). |
-| Conversation messages | graph state (`messages`) | durable, delta-checkpointed | Attach context to a synthetic summary message instead of the user's — see below. |
+| Conversation messages | graph state (`messages`) | durable, delta-checkpointed | Attach context to a synthetic summary message instead of the user's; see below. |
 | Tool set | `AllowedToolsMiddleware` | per call | The model reaches for a tool that isn't structurally reachable; see [Middleware](09b-code-components-and-organization.md). |
-| User question | framed onto the latest `HumanMessage` | this turn | Framed onto the wrong (synthetic) message, or the injected text forges the closing delimiter — both covered next. |
+| User question | framed onto the latest `HumanMessage` | this turn | Framed onto the wrong (synthetic) message, or the injected text forges the closing delimiter; both are covered next. |
 
-The two transient blocks (`[User context]` and `[Held data]`) are the ones that carry the sharpest edges, because they are user-influenced and re-composed every turn. Both are wrapped in delimited blocks, and both must escape their own closing tag so held text cannot forge the boundary — the discipline the rest of this chapter is about.
+The two transient blocks (`[User context]` and `[Held data]`) are the riskiest, because they are user-influenced and re-composed every turn. Both are wrapped in delimited blocks, and both must escape their own closing tag so held text cannot forge the boundary. The rest of this chapter covers that discipline.
 
-## Two subtle ways it goes wrong
+## Two ways it goes wrong
 
-Most context-injection bugs are not "we forgot the context." They are "we attached it to the wrong thing." Two that bite hard:
+Most context-injection bugs come from attaching the context to the wrong thing, not from forgetting it. Two common ones:
 
 **1. Attaching context to a synthetic message, not the user's.** Some frameworks insert synthetic messages during history summarization. They may still be `HumanMessage` objects, but they are not user-authored. If you blindly compose context onto "the last human message," you may be labeling a machine-written summary as the user's latest words. Walk back to the *real* one:
 
@@ -93,9 +93,9 @@ for i in range(len(messages) - 1, -1, -1):
     break
 ```
 
-**2. Not escaping your own delimiter.** Your format uses `[/User context]` to close the trusted block. The text *inside* that block comes partly from the user's prior conversation history — which you do not fully control. If any of that history contains the literal string `[/User context]`, it will close the block early, and the text after it will look to the model like it is *outside* the trusted section.
+**2. Not escaping your own delimiter.** Your format uses `[/User context]` to close the trusted block. The text *inside* that block comes partly from the user's prior conversation history, which you do not fully control. If any of that history contains the literal string `[/User context]`, it will close the block early, and the text after it will look to the model like it is *outside* the trusted section.
 
-Here is what the model actually sees when that happens:
+Here is what the model sees when that happens:
 
 ```text
 WITHOUT ESCAPING — what the model sees:
@@ -135,7 +135,7 @@ def compose_with_context(content: str, context: str) -> str:
 
 Lowercasing the injected copy makes it visually different from the real closing tag, so the model does not treat it as a boundary. The real `[/User context]` is now only ever written by your code, not by user-influenced text.
 
-This does not make prompt injection impossible — it closes one obvious escape hatch. Any time a delimiter separates trusted from untrusted text, the untrusted side must not be able to reproduce the delimiter exactly.
+This does not make prompt injection impossible. It closes one obvious escape hatch. Any time a delimiter separates trusted from untrusted text, the untrusted side must not be able to reproduce the delimiter exactly.
 
 ## The boundary question: *where* do you inject?
 
@@ -152,19 +152,17 @@ flowchart TD
     style D fill:#f0faf0,stroke:#388e3c
 ```
 
-The safest place for **request-only** context is usually just before the model call, via [middleware](00-glossary.md#middleware). That keeps the [checkpoint](00-glossary.md#checkpoint) clean — you are not persisting per-request text into durable state where it can go stale and leak into a later turn. The tradeoff: the injected text is *invisible* when you inspect saved graph state, so you must be able to reconstruct it for debugging.
+The safest place for **request-only** context is usually just before the model call, via [middleware](00-glossary.md#middleware). That keeps the [checkpoint](00-glossary.md#checkpoint) clean, because you are not persisting per-request text into durable state where it can go stale and leak into a later turn. The tradeoff is that the injected text is *invisible* when you inspect saved graph state, so you must be able to reconstruct it for debugging.
 
-Because prompt assembly can differ across code paths, these bugs usually surface as **inconsistent** answers rather than hard failures — the same request works in one route and fails in another because the two routes compose the prompt differently.
+Because prompt assembly can differ across code paths, these bugs usually surface as **inconsistent** answers rather than hard failures. The same request works in one route and fails in another because the two routes compose the prompt differently.
 
 ## Guardrails
 
-- **Centralize prompt construction.** One place assembles the final input, so there is one place to review — the same lesson as the input factory in [LangGraph State](02-state-and-checkpoints.md).
+- **Centralize prompt construction.** One place assembles the final input, so there is one place to review. This is the same lesson as the input factory in [LangGraph State](02-state-and-checkpoints.md).
 - Make context **sources** explicit in typed state, so a reviewer can see what came from where.
-- In debug environments, **snapshot the final prompt** actually sent to the model.
-- **Test prompt assembly independently** from model calls — it is pure string composition and deserves its own tests.
+- In debug environments, **snapshot the final prompt** sent to the model.
+- **Test prompt assembly independently** from model calls. It is pure string composition and deserves its own tests.
 - Test the awkward inputs: summarized histories, multimodal messages, and **empty context** (does a correction survive, or does stale context win?).
-
----
 
 ---
 

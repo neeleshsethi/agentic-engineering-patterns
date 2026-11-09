@@ -2,13 +2,13 @@
 
 Use this as the final review exercise: a deep agent can look healthy, return `200 OK`, and still be wrong.
 
-> **Capstone.** This is where the series lands: the nine bugs below are the failure modes from the build path — state, context, planning, identifiers, streaming, locking, durability, and prompt boundaries — seen together in one real system. It also stands on its own, so a few ideas from earlier articles are re-introduced briefly here.
+> **Capstone.** This is where the series lands: the nine bugs below are the failure modes from the build path (state, context, planning, identifiers, streaming, locking, durability, and prompt boundaries) seen together in one real system. It also stands on its own, so a few ideas from earlier articles are re-introduced briefly here.
 
-This article is written for the engineer who has built normal Python APIs and is now trying to understand production agents. If that is you, here is the uncomfortable shift: with agent systems, "the request succeeded" is not the same as "the work was correct."
+This article is written for the engineer who has built normal Python APIs and is now trying to understand production agents. If that is you, the hardest adjustment is this: with agent systems, "the request succeeded" is not the same as "the work was correct."
 
 We learned this while building a research agent for pharma business questions. The agent takes a question, proposes a multi-step research plan, pauses for human approval, then executes the approved plan and writes a report. On paper, the stack was ordinary enough: LangGraph for orchestration, middleware for context injection, DynamoDB for persistence, and Server-Sent Events for streaming progress to the browser.
 
-Before one release, code review found nine bugs. None crashed the app. None produced scary logs. None would have paged anyone. They all did something more dangerous: they completed successfully while corrupting the meaning of the run.
+Before one release, code review found nine bugs. None crashed the app. None produced scary logs. None would have paged anyone. Each one completed successfully while corrupting the meaning of the run.
 
 That is the core lesson of this piece:
 
@@ -41,7 +41,7 @@ So the agent does four things:
 
 The hard part is that these steps do not happen inside one neat function call. A single user turn spans multiple HTTP requests, may resume on a different API replica, and depends on checkpointed state in DynamoDB.
 
-That is why the bugs below are interesting. They are not "the model hallucinated" stories. They are ordinary engineering bugs at the boundaries around the model.
+None of the bugs below are "the model hallucinated" stories. They are ordinary engineering bugs at the boundaries around the model.
 
 ## Vocabulary for a new engineer
 
@@ -260,7 +260,7 @@ graph = create_deep_agent(
 )
 ```
 
-At compile time, LangGraph merges `DeepState` and `_UserContextState` into one checkpointed schema. At runtime they are indistinguishable, but in the source each channel declaration sits beside the code that writes it. Dropping `UserContextMiddleware` from the middleware list still compiles and runs. The channels just disappear from the checkpoint quietly, which is exactly the sort of structural gap Bug 5 exploited.
+At compile time, LangGraph merges `DeepState` and `_UserContextState` into one checkpointed schema. At runtime they are indistinguishable, but in the source each channel declaration sits beside the code that writes it. Dropping `UserContextMiddleware` from the middleware list still compiles and runs. The channels just disappear from the checkpoint quietly, the same kind of structural gap Bug 5 exploited.
 
 ### Why middleware for context injection
 
@@ -300,11 +300,11 @@ Before every LLM call, middleware injected a context block with the user's defau
 Two names matter here:
 
 - **Raw question** means the exact text the user typed, before the system adds anything.
-- **Model input** means what the LLM actually receives: system prompt, injected user context, conversation history, tool messages, and the raw question.
+- **Model input** means what the LLM receives: system prompt, injected user context, conversation history, tool messages, and the raw question.
 
 So if the user types `"Give me my sales for GERMANY"`, the raw question contains `GERMANY`. Middleware then wraps extra context around it before the model sees it.
 
-Here is the missing moment: **Germany comes from the user's question and then from the human-approved plan.** Australia is only the user's default.
+**Germany comes from the user's question and then from the human-approved plan.** Australia is only the user's default.
 
 <div class="scrubber" data-scrubber markdown="0">
   <div class="scrubber-stage">
@@ -374,7 +374,7 @@ Lesson: when context should only apply at one phase of a multi-phase pipeline, e
 
 ## 2. A framework dependency swapped in a synthetic HumanMessage under our feet
 
-The injection code was the context middleware's model-call wrapper — the `UserContextMiddleware._inject(...)` method shown earlier in this article. It runs immediately before each LLM call and rewrites the model request, not the checkpointed state.
+The injection code was the context middleware's model-call wrapper, the `UserContextMiddleware._inject(...)` method shown earlier in this article. It runs immediately before each LLM call and rewrites the model request, not the checkpointed state.
 
 The risky part was this pattern: scan the message list in reverse, find the latest `HumanMessage`, and attach the context block to it.
 
@@ -415,7 +415,7 @@ if msg.additional_kwargs.get("lc_source") == "summarization":
     continue
 ```
 
-This helps because the injection code is not looking for "any human-shaped message." It is looking for the latest real user-authored message.
+The injection code needs the latest real user-authored message, not any human-shaped message.
 
 The synthetic summary is human-shaped because it is represented as a `HumanMessage`, but it is framework-authored. The `lc_source` tag is the only reliable clue in that list that the message came from summarization middleware.
 
@@ -456,9 +456,7 @@ Backward scan starts at index 2:
   index 0 → HumanMessage with string → MATCH → inject here ✗ WRONG TURN
 ```
 
-Turn 2's context ("user defaults: Australia") gets injected into Turn 1's question. Turn 2's message receives no context at all. The model plans for Australia when the user asked about Germany — from a turn that already completed.
-
-The fix was to separate "not the target" from "the target exists but cannot be processed":
+Turn 2's context ("user defaults: Australia") gets injected into Turn 1's question. Turn 2's message receives no context at all. The model plans for Australia when the user asked about Germany, and the context lands on a turn that already completed.
 
 The fix was to separate "not the target" from "the target exists but cannot be processed":
 
@@ -694,7 +692,7 @@ Lesson: embedding session state inside event or message records creates two stru
 
 All nine bugs shared one property: the code ran to completion and the operation succeeded in the narrow transport sense because nothing threw. What failed was the semantic contract.
 
-| Bug | What "succeeded" | What actually happened |
+| Bug | What "succeeded" | What happened |
 | --- | --- | --- |
 | Context overrides approved plan | `200 OK`, report generated | Report about wrong entities |
 | Synthetic message targeted | `200 OK`, context injected | Context labeled summarizer prose as user words |
@@ -710,13 +708,13 @@ The review habits that caught these before they shipped were consistent:
 
 - Test the content, not just the return code.
 - Read library source, not just the docs.
-- For every abstract pattern, such as injection, locking, or persistence, enumerate failure modes phase by phase and ask whether a transport-level success code actually means the semantic work completed.
+- For every abstract pattern, such as injection, locking, or persistence, enumerate failure modes phase by phase and ask whether a transport-level success code means the semantic work completed.
 
 Built on LangGraph, Python 3.11, DynamoDB, and Starlette SSE. The stack is incidental. Context injection targeting, lock ownership, async cancellation, and writer-reader key mismatch are universal failure classes.
 
 ## A note on the approval code snippet
 
-One detail to watch in the approval endpoint pattern above: the code shows a `plan_id` check, but `plan_id` is stable across refinements by design — it names the logical plan, not the exact interrupt. To reject a stale browser tab that approved an older revision, also validate `interrupt_id`, which is minted fresh for each pause:
+One detail to watch in the approval endpoint pattern above: the code shows a `plan_id` check, but `plan_id` is stable across refinements by design: it names the logical plan, not the exact interrupt. To reject a stale browser tab that approved an older revision, also validate `interrupt_id`, which is minted fresh for each pause:
 
 ```python
 gate = read_pending_gate(thread_id)
@@ -757,7 +755,7 @@ The nine above came from a single pre-release review. These four arrived as prod
 
 A model that emits reasoning tokens sends many `thinking.delta` events, each carrying the *full accumulated* reasoning text to that point (replace semantics). Persisting each delta naively means N deltas write O(N²) bytes into one DynamoDB partition key, which hit the per-partition write-capacity ceiling (~1,000 WCU/s) mid-run.
 
-The fix: time-coalesce live frames in the curator — flush at most once per 2 seconds per step. The SSE path to the browser stays byte-identical; only the durable-log write is coalesced.
+The fix: time-coalesce live frames in the curator, flushing at most once per 2 seconds per step. The SSE path to the browser stays byte-identical; only the durable-log write is coalesced.
 
 The lesson: replace-semantics streaming plus per-delta persistence is quadratic. Identify the semantics (append vs. replace) before deciding whether to persist every frame or the last.
 
@@ -773,14 +771,14 @@ The lesson: an async client must never cross event loops. In a worker process th
 
 `ReadTimeout` was classified as a retryable error, so a call that already spent its entire 300-second timeout budget was replayed for another 300 seconds. Two exhausted attempts burned 600 seconds on work that had no chance of succeeding faster.
 
-The fix: only retry errors that fail *before the request was sent* — `ConnectError`, `ConnectTimeout` — plus rate-limit and gateway responses (`429`, `502`, `503`). Use jittered exponential backoff. A `ReadTimeout` means the server acknowledged the request and timed out during processing; retrying it from the start sends a duplicate with no guarantee the first copy was not processed.
+The fix: only retry errors that fail *before the request was sent* (`ConnectError`, `ConnectTimeout`), plus rate-limit and gateway responses (`429`, `502`, `503`). Use jittered exponential backoff. A `ReadTimeout` means the server acknowledged the request and timed out during processing; retrying it from the start sends a duplicate with no guarantee the first copy was not processed.
 
 The lesson: a burned timeout is spent budget, not a transient blip. Classify retryable errors at the transport layer, not at the exception class.
 
 ### Stale plan re-persisted on a follow-up turn
 
-The `plan` channel is `LastValue`. The exit path persisted the plan onto every completed turn's DynamoDB record — including follow-up turns that never called `submit_plan`. This caused a stale prior-turn plan to be stamped onto a follow-up row and resurface later as the current plan.
+The `plan` channel is `LastValue`. The exit path persisted the plan onto every completed turn's DynamoDB record, including follow-up turns that never called `submit_plan`. This caused a stale prior-turn plan to be stamped onto a follow-up row and resurface later as the current plan.
 
 The fix: stamp `plan.minted_run_id = deep_run_id` at plan creation and persist only when `plan.minted_run_id` matches the current turn's `deep_run_id`. Fail open when either is absent.
 
-The lesson: a sticky `LastValue` channel written only at plan time, combined with end-of-run persistence on every turn, silently re-persists the old value. The per-turn reset signal — the turn's own run id — is the only safe discriminator.
+The lesson: a sticky `LastValue` channel written only at plan time, combined with end-of-run persistence on every turn, silently re-persists the old value. The turn's own run id is the only safe discriminator.

@@ -4,15 +4,15 @@ The agent now has durable state and the right context at the model boundary. The
 
 This chapter builds the planning gate: the model drafts a plan, the human approves or refines it, and only then does execution begin. That one design choice changes the topology of the system. The run can no longer live inside one HTTP request.
 
-> Terms below — [`interrupt()`](00-glossary.md#interrupt), [checkpoint](00-glossary.md#checkpoint), [gate](00-glossary.md#gate), [lease](00-glossary.md#lease), [replica](00-glossary.md#replica) — are defined once in the [glossary](00-glossary.md).
+> Terms below ([`interrupt()`](00-glossary.md#interrupt), [checkpoint](00-glossary.md#checkpoint), [gate](00-glossary.md#gate), [lease](00-glossary.md#lease), [replica](00-glossary.md#replica)) are defined once in the [glossary](00-glossary.md).
 
-Some agent actions are expensive, slow, or irreversible. A research plan that hits external APIs, runs database queries, or spends real money should be shown to a human *before* it executes, not after. This article builds that approval gate from the ground up.
+Some agent actions are expensive, slow, or irreversible. A research plan that hits external APIs, runs database queries, or spends real money should be shown to a human *before* it executes, not after.
 
 The running example is a pharmaceutical commercial-analytics agent: it plans a set of data-retrieval steps, a human approves or refines the plan, and only then does it query anything. The identifiers are generic (`BRAND_A`, `SOURCE_A`, `query_source`), but the shape applies to any agent with a costly execute phase.
 
 ## The Big Picture First
 
-Before diving into code, here is the shape of the whole system this chapter builds:
+Here is the shape of the whole system this chapter builds:
 
 ```text
  WITHOUT approval gate          WITH approval gate
@@ -42,7 +42,7 @@ Before diving into code, here is the shape of the whole system this chapter buil
                        Answer
 ```
 
-The key idea: the `submit_plan` **tool** is the bridge between the agent and the human. The agent calls the tool. The tool pauses everything and shows the human the plan. When the human decides, the tool gets the decision back and **tells the agent what to do next** via a ToolMessage. The agent never talks to the human directly.
+The `submit_plan` **tool** is the bridge between the agent and the human. The agent calls the tool. The tool pauses everything and shows the human the plan. When the human decides, the tool gets the decision back and **tells the agent what to do next** via a ToolMessage. The agent never talks to the human directly.
 
 ## Start With The Naive Version
 
@@ -52,7 +52,7 @@ Before any approval machinery, the baseline agent is one straight line:
 user question -> LLM plans (internal, never shown) -> agent executes -> answer
 ```
 
-Everything happens in one HTTP request, one graph invocation, one stream. The problem is not correctness — the LLM might plan correctly. The problem is trust and cost. If the model misread the question, you want to catch it before three source calls run, not after. So you want to show the plan first, and wait.
+Everything happens in one HTTP request, one graph invocation, one stream. The LLM might plan correctly. The problem is trust and cost. If the model misread the question, you want to catch it before three source calls run, not after. So you want to show the plan first, and wait.
 
 ## The One Primitive: `interrupt()`
 
@@ -96,11 +96,11 @@ sequenceDiagram
     Note over C: Worker later reloads and resumes with input=None
 ```
 
-The dashed pause is the whole point: between the two requests, **nothing is running**. The plan lives in the checkpoint, and any [replica](00-glossary.md#replica) can pick it up.
+Between the two requests, **nothing is running**. The plan lives in the checkpoint, and any [replica](00-glossary.md#replica) can pick it up.
 
 ## The Idempotency Rule You Cannot Ignore
 
-When a graph resumes, LangGraph re-runs the current node **from the beginning** — not from the `interrupt()` line. Everything before `interrupt()` runs again, on every resume.
+When a graph resumes, LangGraph re-runs the current node **from the beginning**, not from the `interrupt()` line. Everything before `interrupt()` runs again, on every resume.
 
 ```python
 def submit_plan(plan, thread_id):
@@ -110,7 +110,7 @@ def submit_plan(plan, thread_id):
 
 Refine the plan twice and that notification fires three times: once on the initial proposal, once per resume. This is the single most common bug in resumable graphs. The fix is one of two things: move side effects to *after* `interrupt()`, or make them idempotent (check whether the work was already done before doing it).
 
-The deeper consequence: all code before `interrupt()` must be a pure, deterministic function of durable state. If it computes the plan, that computation has to produce the identical plan every time it re-runs — which drives the design in the rest of this article.
+It follows that all code before `interrupt()` must be a pure, deterministic function of durable state. If it computes the plan, that computation has to produce the identical plan every time it re-runs. That requirement drives the design in the rest of this article.
 
 ## Designing The Interrupt Payload
 
@@ -165,11 +165,11 @@ def submit_plan(plan: Plan) -> str:
         continue
 ```
 
-The problem is the marked line. Applying "add a competitive analysis step" means interpreting prose and rewriting research steps — that is LLM work. But you are inside a tool: plain Python, mid-way through the agent's own graph. To regenerate the plan you would make a *separate, out-of-band* LLM call — a second model that does not share the agent's system prompt, tools, or conversation. Now two different models author the plan. Formats drift, context is lost, and the plan the human finally approves was never seen whole by the agent that will execute it.
+The problem is the marked line. Applying "add a competitive analysis step" means interpreting prose and rewriting research steps, which is LLM work. But you are inside a tool: plain Python, mid-way through the agent's own graph. To regenerate the plan you would make a *separate, out-of-band* LLM call to a second model that does not share the agent's system prompt, tools, or conversation. Now two different models author the plan. Formats drift, context is lost, and the plan the human finally approves was never seen whole by the agent that will execute it.
 
 ## Refine Is The Agent Loop
 
-The structural fix: the tool never applies feedback. It hands the feedback back to the agent as its tool result, and the "loop" becomes the agent's own loop. Each `submit_plan` call interrupts exactly once and returns.
+The fix is structural. The tool never applies feedback. It hands the feedback back to the agent as its tool result, and the "loop" becomes the agent's own loop. Each `submit_plan` call interrupts exactly once and returns.
 
 Here is who does what at each step of a refine round:
 
@@ -206,7 +206,7 @@ Here is who does what at each step of a refine round:
      │                   │                    │                    │
 ```
 
-**The key insight:** the `submit_plan` tool is a messenger, not an editor. It passes the human's feedback to the agent as a tool result and pauses again. The agent is the one that reads the feedback and rewrites the plan steps. The tool never touches the plan content itself.
+The `submit_plan` tool is a messenger, not an editor. It passes the human's feedback to the agent as a tool result and pauses again. The agent is the one that reads the feedback and rewrites the plan steps. The tool never touches the plan content itself.
 
 ```python
 def submit_plan(title, scope, runtime) -> Command:
@@ -232,7 +232,7 @@ def submit_plan(title, scope, runtime) -> Command:
     })
 ```
 
-Here is the complete picture of both outcomes — approve and refine — showing exactly what the tool returns to the agent each time:
+Here are both outcomes, approve and refine, with what the tool returns to the agent each time:
 
 ```text
                     AGENT calls submit_plan tool
@@ -269,13 +269,13 @@ Here is the complete picture of both outcomes — approve and refine — showing
     → writes report                       → back to interrupt() ↑
 ```
 
-**The tool is the messenger in both directions.** Going in: it carries the plan to the human via `interrupt()`. Coming back: it tells the agent what the human decided. The agent never talks to the human directly — it only ever reads a ToolMessage.
+The tool carries messages in both directions. Going in, it carries the plan to the human via `interrupt()`. Coming back, it tells the agent what the human decided in a ToolMessage.
 
 Each refine round is one full trip: a new tool call, a new `interrupt()`, a new HTTP request. The tool stays dumb; the agent stays the sole author of the plan. The human's feedback reaches the agent as conversational input, never as a direct edit the code performs.
 
 ## The Plan Is A Read-Only Projection
 
-The refine design has a prerequisite that also solves the idempotency problem: the agent never writes a `Plan` object directly. It writes plain todo items — natural-language steps with routing tags in their text — and the typed `Plan` is *derived* from those todos by a pure function every time it is needed.
+The refine design has a prerequisite that also solves the idempotency problem: the agent never writes a `Plan` object directly. It writes plain todo items (natural-language steps with routing tags in their text), and the typed `Plan` is *derived* from those todos by a pure function every time it is needed.
 
 ```python
 def submit_plan(title, scope, runtime) -> Command:
@@ -286,10 +286,10 @@ def submit_plan(title, scope, runtime) -> Command:
 
 Two payoffs:
 
-- **The agent cannot corrupt the plan.** It can only write inconsistent todos; the projection is a sanitizing layer between raw model output and the typed structure the frontend receives. A malformed routing tag fails soft — the raw text stays visible in the step title, and the routing field is left unset for the executor to skip.
+- **The agent cannot corrupt the plan.** It can only write inconsistent todos; the projection is a sanitizing layer between raw model output and the typed structure the frontend receives. A malformed routing tag fails soft: the raw text stays visible in the step title, and the routing field is left unset for the executor to skip.
 - **Resume is safe by construction.** Because `project_plan` is pure and the plan id is derived deterministically from the thread, re-running `submit_plan` on every resume rebuilds the bit-for-bit identical plan. A random id or a timestamp here would fork a different plan on each resume and break the `plan_id` validation above.
 
-Refine, then, is just: the agent edits its todos, calls `submit_plan` again, and the projection produces the revised plan automatically. There is no plan object being mutated in place.
+So a refine round means the agent edits its todos, calls `submit_plan` again, and the projection produces the revised plan automatically. There is no plan object being mutated in place.
 
 ## The Gate Does Not Run On Every Turn
 
@@ -310,13 +310,13 @@ That workflow should run only when the conversation needs a new approved plan. I
 | Extension, such as "also pull New Zealand" | No | Retrieve directly under the current locked plan. |
 | Evidence reply or presentation change | No | Answer from held evidence or rebuild artifacts once. |
 
-This is why the plan's lifetime matters. A locked plan keeps its `plan_id`, step ids, and carried evidence attached to the same cycle. Re-opening the gate for a source-elicitation reply would mint a new `plan_id`, orphan already-fetched results from the current cycle, and ask the human to approve the same question twice.
+A locked plan keeps its `plan_id`, step ids, and carried evidence attached to the same cycle. Re-opening the gate for a source-elicitation reply would mint a new `plan_id`, orphan already-fetched results from the current cycle, and ask the human to approve the same question twice.
 
 The rule is simple enough to review: clarification about the user's intended entity or metric happens before planning; source ambiguity can ride the plan gate; once a plan is locked, only a genuinely new question reopens planning.
 
 ## The State Machine Lives In Code
 
-The plan has a lifecycle, and the code — not the model — owns every transition:
+The plan has a lifecycle, and code owns every transition, not the model:
 
 ```text
 DRAFT --(interrupt: human sees plan)--> DRAFT (modification_count++)   [refine]
@@ -328,7 +328,7 @@ DRAFT --(interrupt: human sees plan)--> DRAFT (modification_count++)   [refine]
 - **EXECUTING** is guarded against a second concurrent run.
 - **COMPLETE** is terminal.
 
-The model only ever writes plan *content*, and only in DRAFT. The `locked` transition happens in code on approve, via `model_copy`. The model cannot accidentally lock or unlock a plan, and it cannot execute an unlocked one — because the gate structurally blocks continuation until the human resumes. If you try to prompt the model into enforcing this ("only proceed if the plan is approved"), you have put a state decision in the one place that cannot guarantee it.
+The model only ever writes plan *content*, and only in DRAFT. The `locked` transition happens in code on approve, via `model_copy`. The model cannot accidentally lock or unlock a plan, and it cannot execute an unlocked one, because the gate structurally blocks continuation until the human resumes. If you try to prompt the model into enforcing this ("only proceed if the plan is approved"), you have put a state decision in the one place that cannot guarantee it.
 
 ## Concurrency: One Resume At A Time
 
@@ -336,7 +336,7 @@ Imagine a user opens the plan approval screen in two browser tabs. Both show the
 
 LangGraph does not support two runs on the same thread at once. If both requests succeed, the graph executes the research plan twice in parallel, each writing to the same checkpoint. Whichever finishes last wins and overwrites the other's work. The user gets one result, one run's state is silently lost, and nothing logs an error.
 
-The fix is a **claim**: before resuming, write a small record to the database that says "I own this thread right now." The write is conditional — it only succeeds if no one else already holds the claim. The second request races to write the same record, loses the race, and gets a `409 Conflict` back. Exactly one resume proceeds.
+The fix is a **claim**: before resuming, write a small record to the database that says "I own this thread right now." The write is conditional: it only succeeds if no one else already holds the claim. The second request races to write the same record, loses the race, and gets a `409 Conflict` back. Exactly one resume proceeds.
 
 ```text
 Tab A clicks approve:
@@ -386,7 +386,7 @@ Each step is runnable and testable before the next:
 
 The hardest step is 5: idempotency and stale-state bugs both surface there. Run the approve endpoint twice on the same payload and confirm the second call is a 409 or a safe no-op.
 
-Once a plan is locked, the run itself has to survive worker crashes and reconnects — that is [Durable Async Agent Runs](./08-queue-and-worker-execution.md).
+Once a plan is locked, the run itself has to survive worker crashes and reconnects. [Durable Async Agent Runs](./08-queue-and-worker-execution.md) covers that.
 
 ## Guardrails
 
