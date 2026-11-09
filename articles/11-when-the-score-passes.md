@@ -27,7 +27,7 @@ Every failure below lives in one of those gaps.
 
 These came from production traces and regression tests after the first capstone shipped. In each case the infrastructure was correct: the right context reached the model, the run completed, the stream closed cleanly. What failed was the agent's behavior or the contract around it.
 
-| Failure | What "succeeded" | What actually happened |
+| Failure | What "succeeded" | What happened |
 | --- | --- | --- |
 | Output-language instruction never reached the model | Language detected, answer streamed | Answer came back in the default language |
 | New topic inherited old scope | Follow-up answered | Previous entities and filters applied to an unrelated question |
@@ -41,7 +41,7 @@ These came from production traces and regression tests after the first capstone 
 
 ### 1. Diagnose the boundary before blaming the model
 
-The output-language failure looked like a weak model ignoring an instruction. It wasn't. Language detection worked, but its result never reached the prompt the model actually received.
+The output-language failure looked like a weak model ignoring an instruction. It wasn't. Language detection worked, but its result never reached the prompt the model received.
 
 The review habit: **before you call something model behavior, read the exact prompt at the model boundary.** In a tracing tool such as Langfuse, open the generation span, not the request span. If the instruction isn't there, it's an infrastructure bug, and no amount of prompt wording will fix it.
 
@@ -123,7 +123,7 @@ A passing tool-choice score can hide an unchanged table (failure 2). So keep two
 | Score | Question it answers | Example |
 | --- | --- | --- |
 | Decision correctness | Did the agent choose the right action? | Right sources, right mode, retrieve vs rebuild |
-| Artifact correctness | Did the user get the right result? | Table actually changed, figures match stored rows |
+| Artifact correctness | Did the user get the right result? | Table changed, figures match stored rows |
 
 Report them separately. A rise in one is not a rise in the other.
 
@@ -144,7 +144,7 @@ Restricting to the cases present in both runs with unchanged expected labels, an
 
 Correctness improved, mostly because the agent asked less. But some cases that used to ask now answered **confidently and wrongly**. The uncertainty didn't go away; it stopped being disclosed.
 
-The tool that shows this is a transition table over paired cases:
+A transition table over paired cases shows this:
 
 ```python
 from collections import Counter
@@ -161,7 +161,7 @@ The rule: **never report an improvement from two unpaired summaries.** Pair the 
 
 ### Know where your labels come from
 
-Be honest with yourself about three things:
+Check three things about your labels:
 
 - **Who wrote the expected labels.** Ours are engineering-authored or derived from rules in the question banks, not independent expert consensus. That's fine for regression; it's not ground truth.
 - **Whether the holdout is really held out.** Our file called "holdout" deliberately includes questions that also appear as prompt examples. That makes it regression coverage, not a generalization test.
@@ -195,7 +195,7 @@ If you want to know whether placement matters, design the experiment:
 | --- | --- | --- |
 | Boundary | Instruction in the code | Instruction in the prompt the model received |
 | Tool vs task | Tool returned success | Result kind: rows, question, or error |
-| Artifact | Answer streamed | Artifact actually changed; data changes retrieved |
+| Artifact | Answer streamed | Artifact changed; data changes retrieved |
 | Relay | Answer delivered | Answer routed to the asker, not a name match |
 | Scope | Follow-up answered | Scope resolved per turn, context injected per source |
 | Grounding | Retrieval happened | Numbers read from stored rows |

@@ -1,6 +1,6 @@
 # Deep Dive · Clarifications
 
-A clarification is any turn where the system asks the user something instead of writing the final answer. In a deep agent, that is not just UX copy. It changes which graph path runs, which state is carried, whether a report may be written, and whether the next user message resumes an interrupt or starts a fresh invocation.
+A clarification is any turn where the system asks the user something instead of writing the final answer. In a deep agent, a clarification changes which graph path runs, which state is carried, whether a report may be written, and whether the next user message resumes an interrupt or starts a fresh invocation.
 
 The safe mental model is:
 
@@ -51,7 +51,7 @@ Agent:
   "Which launch brand should I use?"
 ```
 
-The important invariant is that terminal clarification happens before `write_todos`. A submitted plan should be fully determined. If the agent writes vague todos and hopes to clarify during execution, the plan approval loses meaning: the human approved a shape that still contains unknowns.
+Terminal clarification must happen before `write_todos`. A submitted plan should be fully determined. If the agent writes vague todos and hopes to clarify during execution, the plan approval loses meaning: the human approved a shape that still contains unknowns.
 
 Use this when:
 
@@ -76,7 +76,7 @@ The source's ask-back must be detected before the report writer runs. Do not rel
 | Status-code protocol | A deterministic classifier maps `input-required` to elicitation. |
 | Prose-only replies | A narrow deterministic ladder catches clarification phrases and question-shaped no-table replies. |
 
-The key distinction:
+Detection and action are split differently in each mode:
 
 > Detection is deterministic before either mode sees the result. Acting on that detection is prompt-led in reactive, but code-enforced in deep.
 
@@ -85,9 +85,9 @@ The key distinction:
 | Reactive | Deterministic `is_elicitation` flag when the source/client can set it; prompt backstop for question-shaped replies | Prompt rules tell the one-pass router to relay the source question instead of synthesizing. | Results stay available for the next turn. |
 | Deep | Deterministic `is_elicitation` flag on `SourceResult`; deep treats that flag as the source of truth | `DeepExitPathMiddleware` checks `pending_elicitation()` and skips report generation in code. | The step stays open; the report is skipped until the user answers. |
 
-So yes: **clarification handling is deterministic for deep at the report boundary.** The model is still prompted to relay the question politely, but it is not trusted to decide whether a report may be written. If a current-cycle step's latest successful result is an elicitation, `pending_elicitation()` blocks the report.
+**Clarification handling is deterministic for deep at the report boundary.** The model is still prompted to relay the question politely, but it is not trusted to decide whether a report may be written. If a current-cycle step's latest successful result is an elicitation, `pending_elicitation()` blocks the report.
 
-That "latest successful" qualifier matters. A failed retry should not accidentally clear an open source question, and an older elicitation should not block forever after the same step later returns real data. The predicate groups successful results by `step_id`, keeps the latest one per step, then asks whether any of those latest successes still carries `is_elicitation`.
+The "latest successful" qualifier covers two cases. A failed retry should not clear an open source question, and an older elicitation should not block forever after the same step later returns real data. The predicate groups successful results by `step_id`, keeps the latest one per step, then asks whether any of those latest successes still carries `is_elicitation`.
 
 The deterministic deep path has three owners:
 
@@ -116,7 +116,7 @@ When the user answers, the system re-queries only the asking step. The already c
 
 ## Elicitation Reply Is Not Resume
 
-This distinction catches teams because the user experience looks like a pause. Internally, it is not the same pause as plan approval.
+To the user, an elicitation reply looks like answering a paused run. Internally, it works differently from plan approval.
 
 | Question | Plan approval | Source elicitation reply |
 |---|---|---|
@@ -126,7 +126,7 @@ This distinction catches teams because the user experience looks like a pause. I
 | What is reused? | The checkpointed plan and state | Completed source results from `source_results` |
 | What runs? | SQS worker resumes approved execution | The ordinary deep reply path re-queries the open step |
 
-Why this matters: re-planning would mint a new `plan_id`, which would orphan the carried result from the current cycle. Current-cycle evidence is filtered by plan identity, so keeping the locked plan is what lets the clarified turn reuse already-fetched data safely.
+Re-planning would mint a new `plan_id`, which would orphan the carried result from the current cycle. Current-cycle evidence is filtered by plan identity, so keeping the locked plan is what lets the clarified turn reuse already-fetched data safely.
 
 ## Zero-Retrieval Guard
 
