@@ -1,8 +1,8 @@
 # Step 4 · Identifiers That Hold a Run Together
 
-A worker crashes mid-run. A second worker picks the run up from its [checkpoint](00-glossary.md#checkpoint) and re-emits the events the first one already produced. The user's report ends up with two copies of every section. `200 OK`, no error, duplicated content — a [silent failure](00-glossary.md#transport-success-vs-semantic-success).
+A worker crashes mid-run. A second worker picks the run up from its [checkpoint](00-glossary.md#checkpoint) and re-emits the events the first one already produced. The user's report ends up with two copies of every section. `200 OK`, no error, duplicated content: a [silent failure](00-glossary.md#transport-success-vs-semantic-success).
 
-The cause is almost always the same: the code deduplicated events by their **[sequence number](00-glossary.md#sequence-number-seq)**, and on replay the sequence numbers came out different, so the reader thought the replayed events were new. The fix is not more code. It is understanding that a single run answers to *half a dozen different names*, each with a different job, and that using the wrong name for a job is its own class of bug.
+The cause is almost always the same: the code deduplicated events by their **[sequence number](00-glossary.md#sequence-number-seq)**, and on replay the sequence numbers came out different, so the reader thought the replayed events were new. The fix starts with seeing that a single run answers to *half a dozen different names*, each with a different job, and that using the wrong name for a job is its own class of bug.
 
 This chapter is the map of those names. Everything after it in the series uses them; getting them straight here means the later articles read as "of course."
 
@@ -37,11 +37,11 @@ For every id in the system, four questions settle what it is for:
 3. **Is it stable across replay?** When a node re-runs from a checkpoint, does this id come back *identical*, or does it take a new value?
 4. **What invariant does it guard?** What breaks if it is wrong?
 
-Question 3 is the one that catches people, and it is the axis this whole chapter is organized around: **some ids must be identical on replay, and some must change on replay, and confusing the two is the duplicate-report bug above.**
+Question 3 catches people, and this chapter is organized around it: **some ids must be identical on replay, and some must change on replay, and confusing the two is the duplicate-report bug above.**
 
 ## Follow one run: where each name appears
 
-Before the categories, walk a single question end to end. Each identifier is *minted* at one hop and *checked* or *reused* at later ones — that hand-off is the whole point of having separate names.
+Before the categories, walk a single question end to end. Each identifier is *minted* at one hop and *checked* or *reused* at later ones. That hand-off is why the names are separate.
 
 ```mermaid
 sequenceDiagram
@@ -88,12 +88,12 @@ Read the table top to bottom as one run's life; the sections after it are the de
 | Exit writes the report | `cycle_stamp = {plan_id, sorted provenance_ids}` · `retrieval_ordinal` | minted | stable | The stamp blocks a duplicate report on redelivery; `retrieval_ordinal` maps each `[n]` citation back to its retrieval. |
 | The whole way through | `trace_id` | minted once | — | Ties every log and span together for debugging. Never touches correctness. |
 
-Two patterns fall out of reading it this way. First, **identity flows downstream**: `plan_id` is minted at proposal and then reappears inside `provenance_id` and `cycle_stamp` — the plan's name is literally a substring of the evidence's name and the report's name, which is what lets the exit path ask "does this evidence belong to this plan?" with a string compare. Second, **the stable-versus-new split alternates by purpose**: naming a *thing* (thread, plan, step, fact) is stable; naming an *attempt* at doing something (run, pause, lock tenure, stream position) is new. The rest of the chapter is those two patterns, one category at a time.
+Two patterns fall out of reading it this way. First, **identity flows downstream**: `plan_id` is minted at proposal and then reappears inside `provenance_id` and `cycle_stamp`. The plan's name is a substring of the evidence's name and the report's name, which lets the exit path ask "does this evidence belong to this plan?" with a string compare. Second, **the stable-versus-new split alternates by purpose**: naming a *thing* (thread, plan, step, fact) is stable; naming an *attempt* at doing something (run, pause, lock tenure, stream position) is new. The rest of the chapter is those two patterns, one category at a time.
 
 ## Identity of the run: `thread_id` and `run_id`
 
-- **[`thread_id`](00-glossary.md#thread-thread_id)** names one conversation — one logical timeline. It is stable forever. It is also the FIFO group key that makes ["one worker per thread"](08-queue-and-worker-execution.md) a property of the queue.
-- **[`run_id`](00-glossary.md#run_id)** names one *attempt* to execute that thread's work. A thread can be run several times — an enqueue, a retry after a crash, a redelivery — and each attempt gets a fresh `run_id`.
+- **[`thread_id`](00-glossary.md#thread-thread_id)** names one conversation, one logical timeline. It is stable forever. It is also the FIFO group key that makes ["one worker per thread"](08-queue-and-worker-execution.md) a property of the queue.
+- **[`run_id`](00-glossary.md#run_id)** names one *attempt* to execute that thread's work. A thread can be run several times (an enqueue, a retry after a crash, a redelivery), and each attempt gets a fresh `run_id`.
 
 The relationship is one-to-many: one `thread_id`, many `run_id`s over its life. Logs keyed only on `thread_id` cannot tell a retry from the original; logs keyed on `run_id` can.
 
@@ -105,11 +105,11 @@ These three describe *what the human approved* and *which version of it*:
 - **[`interrupt_id`](00-glossary.md#plan-plan_id-interrupt_id)** is minted fresh on every pause, so it identifies *the exact revision the user was looking at*. When two browser tabs both try to approve, the one holding a stale `interrupt_id` is rejected. This is the stale-tab check `plan_id` cannot provide by itself when the logical plan id stays stable across refinements.
 - **[Ordinal id](00-glossary.md#ordinal-id)** is the stable position of a step *within* a locked plan — step 1, step 2, step 3. Once the plan is locked the ordinal is fixed, so "the result of step 2" means the same thing on every replay, in every report.
 
-Note the split even here: `plan_id` and the step ordinal are **stable**; `interrupt_id` is **minted per pause**. Same object, different jobs, different stability.
+Even within the plan, stability splits: `plan_id` and the step ordinal are **stable**; `interrupt_id` is **minted per pause**.
 
 ## Identity for safe replay: idempotency key versus `seq`
 
-This is the pair the opening bug is about, and the most important distinction in the chapter.
+The opening bug comes from confusing these two.
 
 ```text
 A run is replayed after a crash. For each logical event:
@@ -123,13 +123,13 @@ A run is replayed after a crash. For each logical event:
 ```
 
 - The **[idempotency key](00-glossary.md#idempotency-key)** answers "is this the same *logical* event I already saw?" Because it is built from *where in the execution* the event occurred, a replayed event carries the same key, and the reader drops the duplicate.
-- The **[sequence number](00-glossary.md#sequence-number-seq)** (`seq`) answers "what order do these go in, and where is my cursor?" It takes new values on replay, which is fine for ordering — and fatal if you use it for identity.
+- The **[sequence number](00-glossary.md#sequence-number-seq)** (`seq`) answers "what order do these go in, and where is my cursor?" It takes new values on replay, which is fine for ordering and fatal if you use it for identity.
 
-> **The rule the whole system depends on: derive identity from execution *position*, never from the ordering counter.** Build the idempotency key from `seq` and you have written the duplicate-report bug. This is treated in depth in [Durable Async Runs](08-queue-and-worker-execution.md#sequence-number-versus-idempotency-key).
+> **Derive identity from execution *position*, never from the ordering counter.** Build the idempotency key from `seq` and you have written the duplicate-report bug. This is treated in depth in [Durable Async Runs](08-queue-and-worker-execution.md#sequence-number-versus-idempotency-key).
 
 ## Identity for ownership and locking: `owner_id` and `claim_token`
 
-- **[`owner_id`](00-glossary.md#owner_id)** is *who* — the user who proposed the plan. It is checked on resume so one user cannot approve or resume another user's run. An authorization identity.
+- **[`owner_id`](00-glossary.md#owner_id)** is *who*: the user who proposed the plan. It is checked on resume so one user cannot approve or resume another user's run. An authorization identity.
 - **[`claim_token`](00-glossary.md#token)** is *this acquisition of the lock*. It is minted fresh each time a worker claims the run, and it identifies **the tenure, not the worker**. Every write to the claim is guarded by "only if the stored token still equals mine," so a worker that lost the claim can neither renew nor delete it. This is the fencing mechanism in [Distributed Locks](07-distributed-locks.md).
 
 `claim_token` is another **changes-on-replay** id: a new acquisition is a new tenure, deliberately.
@@ -138,8 +138,8 @@ A run is replayed after a crash. For each logical event:
 
 The last pair is about trusting the output, not running it:
 
-- **[Provenance id](00-glossary.md#provenance-id)** is a pointer from a *fact* back to the tool result that produced it — which `query_source` call a given figure in the report came from. It turns [grounding](00-glossary.md#grounding) from a promise into something *auditable*: every number carries the id of its retrieval, so a reviewer, or code, can confirm no figure was invented. In a regulated domain this is the difference between a quality issue and a compliance one.
-- **[`trace_id`](00-glossary.md#trace_id)** ties every log line, span, and model call for one request together for the humans debugging later. Nothing in the run's *correctness* depends on it — it is pure observability.
+- **[Provenance id](00-glossary.md#provenance-id)** is a pointer from a *fact* back to the tool result that produced it: which `query_source` call a given figure in the report came from. It turns [grounding](00-glossary.md#grounding) from a promise into something *auditable*: every number carries the id of its retrieval, so a reviewer, or code, can confirm no figure was invented. In a regulated domain this is the difference between a quality issue and a compliance one.
+- **[`trace_id`](00-glossary.md#trace_id)** ties every log line, span, and model call for one request together for the humans debugging later. Nothing in the run's *correctness* depends on it; it is pure observability.
 
 ### Why deep runs need provenance
 
@@ -161,7 +161,7 @@ provenance_id = "{source}:{plan_id}:{step_id}:{sha1(sub_question)[:8]}"
 
 An identical retry intentionally gets the same id. A changed clarification answer changes the sub-question hash, so the new retrieval gets a new id. Because the `plan_id` is embedded, the system can filter current-cycle evidence by rebuilding the id for the current plan and comparing strings, without relying on timestamps.
 
-That filter is the small trick that keeps accumulating state usable:
+That filter keeps accumulating state usable:
 
 ```python
 def current_cycle_results(plan, source_results):
@@ -205,7 +205,7 @@ cycle_stamp = {
 
 `reported_cycle` stores the stamp of the last delivered report; if an SQS redelivery reaches the exit path with the same stamp, report generation is a no-op. The comparison is whole-dict equality: same plan, same sorted set of provenance ids. On that idempotent branch the exit path should avoid even cosmetic writes such as a fresh chat label, because byte-identical retry behavior is the goal.
 
-`chart_cycle` plays the same role for chart anchors. Chart specs are useful only for the evidence set they were built against; anchoring a new report against a stale catalog is just another way to make a correct-looking wrong answer. Comparing the same `cycle_stamp` before anchoring keeps chart references attached to same-cycle evidence.
+`chart_cycle` plays the same role for chart anchors. Chart specs are useful only for the evidence set they were built against; anchoring a new report against a stale catalog is another way to produce a correct-looking wrong answer. Comparing the same `cycle_stamp` before anchoring keeps chart references attached to same-cycle evidence.
 
 This is why `cycle` and `cycle_stamp` are different ideas:
 
@@ -217,7 +217,7 @@ This is why `cycle` and `cycle_stamp` are different ideas:
 
 ## The whole map on one axis
 
-The single most useful way to hold all of these is by the replay question:
+Sorted by the replay question, the whole map fits in one table:
 
 | Stable across replay (identity) | New on replay (ordering / tenure) |
 |---|---|
@@ -227,7 +227,7 @@ The single most useful way to hold all of these is by the replay question:
 | **idempotency key** — the logical write | `claim_token` — the lock tenure |
 | `owner_id`, `provenance id`, `trace_id` | |
 
-When you reach for an id, ask which column it belongs in. If you need to recognize "the same thing" after a crash, it must come from the left column — and it must be derived from position, never from a counter.
+When you reach for an id, ask which column it belongs in. If you need to recognize "the same thing" after a crash, it must come from the left column, and it must be derived from position, never from a counter.
 
 ---
 

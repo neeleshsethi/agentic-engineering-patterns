@@ -1,6 +1,6 @@
 # Deep Dive · Reactive Mode And Its Prompt
 
-Reactive mode is the contrast case to deep mode. It does not run a plan-gate loop, does not pause for approval, and does not iterate through long research steps. It is a one-pass router.
+Reactive mode is the contrast case to deep mode: a one-pass router with no plan-gate loop, no approval pause, and no long research steps.
 
 ```text
 decide -> call at most the needed data tool once -> answer
@@ -24,7 +24,7 @@ The reactive system prompt is assembled as one template with several layers in a
 | Fidelity rules | Preserve tables, caveats, footnotes, and source details. |
 | Final answer schema | Return the required JSON response shape. |
 
-The important design point is that reactive mode spends prompt text on judgment because there is no plan gate to hold the model inside a multi-step workflow.
+Reactive mode spends prompt text on judgment because there is no plan gate to hold the model inside a multi-step workflow.
 
 ## Tool Decision Rule
 
@@ -79,7 +79,7 @@ Reactive can relay an elicitation correctly, but it depends more on prompt obedi
 | Source elicitation report block | Prompt relay | Code-enforced `pending_elicitation()` gate |
 | Best for | Fast answers and small follow-ups | Durable, auditable research |
 
-Reactive is not weaker by default. It is optimized for a different job: answer quickly when the question can be resolved in one pass. Deep exists for runs where planning, approval, attribution, and durable execution matter more than speed.
+Reactive is built for a different job, not a weaker version of deep: answer quickly when the question can be resolved in one pass. Deep exists for runs where planning, approval, attribution, and durable execution matter more than speed.
 
 ---
 

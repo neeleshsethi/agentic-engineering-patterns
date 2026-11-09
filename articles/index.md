@@ -11,13 +11,13 @@ It is written for an engineer who has built normal Python web APIs and is now lo
 Everything here turns on a single distinction:
 
 - **Transport success** — the request finished, nothing threw.
-- **Semantic success** — the right context, state, lock, plan, and persistence rules actually held.
+- **Semantic success** — the right context, state, lock, plan, and persistence rules held.
 
 A silent failure is any moment those two drift apart. Keep the [glossary](00-glossary.md) open beside you; every term is defined there the first time it appears.
 
 ## How to read this
 
-The series is a build path, not a bug catalog. Read it as if you are implementing the system in this order.
+The articles follow the order you would build the system in. Read them as if you are implementing it.
 
 ### First, understand the project
 1. [Problem, Design Decisions, and Implementation Plan](01-problem-design-implementation-plan.md) — the production problem, the design principles, and the build order.
