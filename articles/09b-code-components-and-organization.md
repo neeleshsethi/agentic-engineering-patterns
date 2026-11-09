@@ -20,7 +20,7 @@ The `agent/deep/` package is easiest to understand as seven groups:
 | Provenance, citations, and charts | `provenance.py`, `citations.py`, `chart_tool.py`, `chart_state.py`, `chart_anchors.py`, `chart_adapter.py` | Retrieval identity, citation joins, source cards, chart specs, and report-cycle anchoring. |
 | Prompts | `prompts/orchestrator_prompts.py`, `report_prompts.py`, `sufficiency_prompts.py`, `analyst_prompts.py` | Planning, follow-up routing, report writing, sufficiency grading, and code-analysis behavior. |
 
-The point is not the exact filenames. The point is that each module group has one reason to change.
+The filenames matter less than the rule behind them: each module group has one reason to change.
 
 ## Graph And Control Flow
 
@@ -130,7 +130,7 @@ Use the package map during code review:
 | Progress duplicated, disappeared, or rendered oddly | `curator.py`, `event_log.py` |
 | Citations, cards, or charts attached to the wrong evidence | `provenance.py`, `citations.py`, `chart_anchors.py`, `chart_state.py` |
 
-This is how code organization becomes an engineering pattern: it makes the next silent failure easier to localize before it reaches production.
+Organized this way, the package makes the next silent failure easier to localize before it reaches production.
 
 ---
 

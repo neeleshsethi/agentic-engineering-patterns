@@ -6,11 +6,11 @@ A user asks a business question. The system should produce a sourced research re
 
 That is the system we are building in this series.
 
-It is not a chatbot, not a prompt wrapper, and not an API handler that calls a model and returns. It is a **distributed system with an agent inside it**.
+It is a **distributed system with an agent inside it**. A chatbot or an API handler that calls a model and returns never has to survive a crash halfway through a forty-minute job.
 
 ## The problem
 
-The dangerous failure mode is not a crash. The dangerous failure mode is this:
+A crash is the easy failure, because you can see it. The dangerous one looks like this:
 
 ```text
 HTTP request: 200 OK
@@ -59,7 +59,7 @@ We will build the system in this order:
 10. Capstone review
 ```
 
-The order matters. Identifiers make more sense after you have seen a plan pause and resume. Locks make more sense after the browser can double-click approval. Prompt design makes more sense after code already owns the boundaries.
+Identifiers make more sense after you have seen a plan pause and resume. Locks make more sense after the browser can double-click approval. Prompt design makes more sense after code already owns the boundaries.
 
 ## The lifecycle of a single run
 
@@ -78,25 +78,25 @@ flowchart LR
     H --> J[Final report<br/>persisted]
 ```
 
-Here is what happens at each stage — and what is at stake at each boundary.
+Here is what happens at each stage and what can go wrong at each boundary.
 
-**Question.** The user's intent arrives as text. It is not yet enough to act on — the agent needs to know who the user is, what they are permitted to see, what defaults apply to their account.
+**Question.** The user's intent arrives as text. It is not yet enough to act on. The agent also needs to know who the user is, what they are permitted to see, and what defaults apply to their account.
 
-**Context injection.** Before any model call, the system attaches what the model cannot derive from the message alone: account context, user permissions, locale, relevant business rules. The seam between "what the user typed" and "what the system added" must be deliberately managed. [Step 2](03-context-injection.md) covers this.
+**Context injection.** Before any model call, the system attaches what the model cannot derive from the message alone: account context, user permissions, locale, relevant business rules. The system has to keep "what the user typed" and "what the system added" apart on purpose. [Step 2](03-context-injection.md) covers this.
 
-**Orchestrator drafts a plan.** The model reads the enriched question and produces a structured, inspectable sequence of steps — not "do research," but "query this source, verify that figure, draft this section" — in terms a human can read and evaluate. [Step 3](04-planning-and-human-approval.md) covers this together with approval.
+**Orchestrator drafts a plan.** The model reads the enriched question and produces a structured sequence of steps a human can read and evaluate: "query this source, verify that figure, draft this section" instead of "do research." [Step 3](04-planning-and-human-approval.md) covers this together with approval.
 
 **Human approval.** The plan pauses at a gate. A human reads it and approves or rejects it. Only after approval does any expensive execution begin. This single gate means the run spans two or more HTTP requests, not one. [Step 3](04-planning-and-human-approval.md) covers this.
 
 **Queue.** The approved plan is handed to a FIFO queue, keyed on the conversation thread. The API process returns immediately; the queue holds the intent durably until a worker is ready. [Step 7](08-queue-and-worker-execution.md) covers this.
 
-**Worker.** A background worker dequeues the job and begins executing the plan. The worker is independent of the API process — it may run on a different machine, across a deploy boundary, or restart after a crash without the user knowing anything changed. [Step 7](08-queue-and-worker-execution.md) covers this.
+**Worker.** A background worker dequeues the job and begins executing the plan. The worker is independent of the API process. It may run on a different machine, across a deploy boundary, or restart after a crash without the user knowing anything changed. [Step 7](08-queue-and-worker-execution.md) covers this.
 
-**Graph runs step by step.** The worker runs the plan as a LangGraph graph — one node per step. Each node reads from state, does its work, and writes results back. [Step 1](02-state-and-checkpoints.md) covers how that state works.
+**Graph runs step by step.** The worker runs the plan as a LangGraph graph, one node per step. Each node reads from state, does its work, and writes results back. [Step 1](02-state-and-checkpoints.md) covers how that state works.
 
-**Checkpoint after each step.** After every node, LangGraph persists a checkpoint: a complete snapshot of state at that point. If the worker crashes at step 4, a new worker reads the checkpoint and resumes from step 4 — not from the beginning. [Step 1](02-state-and-checkpoints.md) covers checkpoints.
+**Checkpoint after each step.** After every node, LangGraph persists a checkpoint: a complete snapshot of state at that point. If the worker crashes at step 4, a new worker reads the checkpoint and resumes from step 4 instead of starting over. [Step 1](02-state-and-checkpoints.md) covers checkpoints.
 
-**Streamed progress → browser.** As the graph runs, it emits progress events over SSE (server-sent events). The browser shows the report being built section by section. But the SSE connection is ephemeral — closing the browser must not stop the work. [Step 6](06-streaming-and-background-work.md) covers this.
+**Streamed progress → browser.** As the graph runs, it emits progress events over SSE (server-sent events). The browser shows the report being built section by section. The SSE connection is ephemeral, and closing the browser must not stop the work. [Step 6](06-streaming-and-background-work.md) covers this.
 
 **Final report persisted.** When the graph completes, the finished report is written to durable storage. The user can reload, share the link, or return a week later.
 
@@ -110,9 +110,9 @@ Each stage of the lifecycle runs in a different context:
 - The **checkpoint store** persists state across crashes and deploys.
 - The **SSE stream** connects the browser to live progress without keeping the work alive.
 
-This is what the standard tutorial loop — call model, run tool, return answer — does not show. When work must outlive the request that started it, you are no longer writing a request handler. You are operating a small distributed system, and every boundary between those components is a place where state can be lost, duplicated, or corrupted while every individual component still reports success.
+The standard tutorial loop (call model, run tool, return answer) never shows this. When work must outlive the request that started it, you are no longer writing a request handler. You are operating a small distributed system, and every boundary between those components is a place where state can be lost, duplicated, or corrupted while every individual component still reports success.
 
-That failure mode — `200 OK`, wrong answer — is what the rest of this series teaches you to prevent.
+The rest of this series covers how to prevent the `200 OK`, wrong-answer failure at each of those boundaries.
 
 ---
 
@@ -124,9 +124,9 @@ That failure mode — `200 OK`, wrong answer — is what the rest of this series
     - Why `200 OK` and "the work was correct" are not the same thing
 
 ??? question "Try this"
-    **Your team builds a request handler that calls an LLM, lets it pick tools, and returns the result — all in one HTTP request. They want to add human approval before any expensive tool runs. A colleague says: "Easy, just interrupt the function, wait for the approval callback, then resume." What breaks with that design, and what has to change?**
+    **Your team builds a request handler that calls an LLM, lets it pick tools, and returns the result, all in one HTTP request. They want to add human approval before any expensive tool runs. A colleague says: "Easy, just interrupt the function, wait for the approval callback, then resume." What breaks with that design, and what has to change?**
 
     ??? success "Answer"
-        The approval can take minutes or days — a human reads and approves asynchronously. Holding an HTTP connection open that long is not possible in practice (timeouts, load balancers, client disconnects). Approval changes the system topology: the first request produces the plan and returns; the human approves out-of-band; a second request resumes the run. This requires (1) durable checkpointed state so any replica can pick up the run, (2) a pause mechanism (`interrupt()`) that serializes the graph to storage rather than blocking a thread, and (3) a separate resume endpoint that delivers the human's decision. The single-function model doesn't survive crossing an HTTP boundary.
+        The approval can take minutes or days, because a human reads and approves asynchronously. Holding an HTTP connection open that long is not possible in practice (timeouts, load balancers, client disconnects). Approval changes the system topology: the first request produces the plan and returns; the human approves out-of-band; a second request resumes the run. This requires (1) durable checkpointed state so any replica can pick up the run, (2) a pause mechanism (`interrupt()`) that serializes the graph to storage rather than blocking a thread, and (3) a separate resume endpoint that delivers the human's decision. The single-function model doesn't survive crossing an HTTP boundary.
 
 *Next: [Chapter 2 · End-to-End Architecture and Orchestrator Flow](02-end-to-end-architecture-and-orchestrator-flow.md) — the whole production path before we zoom into each mechanism.*
