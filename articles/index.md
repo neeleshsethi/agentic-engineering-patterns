@@ -40,6 +40,7 @@ The series is a build path, not a bug catalog. Read it as if you are implementin
 
 ### Finally, review the scars
 16. [Nine Silent Failures](10-nine-silent-failures.md) — the final case study. Each failure should now feel recognizable, not mysterious.
+17. [When the Score Passes and the Work Fails](11-when-the-score-passes.md) — the second capstone: tool success that isn't task success, and evaluations that hide a tradeoff.
 
 ## Reference
 - [Glossary](00-glossary.md) — every term, defined once.
