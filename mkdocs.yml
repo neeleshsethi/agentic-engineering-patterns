@@ -61,6 +61,7 @@ nav:
   - "Deep dive · Carryover and the data manifest": 09f-carryover-and-the-data-manifest.md
   - "Interactive lessons": lessons/index.html
   - "Capstone · Nine silent failures in one agent": 10-nine-silent-failures.md
+  - "Capstone 2 · When the score passes and the work fails": 11-when-the-score-passes.md
   - Reference:
       - Glossary: 00-glossary.md
       - "Source Notes (advanced)":

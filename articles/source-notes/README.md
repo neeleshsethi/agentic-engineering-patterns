@@ -1,6 +1,6 @@
 # Source Notes: A Deep Agent, End to End
 
-These three notes are a faithful reconstruction of the internal design docs behind a production
+These three notes describe the design of a production
 **deep agent** — a human-in-the-loop research orchestrator that plans, gets a human to approve the
 plan, then executes it durably on a worker fleet. They are the *source material* the published
 [Agentic Engineering Patterns](../01-problem-design-implementation-plan.md) series draws from, at full
