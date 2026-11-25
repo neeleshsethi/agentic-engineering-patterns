@@ -121,4 +121,4 @@ The happy-path test never catches this bug. You have to hang up early.
     ??? success "Answer"
         The server generator is cancelled at its next `await`, so `save_turn()` may never start. The user saw the answer and the stream ended cleanly, but history is missing. Start the required save as an owned background task before yielding the terminal frame, and test with a forced disconnect.
 
-*Next: [Step 6 · Distributed locks](step-6-distributed-locks.md) — streaming made progress visible; locking makes sure only one worker owns the run.*
+*Next: [Bridge · DynamoDB conditional writes and SQS](bridge-dynamodb-and-sqs.md) — the two AWS primitives that Step 6's lock and Step 7's queue are built from.*

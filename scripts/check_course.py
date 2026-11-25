@@ -34,6 +34,7 @@ OLD_TITLES = [
     "Carryover and the Data Manifest", "When the Score Passes and the Work Fails",
     "Streaming and background work", "Durable Async Agent Runs", "SSE Cancellation",
 ]
+NEXT_LINE = re.compile(r"^\*{1,2}Next:\*{0,2}\s*\[[^\]]+\]\(([^)#]+\.md)")
 LINK = re.compile(r"(?<!!)\[([^\]]+)\]\(([^)#\s]+\.md)(#[^)]*)?\)")
 
 
@@ -70,6 +71,12 @@ def main() -> int:
                 errors.append(f"{page}: H1 '{h1(path)}' should start with '{prefix(m)}'")
 
     titles = {(ARTICLES / p).resolve(): h1(ARTICLES / p) for p in pages if (ARTICLES / p).exists()}
+
+    for page, following in zip(pages, pages[1:] + [None]):
+        for line in (ARTICLES / page).read_text().splitlines():
+            m = NEXT_LINE.match(line)
+            if m and (ARTICLES / page).parent.joinpath(m[1]).resolve() != (ARTICLES / str(following)).resolve():
+                errors.append(f"{page}: 'Next:' points at {m[1]}, but the nav's next page is {following}")
     topics = {t.split(" · ", 1)[-1].lower() for t in titles.values()} | {t.lower() for t in OLD_TITLES}
     fix = "--fix" in sys.argv
 

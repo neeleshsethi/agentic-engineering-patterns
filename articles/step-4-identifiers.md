@@ -26,10 +26,10 @@ sequenceDiagram
     W1-->>T: 💥 crash
 
     T->>W2: resume from checkpoint (new run_id = R2, same thread_id)
-    W2->>S: re-emit event (idempotency_key = T1·step2·write1, seq = 1)
+    W2->>S: re-emit event (idempotency_key = T1·step2·write1, seq = 3)
 
     Note over S: idempotency_key already seen → drop duplicate ✓
-    Note over S: seq reset to 1 — using seq as key would emit a duplicate ✗
+    Note over S: seq is new (3), so keying on seq would show the line twice ✗
 ```
 
 ## The four questions to ask of any identifier
@@ -115,21 +115,10 @@ Even within the plan, stability splits: `plan_id` and the step ordinal are **sta
 
 The opening bug comes from confusing these two.
 
-```text
-A run is replayed after a crash. For each logical event:
-
-  idempotency key  →  derived from EXECUTION POSITION
-                      (which step, which logical write)
-                      → IDENTICAL on replay  → reader dedupes correctly
-
-  seq              →  a plain counter on the event stream
-                      → NEW value on replay  → only good for ordering
-```
-
 - The **[idempotency key](glossary.md#idempotency-key)** answers "is this the same *logical* event I already saw?" Because it is built from *where in the execution* the event occurred, a replayed event carries the same key, and the reader drops the duplicate.
 - The **[sequence number](glossary.md#sequence-number-seq)** (`seq`) answers "what order do these go in, and where is my cursor?" It takes new values on replay, which is fine for ordering and fatal if you use it for identity.
 
-> **Derive identity from execution *position*, never from the ordering counter.** Build the idempotency key from `seq` and you have written the duplicate-report bug. This is treated in depth in [Step 7 · Queue and worker execution](step-7-queue-and-worker-execution.md#sequence-number-versus-idempotency-key).
+> **Derive identity from execution *position*, never from the ordering counter.** Build the idempotency key from `seq` and you have written the duplicate-report bug. [Step 7a · The event feed and idempotency](step-7a-event-feed-and-idempotency.md) shows how the key is derived and how the reader uses it.
 
 ## Identity for ownership and locking: `owner_id` and `claim_token`
 

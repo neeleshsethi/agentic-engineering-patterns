@@ -10,7 +10,9 @@ A user asks a business question. The system should produce a sourced research re
 
 That is the system we are building in this series.
 
-It is a **distributed system with an agent inside it**. A chatbot or an API handler that calls a model and returns never has to survive a crash halfway through a forty-minute job.
+The agent inside it is a **deep agent**: one that drafts a multi-step plan, waits for a human to approve it, then carries it out over many tool calls and many minutes. Its working state lives in a database, not in one process, so the run can pause and resume. The contrast case is a one-pass agent that calls a tool once and answers, which this series calls reactive mode ([Step 8a](step-8a-reactive-mode-prompt.md)).
+
+The whole system is a **distributed system with an agent inside it**. A chatbot or an API handler that calls a model and returns never has to survive a crash halfway through a forty-minute job.
 
 ## The problem
 
@@ -51,18 +53,19 @@ The implementation follows six decisions. Each later chapter turns one of them i
 We will build the system in this order:
 
 ```text
-1. End-to-end architecture and orchestrator flow
-2. State and checkpoints
-3. Context injection
-4. Planning and human approval
-5. Identifiers
-6. Streaming and background work
-7. Distributed locks
-8. Queue and worker execution
-9. Orchestrator prompt
-10. Capstone review
+Chapter 2   End-to-end architecture and orchestrator flow
+Step 1      State and checkpoints
+Step 2      Context injection
+Step 3      Planning and human approval
+Step 4      Identifiers
+Step 5      Streaming and background work
+Bridge      DynamoDB conditional writes and SQS
+Step 6      Distributed locks
+Step 7      Queue and worker execution (7a: the event feed)
+Step 8      Orchestrator prompt (8a to 8e: reactive mode, clarifications,
+            plan lifecycle, carryover, code layout)
+Capstones   Nine silent failures; when the score passes
 ```
-
 Identifiers make more sense after you have seen a plan pause and resume. Locks make more sense after the browser can double-click approval. Prompt design makes more sense after code already owns the boundaries.
 
 ## The lifecycle of a single run
@@ -117,6 +120,19 @@ Each stage of the lifecycle runs in a different context:
 The standard tutorial loop (call model, run tool, return answer) never shows this. When work must outlive the request that started it, you are no longer writing a request handler. You are operating a small distributed system, and every boundary between those components is a place where state can be lost, duplicated, or corrupted while every individual component still reports success.
 
 The rest of this series covers how to prevent the `200 OK`, wrong-answer failure at each of those boundaries.
+
+## Terms you'll meet
+
+Chapter 2 uses these words before the steps that teach them. One sentence each is enough to keep reading. Each links to its glossary entry and names the page that teaches it properly.
+
+- **[Deep agent](glossary.md#deep-agent).** An agent that plans, pauses for approval, then executes over many steps with its state in a database. Defined above.
+- **[Checkpoint](glossary.md#checkpoint).** The saved copy of the graph's state after each step. Any process can reload it and continue the run. Taught in [Step 1](step-1-state-and-checkpoints.md).
+- **[Interrupt](glossary.md#interrupt).** The `interrupt()` call that pauses the graph to wait for a human. The pause is written into the checkpoint, so the HTTP request can end. Taught in [Step 3](step-3-planning-and-human-approval.md).
+- **[SQS FIFO queue](glossary.md#fifo-queue).** An AWS queue that will not hand out a second message for a conversation while the first is still being worked on. That gives one worker per conversation. Introduced in the [DynamoDB and SQS bridge](bridge-dynamodb-and-sqs.md), used in [Step 7](step-7-queue-and-worker-execution.md).
+- **[DynamoDB](glossary.md#dynamodb-terms) and [conditional write](glossary.md#conditional-write).** DynamoDB is the AWS database that holds checkpoints, run-state, locks and events. A conditional write succeeds only if a condition is true at that instant, so two racing writers get exactly one winner. Introduced in the bridge, used for locks in [Step 6](step-6-distributed-locks.md).
+- **[Worker](glossary.md#worker).** A background process that takes an approved run off the queue and executes it, separate from the API process that handled the request. Taught in [Step 7](step-7-queue-and-worker-execution.md).
+- **[Carryover](glossary.md#carryover).** Reusing what an earlier turn already resolved or retrieved, instead of asking or querying again. Taught in [Step 8d](step-8d-carryover-and-data-manifest.md).
+- **[Data manifest](glossary.md#data-manifest).** A short index of the results the agent already holds, shown to the model in place of the data itself. Taught in [Step 8d](step-8d-carryover-and-data-manifest.md).
 
 ---
 

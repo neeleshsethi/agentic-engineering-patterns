@@ -12,7 +12,7 @@ The prompt looked complete. Every field was populated. The request returned `200
 
 ## What context injection is
 
-Context injection is adding text or data to the model input that the user did **not** type in that exact request: user defaults, account permissions, previously mentioned entities, retrieved documents, tool results, an approved plan.
+Context injection is adding text or data to the model input that the user did **not** type in that exact request: user defaults, account permissions, entities and results carried over from earlier turns ([carryover](glossary.md#carryover)), retrieved documents, tool results, an approved plan.
 
 Your code *knows* which parts came from memory, tools, or the user. The model does not. It sees **one flat, composed prompt**. Unless you label the boundaries, "trusted memory" and "the user's words" are indistinguishable to it:
 
@@ -31,7 +31,7 @@ Injected model input (what the model sees)
      Give me my sales
 ```
 
-This is *useful*: "my sales" is meaningless without the account context. It is *dangerous* because stale or over-salient context can quietly override a later user correction, as in the France/Australia bug above. This connects back to [Step 1 · State and checkpoints](step-1-state-and-checkpoints.md): a stale `user_context` value gets **composed into the prompt** and steers the answer.
+This is *useful*: "my sales" is meaningless without the account context. It is *dangerous* because stale or over-salient context can quietly override a later user correction, as in the France/Australia bug above. This is not [Step 1](step-1-state-and-checkpoints.md)'s France/Germany bug, where a value left over from the last turn was read back. Here the default is current and correct. It wins only because the model weighs it above the user's correction. [Step 8](step-8-orchestrator-prompt.md#the-priority-stack) adds the prompt rule that settles the precedence.
 
 ## What we assemble into each model call
 
@@ -67,7 +67,7 @@ Each component has a different source, lifetime, and failure mode, which is why 
 | System / orchestrator prompt | base prompt (`orchestrator_prompts.py`) | static | The rules the model plans and reuses under; see [Step 8 · Orchestrator prompt](step-8-orchestrator-prompt.md). |
 | Source cards / catalog | **within the system prompt** — what each source answers: questions, KPIs, domains, out-of-scope, inter-source relationships | static | The model routes a step to the wrong source, attempts an out-of-scope question, or fans out redundantly; see [Step 8b · Clarifications](step-8b-clarifications.md). |
 | `[User context]` | `UserContextMiddleware` | transient, rebuilt per call | A stale value overrides a live correction (the France/Australia bug). |
-| `[Held data]` manifest | `DataManifestMiddleware` | transient, rebuilt per call | Inject the rows instead of the pointers and you poison the window; see [Step 8d · Carryover and the data manifest](step-8d-carryover-and-data-manifest.md). |
+| `[Held data]` [data manifest](glossary.md#data-manifest) | `DataManifestMiddleware` | transient, rebuilt per call | Inject the rows instead of the pointers and you poison the window; see [Step 8d · Carryover and the data manifest](step-8d-carryover-and-data-manifest.md). |
 | Conversation messages | graph state (`messages`) | durable, delta-checkpointed | Attach context to a synthetic summary message instead of the user's; see below. |
 | Tool set | `AllowedToolsMiddleware` | per call | The model reaches for a tool that isn't structurally reachable; see [Middleware](step-8e-code-components-and-organization.md). |
 | User question | framed onto the latest `HumanMessage` | this turn | Framed onto the wrong (synthetic) message, or the injected text forges the closing delimiter; both are covered next. |

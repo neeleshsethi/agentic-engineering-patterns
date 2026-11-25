@@ -80,14 +80,7 @@ The source's ask-back must be detected before the report writer runs. Do not rel
 | Status-code protocol | A deterministic classifier maps `input-required` to elicitation. |
 | Prose-only replies | A narrow deterministic ladder catches clarification phrases and question-shaped no-table replies. |
 
-Detection and action are split differently in each mode:
-
-> Detection is deterministic before either mode sees the result. Acting on that detection is prompt-led in reactive, but code-enforced in deep.
-
-| Mode | Detection | What stops the answer | Bookkeeping |
-|---|---|---|---|
-| Reactive | Deterministic `is_elicitation` flag when the source/client can set it; prompt backstop for question-shaped replies | Prompt rules tell the one-pass router to relay the source question instead of synthesizing. | Results stay available for the next turn. |
-| Deep | Deterministic `is_elicitation` flag on `SourceResult`; deep treats that flag as the source of truth | `DeepExitPathMiddleware` checks `pending_elicitation()` and skips report generation in code. | The step stays open; the report is skipped until the user answers. |
+Detection is deterministic before either mode sees the result. What differs is who acts on it. [Step 8a](step-8a-reactive-mode-prompt.md#source-elicitation-in-reactive) showed that reactive mode relies on a prompt rule to relay the question. Deep mode checks `pending_elicitation()` in `DeepExitPathMiddleware` and skips report generation in code. The step stays open until the user answers.
 
 **Clarification handling is deterministic for deep at the report boundary.** The model is still prompted to relay the question politely, but it is not trusted to decide whether a report may be written. If a current-cycle step's latest successful result is an elicitation, `pending_elicitation()` blocks the report.
 
@@ -129,6 +122,8 @@ To the user, an elicitation reply looks like answering a paused run. Internally,
 | Does it re-plan? | Not applicable | No; the plan stays locked |
 | What is reused? | The checkpointed plan and state | Completed source results from `source_results` |
 | What runs? | SQS worker resumes approved execution | The ordinary deep reply path re-queries the open step |
+
+The clarified step gets a new `provenance_id`, so the evidence set changes and the turn can now report.
 
 Re-planning would mint a new `plan_id`, which would orphan the carried result from the current cycle. Current-cycle evidence is filtered by plan identity, so keeping the locked plan is what lets the clarified turn reuse already-fetched data safely.
 

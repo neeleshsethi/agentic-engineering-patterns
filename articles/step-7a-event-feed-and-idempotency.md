@@ -56,13 +56,7 @@ event_table.put_item(
 )
 ```
 
-The condition tests one key attribute but means "is this slot empty?" DynamoDB first addresses the exact item by its full primary key, then evaluates the condition against whatever single item sits there. An empty slot passes trivially; an occupied slot necessarily carries its own `thread_id`, so the condition fails. `seq` is seeded once per pickup and incremented **in memory**, which is safe only because of the single-writer-per-thread invariant (one FIFO message group per thread, plus the [worker lock](step-6-distributed-locks.md)). When the fence does fail, a three-way branch decides what the collision means:
-
-| Collision | Meaning | Action |
-|---|---|---|
-| occupant's `idem_key` == mine | my own earlier attempt already landed (lost ACK + SDK retry, or a replay hitting the same slot) | treat as success, advance, continue |
-| foreign occupant, my lock lost/expired | I am a zombie; a new worker owns the thread | raise `ZombieWriterError`, stop emitting; never weave stale events above the reader's cursor |
-| foreign occupant, my lock still held | a dead predecessor's straggler write landed after my seed read | re-seed above the new max, bounded retry |
+The condition tests one key attribute but means "is this slot empty?" DynamoDB first addresses the exact item by its full primary key, then evaluates the condition against whatever single item sits there. An empty slot passes trivially; an occupied slot necessarily carries its own `thread_id`, so the condition fails. `seq` is seeded once per pickup and incremented **in memory**, which is safe only because of the single-writer-per-thread invariant (one FIFO message group per thread, plus the [worker lock](step-6-distributed-locks.md)). When the fence does fail, the writer runs the three-way branch from [Step 6](step-6-distributed-locks.md#the-write-fence-when-even-the-lock-check-races). If the occupant's `idem_key` equals its own, an earlier attempt already landed, so it treats the write as done. If the occupant is foreign and its lock is gone, it is a zombie: it raises `ZombieWriterError` and stops emitting, rather than weave stale events above the reader's cursor. If the occupant is foreign and it still holds the lock, a dead predecessor's straggler landed after its seed read, so it re-seeds above the new max and retries a bounded number of times.
 
 On a clean redelivery the new worker re-seeds `seq` **above** the current max, so its replayed events get *fresh* seqs and do not collide with the old rows at all. The fence catches only the genuine same-slot races above. Dedup of the ordinary replay case is the reader's job.
 
