@@ -4,6 +4,8 @@ summary: "Nine real bugs that returned 200 OK. Each should now feel recognizable
 
 # Capstone 1 · Nine silent failures in one agent
 
+> **Design question:** [How do I fix it for real?](ch2-designing-a-deep-agent.md#fixing-it-for-real) · **Principles:** Fix Root Causes, Attack the Premise, Exhaust the Design Space
+
 Use this as the final review exercise: a deep agent can look healthy, return `200 OK`, and still be wrong.
 
 > **Capstone.** This is where the series lands: the nine bugs below are the failure modes from the build path (state, context, planning, identifiers, streaming, locking, durability, and prompt boundaries) seen together in one real system. Each bug recalls its mechanism in a few lines and links back to the step that teaches it.

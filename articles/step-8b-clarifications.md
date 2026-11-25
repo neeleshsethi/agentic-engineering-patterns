@@ -4,6 +4,8 @@ summary: "Handle ask-back turns without confusing source elicitation with plan a
 
 # Step 8b · Clarifications
 
+> **Design question:** [Where does the human come in?](ch2-designing-a-deep-agent.md#where-the-human-comes-in) · **Principles:** Never Block on the Human, Subtract Before You Add
+
 A clarification is any turn where the system asks the user something instead of writing the final answer. In a deep agent, a clarification changes which graph path runs, which state is carried, whether a report may be written, and whether the next user message resumes an interrupt or starts a fresh invocation.
 
 The safe mental model is:

@@ -4,6 +4,8 @@ summary: "Make exactly one process own a run, even under double clicks, crashes,
 
 # Step 6 · Distributed locks
 
+> **Design question:** [What happens when two things happen at once?](ch2-designing-a-deep-agent.md#two-at-once) · **Principles:** Separate Before Serializing Shared State, Make Operations Idempotent
+
 !!! note "Before you read"
     This page builds on three ideas. Skim the linked section first if any is hazy.
 

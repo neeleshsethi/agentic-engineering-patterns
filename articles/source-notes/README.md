@@ -42,7 +42,7 @@ The published chapters are the teaching version. These notes go deeper on each m
 
 | Published chapter | Covered in depth by |
 |---|---|
-| [Chapter 2 · End-to-end architecture and orchestrator flow](../ch2-architecture-and-flow.md) | All three notes: async approval, pending resume writes, SQS FIFO, worker resume with `None`, stream curation, seven-tool allow-list |
+| [Chapter 3 · End-to-end architecture and orchestrator flow](../ch3-architecture-and-flow.md) | All three notes: async approval, pending resume writes, SQS FIFO, worker resume with `None`, stream curation, seven-tool allow-list |
 | [Step 1 · State and checkpoints](../step-1-state-and-checkpoints.md) | `before-resume` Part 1 (state channels, `LastValue` footguns, reducer vs last-value vs pending resume writes) |
 | [Step 2 · Context injection](../step-2-context-injection.md) | `before-resume` Step 3 (transient injection, the `[/User context]` boundary) · `orchestrator-prompt-annotated` Step 4 EXECUTE / Bug 1 (the entity override the injection causes) |
 | [Step 3 · Planning and human approval](../step-3-planning-and-human-approval.md) | `orchestrator-prompt-annotated` Part 3 (build-it-yourself) + Parts 2/4 (gate internals, read-only Plan projection) · `before-resume` (async approve path) |

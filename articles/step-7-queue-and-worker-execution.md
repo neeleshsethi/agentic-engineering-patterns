@@ -4,10 +4,12 @@ summary: "Move approved work out of the API process and make replay safe."
 
 # Step 7 · Queue and worker execution
 
+> **Design question:** [What happens when it crashes halfway?](ch2-designing-a-deep-agent.md#crash-halfway) · **Principles:** Make Operations Idempotent, Separate Before Serializing Shared State
+
 !!! note "Before you read"
     This page assembles pieces taught earlier. Skim the linked section first if any is hazy.
 
-    - **The staged resume decision.** Approval is written into the checkpoint before anything is queued, so a worker can resume with no input. Shown end to end in [Chapter 2](ch2-architecture-and-flow.md), built in [Step 3](step-3-planning-and-human-approval.md).
+    - **The staged resume decision.** Approval is written into the checkpoint before anything is queued, so a worker can resume with no input. Shown end to end in [Chapter 3](ch3-architecture-and-flow.md), built in [Step 3](step-3-planning-and-human-approval.md).
     - **SQS FIFO behavior.** Message groups, the visibility timeout, and redelivery after silence. Taught in the [DynamoDB and SQS bridge](bridge-dynamodb-and-sqs.md).
     - **The lease and the zombie.** A lock that expires unless renewed, and a frozen worker that wakes after losing it. Taught in [Step 6](step-6-distributed-locks.md).
 

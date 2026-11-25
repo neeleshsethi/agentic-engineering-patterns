@@ -4,6 +4,8 @@ summary: "Tool success that is not task success, and evaluations that hide a tra
 
 # Capstone 2 · When the score passes and the work fails
 
+> **Design question:** [What does done mean?](ch2-designing-a-deep-agent.md#what-done-means) · **Principles:** Explain the Number, Prove It Works, Test Behavior, Not Implementation
+
 The first capstone was about code that returned `200 OK` while corrupting the meaning of a run. This one is about the same failure one layer up: **an evaluation that passes while the agent's work is wrong**, and **a tool call that succeeds while the user's task does not**.
 
 > **Capstone.** Read [Capstone 1 · Nine silent failures in one agent](capstone-1-nine-silent-failures.md) first. That article is about infrastructure: state, locks, keys and persistence. This one is about the contract between the model, its tools and the evaluations we use to judge it. The system is the same commercial-strategy agent; every name below is generic.

@@ -4,6 +4,8 @@ summary: "Decide what the prompt shapes and what code must enforce."
 
 # Step 8 · Orchestrator prompt
 
+> **Design question:** [Where are the boundaries?](ch2-designing-a-deep-agent.md#boundaries) · **Principles:** Encode Lessons in Structure, Boundary Discipline
+
 Once an agent's control flow lives in code (a gate, a state machine, a set of endpoints), the prompt has a narrower job.
 
 > The prompt shapes judgment. The code enforces boundaries.

@@ -4,6 +4,8 @@ summary: "Reuse earlier results without pasting megabytes back into the context 
 
 # Step 8d · Carryover and the data manifest
 
+> **Design question:** [How much should the model see?](ch2-designing-a-deep-agent.md#how-much-the-model-sees) · **Principles:** Guard the Context Window
+
 A user asks a follow-up: *"and how does that compare to last quarter?"* The agent already pulled the underlying sales two turns ago, so the answer is sitting in state. Re-querying the source would be slow, costly, and sometimes non-deterministic. But the retrieved data is **megabytes**, and pasting it back into the model's context every turn would bury the actual conversation, blow the token budget, and drown the one line that matters under a wall of stale rows. That second failure is [context poisoning](glossary.md): the window fills with low-value text and the model's attention degrades.
 
 So there are two ways to lose. Re-query when you already hold the answer, and you are wasteful and non-deterministic. Paste the held data back to avoid re-querying, and you poison the window. The data manifest is how a deep agent avoids **both**.
