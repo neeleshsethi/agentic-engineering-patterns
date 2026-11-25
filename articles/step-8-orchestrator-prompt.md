@@ -1,4 +1,8 @@
-# Step 8 · Orchestrator Prompt
+---
+summary: "Decide what the prompt shapes and what code must enforce."
+---
+
+# Step 8 · Orchestrator prompt
 
 Once an agent's control flow lives in code (a gate, a state machine, a set of endpoints), the prompt has a narrower job.
 
@@ -8,7 +12,7 @@ The prompt decides what the model should *think about*: how to break a question 
 
 The running example is a retail commercial-analytics orchestrator. Identifiers are generic (`BRAND_A`, `SOURCE_A..D`, `query_source`), but the domain matters here: when data is licensed per market and the numbers feed real decisions, some of these rules are contractual, not style, and that changes where they have to live.
 
-> Terms used below ([gate](00-glossary.md#gate), [middleware](00-glossary.md#middleware), [ToolMessage](00-glossary.md#toolmessage), [grounding](00-glossary.md#grounding), [entity resolution](00-glossary.md#entity-resolution)) are in the [glossary](00-glossary.md). This article builds on [Planning and Human Approval](04-planning-and-human-approval.md).
+> Terms used below ([gate](glossary.md#gate), [middleware](glossary.md#middleware), [ToolMessage](glossary.md#toolmessage), [grounding](glossary.md#grounding), [entity resolution](glossary.md#entity-resolution)) are in the [Glossary](glossary.md). This article builds on [Step 3 · Planning and human approval](step-3-planning-and-human-approval.md).
 
 ## The Test: Prompt Or Structure?
 
@@ -105,7 +109,7 @@ In the production deep graph, seven middlewares formed the runtime contract arou
 
 Registration order matters. LangChain runs `after_agent` hooks in reverse registration order, so the sufficiency gate must run before the exit path writes the report. The retrieval budget uses model-call hooks, so it can meter loop depth without perturbing that exit ordering.
 
-**Gate sequencing, status, concurrency.** Whether the plan is approved, when it locks, how many times it was refined, whether two requests raced: all of that is code (the gate's `interrupt()`, `model_copy` on the plan status, a DynamoDB claim). See [Human-in-the-Loop Plan Approval](./04-planning-and-human-approval.md) for the mechanism. None of it was delegated to the prompt.
+**Gate sequencing, status, concurrency.** Whether the plan is approved, when it locks, how many times it was refined, whether two requests raced: all of that is code (the gate's `interrupt()`, `model_copy` on the plan status, a DynamoDB claim). See [Step 3 · Planning and human approval](./step-3-planning-and-human-approval.md) for the mechanism. None of it was delegated to the prompt.
 
 | Rule | Where it lives | Why not the prompt |
 |------|----------------|--------------------|
@@ -436,4 +440,4 @@ Ship the prompt with a version string (`PROMPT_VERSION = "2.2"`) carried as trac
     ??? success "Answer"
         Code. The approval gate should structurally pause execution, and middleware should remove tools that are not allowed in the current phase. The prompt can explain the workflow, but it should not be the only thing preventing an expensive or unauthorized tool call.
 
-*Next: [Capstone · Nine Silent Failures](10-nine-silent-failures.md) — now use the real case study as a review exam for the whole system.*
+*Next: [Capstone 1 · Nine silent failures in one agent](capstone-1-nine-silent-failures.md) — now use the real case study as a review exam for the whole system.*

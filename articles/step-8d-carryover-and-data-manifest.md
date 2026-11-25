@@ -1,6 +1,10 @@
-# Deep Dive · Carryover and the Data Manifest
+---
+summary: "Reuse earlier results without pasting megabytes back into the context window."
+---
 
-A user asks a follow-up: *"and how does that compare to last quarter?"* The agent already pulled the underlying sales two turns ago, so the answer is sitting in state. Re-querying the source would be slow, costly, and sometimes non-deterministic. But the retrieved data is **megabytes**, and pasting it back into the model's context every turn would bury the actual conversation, blow the token budget, and drown the one line that matters under a wall of stale rows. That second failure is [context poisoning](00-glossary.md): the window fills with low-value text and the model's attention degrades.
+# Step 8d · Carryover and the data manifest
+
+A user asks a follow-up: *"and how does that compare to last quarter?"* The agent already pulled the underlying sales two turns ago, so the answer is sitting in state. Re-querying the source would be slow, costly, and sometimes non-deterministic. But the retrieved data is **megabytes**, and pasting it back into the model's context every turn would bury the actual conversation, blow the token budget, and drown the one line that matters under a wall of stale rows. That second failure is [context poisoning](glossary.md): the window fills with low-value text and the model's attention degrades.
 
 So there are two ways to lose. Re-query when you already hold the answer, and you are wasteful and non-deterministic. Paste the held data back to avoid re-querying, and you poison the window. The data manifest is how a deep agent avoids **both**.
 
@@ -8,11 +12,11 @@ The safe mental model is:
 
 > Give the model an *index* of what it holds, never a *copy*. It should see the shape and age of every prior result in ~100 bytes, decide reuse-versus-refetch itself, and pull the megabytes by name only when a step truly needs them.
 
-This is a [context-injection](03-context-injection.md) mechanism (same middleware seam, same delimiter discipline) specialized for carrying prior *results* forward.
+This is a [context-injection](step-2-context-injection.md) mechanism (same middleware seam, same delimiter discipline) specialized for carrying prior *results* forward.
 
 ## What Accumulates, And Why You Cannot Just Resend It
 
-`state["source_results"]` keeps every verbatim retrieval for the life of the thread. It is an [`operator.add`](05-identifiers.md) channel, so it only grows. That is by design, because assembly, citations, and follow-ups all need the raw evidence later. A single retrieval can be thousands of rows; a long thread can hold megabytes.
+`state["source_results"]` keeps every verbatim retrieval for the life of the thread. It is an [`operator.add`](step-4-identifiers.md) channel, so it only grows. That is by design, because assembly, citations, and follow-ups all need the raw evidence later. A single retrieval can be thousands of rows; a long thread can hold megabytes.
 
 Two things must both be true:
 
@@ -58,13 +62,13 @@ Each line carries exactly five fields, and each earns its place:
 
 | Field | Why it is on the line |
 |---|---|
-| `provenance_id` | The durable name the model uses to *reference* the result in a plan step. See [Identifiers](05-identifiers.md). |
+| `provenance_id` | The durable name the model uses to *reference* the result in a plan step. See [Step 4 · Identifiers that hold a run together](step-4-identifiers.md). |
 | `ok` | Whether the retrieval succeeded; a failed result is not reusable. |
 | `rows` | The *shape* of what is held, without the data. Lets the model judge whether the held answer could plausibly cover the new need. |
 | `retrieved` | The staleness signal. A follow-up asking for "current" numbers must not reuse a week-old pull. |
 | `question` (80 chars) | What that retrieval was *about*, so the model can match it to the new step. |
 
-The 80-char preview is user-influenced text, so it is neutralized (`MANIFEST_END → [/held data]`) the same way [Context Injection](03-context-injection.md#two-ways-it-goes-wrong) escapes its own closing tag. Held content must never be able to forge the boundary of the trusted block.
+The 80-char preview is user-influenced text, so it is neutralized (`MANIFEST_END → [/held data]`) the same way [Step 2 · Context injection](step-2-context-injection.md#two-ways-it-goes-wrong) escapes its own closing tag. Held content must never be able to forge the boundary of the trusted block.
 
 ## Capped By Attention, Not By Tokens
 
@@ -149,4 +153,4 @@ The reactive/quick path has the same idea under different names (a `[Carried dat
 - **Cap by attention.** Show the newest N, newest-first, and roll the rest into one honest line so old entries do not bury fresh ones.
 - **Forbid estimation from memory.** Prose answers may be reused; numbers must be re-fetched. Put the row count on the line so the model knows data exists to pull, not to invent.
 - **Carry the age.** Staleness is part of the reuse decision. Every line gets its `retrieved` date, and old rollups tell the model to ask before assuming.
-- **Escape your delimiter.** The user-influenced preview must never be able to forge the block boundary. See [Context Injection](03-context-injection.md#two-ways-it-goes-wrong).
+- **Escape your delimiter.** The user-influenced preview must never be able to forge the block boundary. See [Step 2 · Context injection](step-2-context-injection.md#two-ways-it-goes-wrong).

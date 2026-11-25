@@ -1,4 +1,8 @@
-# Chapter 1 · Problem, Design Decisions, and Implementation Plan
+---
+summary: "The production problem, what a deep agent is, the design principles, and the build order."
+---
+
+# Chapter 1 · Problem, design, and implementation plan
 
 Start with the problem, not the framework.
 
@@ -82,21 +86,21 @@ Here is what happens at each stage and what can go wrong at each boundary.
 
 **Question.** The user's intent arrives as text. It is not yet enough to act on. The agent also needs to know who the user is, what they are permitted to see, and what defaults apply to their account.
 
-**Context injection.** Before any model call, the system attaches what the model cannot derive from the message alone: account context, user permissions, locale, relevant business rules. The system has to keep "what the user typed" and "what the system added" apart on purpose. [Step 2](03-context-injection.md) covers this.
+**Context injection.** Before any model call, the system attaches what the model cannot derive from the message alone: account context, user permissions, locale, relevant business rules. The system has to keep "what the user typed" and "what the system added" apart on purpose. [Step 2](step-2-context-injection.md) covers this.
 
-**Orchestrator drafts a plan.** The model reads the enriched question and produces a structured sequence of steps a human can read and evaluate: "query this source, verify that figure, draft this section" instead of "do research." [Step 3](04-planning-and-human-approval.md) covers this together with approval.
+**Orchestrator drafts a plan.** The model reads the enriched question and produces a structured sequence of steps a human can read and evaluate: "query this source, verify that figure, draft this section" instead of "do research." [Step 3](step-3-planning-and-human-approval.md) covers this together with approval.
 
-**Human approval.** The plan pauses at a gate. A human reads it and approves or rejects it. Only after approval does any expensive execution begin. This single gate means the run spans two or more HTTP requests, not one. [Step 3](04-planning-and-human-approval.md) covers this.
+**Human approval.** The plan pauses at a gate. A human reads it and approves or rejects it. Only after approval does any expensive execution begin. This single gate means the run spans two or more HTTP requests, not one. [Step 3](step-3-planning-and-human-approval.md) covers this.
 
-**Queue.** The approved plan is handed to a FIFO queue, keyed on the conversation thread. The API process returns immediately; the queue holds the intent durably until a worker is ready. [Step 7](08-queue-and-worker-execution.md) covers this.
+**Queue.** The approved plan is handed to a FIFO queue, keyed on the conversation thread. The API process returns immediately; the queue holds the intent durably until a worker is ready. [Step 7](step-7-queue-and-worker-execution.md) covers this.
 
-**Worker.** A background worker dequeues the job and begins executing the plan. The worker is independent of the API process. It may run on a different machine, across a deploy boundary, or restart after a crash without the user knowing anything changed. [Step 7](08-queue-and-worker-execution.md) covers this.
+**Worker.** A background worker dequeues the job and begins executing the plan. The worker is independent of the API process. It may run on a different machine, across a deploy boundary, or restart after a crash without the user knowing anything changed. [Step 7](step-7-queue-and-worker-execution.md) covers this.
 
-**Graph runs step by step.** The worker runs the plan as a LangGraph graph, one node per step. Each node reads from state, does its work, and writes results back. [Step 1](02-state-and-checkpoints.md) covers how that state works.
+**Graph runs step by step.** The worker runs the plan as a LangGraph graph, one node per step. Each node reads from state, does its work, and writes results back. [Step 1](step-1-state-and-checkpoints.md) covers how that state works.
 
-**Checkpoint after each step.** After every node, LangGraph persists a checkpoint: a complete snapshot of state at that point. If the worker crashes at step 4, a new worker reads the checkpoint and resumes from step 4 instead of starting over. [Step 1](02-state-and-checkpoints.md) covers checkpoints.
+**Checkpoint after each step.** After every node, LangGraph persists a checkpoint: a complete snapshot of state at that point. If the worker crashes at step 4, a new worker reads the checkpoint and resumes from step 4 instead of starting over. [Step 1](step-1-state-and-checkpoints.md) covers checkpoints.
 
-**Streamed progress → browser.** As the graph runs, it emits progress events over SSE (server-sent events). The browser shows the report being built section by section. The SSE connection is ephemeral, and closing the browser must not stop the work. [Step 6](06-streaming-and-background-work.md) covers this.
+**Streamed progress → browser.** As the graph runs, it emits progress events over SSE (server-sent events). The browser shows the report being built section by section. The SSE connection is ephemeral, and closing the browser must not stop the work. [Step 5](step-5-streaming-and-background-work.md) covers this.
 
 **Final report persisted.** When the graph completes, the finished report is written to durable storage. The user can reload, share the link, or return a week later.
 
@@ -129,4 +133,4 @@ The rest of this series covers how to prevent the `200 OK`, wrong-answer failure
     ??? success "Answer"
         The approval can take minutes or days, because a human reads and approves asynchronously. Holding an HTTP connection open that long is not possible in practice (timeouts, load balancers, client disconnects). Approval changes the system topology: the first request produces the plan and returns; the human approves out-of-band; a second request resumes the run. This requires (1) durable checkpointed state so any replica can pick up the run, (2) a pause mechanism (`interrupt()`) that serializes the graph to storage rather than blocking a thread, and (3) a separate resume endpoint that delivers the human's decision. The single-function model doesn't survive crossing an HTTP boundary.
 
-*Next: [Chapter 2 · End-to-End Architecture and Orchestrator Flow](02-end-to-end-architecture-and-orchestrator-flow.md) — the whole production path before we zoom into each mechanism.*
+*Next: [Chapter 2 · End-to-end architecture and orchestrator flow](ch2-architecture-and-flow.md) — the whole production path before we zoom into each mechanism.*

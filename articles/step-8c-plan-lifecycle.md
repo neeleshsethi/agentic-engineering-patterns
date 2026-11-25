@@ -1,4 +1,8 @@
-# Deep Dive · Plan Lifecycle
+---
+summary: "Decide when to replan, extend the locked plan, or skip planning."
+---
+
+# Step 8c · Plan lifecycle
 
 A deep plan is a durable, approved execution contract, and the agent does not create one for every user message. Once it is locked, follow-up turns either open a new plan cycle, extend the current cycle, or avoid planning altogether.
 

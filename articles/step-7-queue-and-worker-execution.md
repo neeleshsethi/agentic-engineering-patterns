@@ -1,8 +1,12 @@
-# Step 7 · Queue and Worker Execution
+---
+summary: "Move approved work out of the API process and make replay safe."
+---
+
+# Step 7 · Queue and worker execution
 
 A long agent run should survive a worker crash, a deploy, and a client that closes its laptop. That means the run cannot live in one process's memory. It has to live in durable storage, and every process (the API, the worker, a failure detector) has to be able to reconstruct it from there.
 
-This article covers what happens *after* a plan is approved: the run is handed to a background worker, executes for tens of minutes, streams progress to the browser, and can be resumed by a different worker if the first one dies. It assumes the vocabulary from the [glossary](00-glossary.md) ([checkpoint](00-glossary.md#checkpoint), [replica](00-glossary.md#replica), [lease](00-glossary.md#lease), [idempotency](00-glossary.md#idempotency)) and builds directly on [Distributed Locks](07-distributed-locks.md).
+This article covers what happens *after* a plan is approved: the run is handed to a background worker, executes for tens of minutes, streams progress to the browser, and can be resumed by a different worker if the first one dies. It assumes the vocabulary from the [Glossary](glossary.md) ([checkpoint](glossary.md#checkpoint), [replica](glossary.md#replica), [lease](glossary.md#lease), [idempotency](glossary.md#idempotency)) and builds directly on [Step 6 · Distributed locks](step-6-distributed-locks.md).
 
 ## Two Streams, Two Tables, Two Audiences
 
@@ -141,7 +145,7 @@ The size rule that falls out: the visibility timeout must exceed the longest *si
 The feed needs a total order and a dedup identity. Use two different values, because they have opposite requirements under replay.
 
 - **Sequence** is a plain in-process counter, seeded once per pickup from the current max and incremented per emitted feed line. It gives ordering and becomes the reader's cursor. Gaps are allowed; ordering is guaranteed. On replay it takes new values.
-- **[Idempotency key](00-glossary.md#idempotency-key)** identifies the *logical* event regardless of which attempt wrote it. It must be identical when a node is replayed, so it is derived from execution position, never from the sequence number and never at random.
+- **[Idempotency key](glossary.md#idempotency-key)** identifies the *logical* event regardless of which attempt wrote it. It must be identical when a node is replayed, so it is derived from execution position, never from the sequence number and never at random.
 
 Step through a crash-and-replay to see why the two values need opposite behavior:
 
@@ -174,7 +178,7 @@ seq 11, 12 → <span class="bad">duplicate idem_key, skipped</span>   <span clas
   </div>
 </div>
 
-Exactly one of the two must change on replay (the [sequence](00-glossary.md#sequence-number-seq)) and exactly one must not (the key). Many frameworks already compute a deterministic per-execution task id; if so, use it and let the framework own the hard part. Here the key is `"{task_id}#{n}"`, where `task_id` is parsed out of each streamed event's checkpoint namespace (LangGraph shapes it as `"{node}:{task_id}"`) and `n` is a per-`task_id` counter of the events that task has emitted. The key stays stable across a crash-replay because `task_id` is derived from the checkpoint the node *started from*, not the one it writes: a replay resumes from the same input checkpoint (same id), while a genuine loop iteration starts from a newer one (new id). That difference is what tells "re-run of the interrupted attempt" apart from "the loop legitimately ran this node again."
+Exactly one of the two must change on replay (the [sequence](glossary.md#sequence-number-seq)) and exactly one must not (the key). Many frameworks already compute a deterministic per-execution task id; if so, use it and let the framework own the hard part. Here the key is `"{task_id}#{n}"`, where `task_id` is parsed out of each streamed event's checkpoint namespace (LangGraph shapes it as `"{node}:{task_id}"`) and `n` is a per-`task_id` counter of the events that task has emitted. The key stays stable across a crash-replay because `task_id` is derived from the checkpoint the node *started from*, not the one it writes: a replay resumes from the same input checkpoint (same id), while a genuine loop iteration starts from a newer one (new id). That difference is what tells "re-run of the interrupted attempt" apart from "the loop legitimately ran this node again."
 
 ### One stream must not poison another's keys
 
@@ -217,7 +221,7 @@ Two more properties round it out:
 - **Termination is on status, not a sentinel.** A crashed worker never writes a "done" event. If the only exit were a sentinel event, the user would watch a spinner forever. The run-state record can be flipped to `failed` by a detector that is not the worker.
 - **Dedup makes at-least-once look exactly-once.** Every duplicated feed line from a redelivery collapses on the idempotency key at read time.
 
-See [Streaming and background work](./06-streaming-and-background-work.md) for what happens to server-side work when that client connection closes.
+See [Step 5 · Streaming and background work](./step-5-streaming-and-background-work.md) for what happens to server-side work when that client connection closes.
 
 ## Crash Recovery Costs One Unit Of Work
 
@@ -230,7 +234,7 @@ cost of a crash   = one duplicated model/tool call, one receive consumed
 
 Per-node pending writes mean a parallel sibling that already finished is not re-executed. The at-most-one incomplete node re-runs, and its replayed events dedup on the reader side.
 
-For the ownership and zombie-fencing mechanics that keep two workers from writing the same thread, see [Distributed Locks](./07-distributed-locks.md).
+For the ownership and zombie-fencing mechanics that keep two workers from writing the same thread, see [Step 6 · Distributed locks](./step-6-distributed-locks.md).
 
 ## Poison Pills Page A Human, Nothing Else Does
 
@@ -267,4 +271,4 @@ Everything else in this design recovers on its own. The dead-letter queue is the
     ??? success "Answer"
         The user should see each logical progress line once. The replayed events get new `seq` values because they are new stream records, but the same idempotency keys because they represent the same logical writes. The reader deduplicates by idempotency key and keeps `seq` only for ordering and cursor movement.
 
-*Next: [Step 8 · Orchestrator Prompt](09-orchestrator-prompt.md) — with the runtime shape built, decide which rules the prompt should shape and which rules code must enforce.*
+*Next: [Step 8 · Orchestrator prompt](step-8-orchestrator-prompt.md) — with the runtime shape built, decide which rules the prompt should shape and which rules code must enforce.*

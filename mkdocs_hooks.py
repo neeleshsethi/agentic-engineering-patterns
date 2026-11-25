@@ -7,9 +7,13 @@ hand-synced, this hook injects the root ``lessons/`` files into the build so
 they publish at ``/lessons/...`` — one source of truth, no drift.
 """
 
+import re
 from pathlib import Path
 
+import yaml
 from mkdocs.structure.files import File
+
+READING_ORDER = "<!-- reading-order -->"
 
 
 def on_files(files, config):
@@ -33,3 +37,37 @@ def on_files(files, config):
             )
         )
     return files
+
+
+def _front_matter(path):
+    text = path.read_text()
+    meta = yaml.safe_load(text.split("---", 2)[1]) if text.startswith("---") else {}
+    body = text.split("---", 2)[2] if text.startswith("---") else text
+    title = next(line[2:].strip() for line in body.splitlines() if line.startswith("# "))
+    return title, (meta or {}).get("summary", "")
+
+
+def _render_section(entries, docs_dir):
+    lines = []
+    for entry in entries:
+        target = next(iter(entry.values())) if isinstance(entry, dict) else entry
+        if not target.endswith(".md"):
+            continue
+        title, summary = _front_matter(Path(docs_dir) / target)
+        lines.append(f"- [{title}]({target}) — {summary}" if summary else f"- [{title}]({target})")
+    return lines
+
+
+def on_page_markdown(markdown, page, config, files):
+    """Render the home page's reading list from the nav, so the order lives in one place."""
+    if READING_ORDER not in markdown:
+        return markdown
+    out = []
+    for section in config["nav"]:
+        if not isinstance(section, dict):
+            continue
+        (name, entries), = section.items()
+        if not isinstance(entries, list):
+            continue
+        out += [f"### {name}", "", *_render_section(entries, config["docs_dir"]), ""]
+    return markdown.replace(READING_ORDER, "\n".join(out))

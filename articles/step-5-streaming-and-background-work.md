@@ -1,4 +1,8 @@
-# Step 5 · Streaming and Background Work
+---
+summary: "Let the user watch progress without letting the browser own correctness."
+---
+
+# Step 5 · Streaming and background work
 
 The agent can now hold state, inject context, pause for approval, and name the pieces of a run. The next step is user experience: the browser should see progress while the system works.
 
@@ -8,13 +12,13 @@ The browser still does not own the work. **Required work must outlive the HTTP c
 
 An agent finishes a run. Your code streams a final `end` event to the browser, then saves the turn to the database. It works every time you test it, because you sit and watch the stream finish.
 
-In production, the browser is not so patient. The moment it receives the `end` event, it closes the connection. That disconnect cancels your server code *before the save runs*. The user got their answer, the request returned `200 OK`, and the turn was never written to history. Nothing threw. Nothing logged. This is a [silent failure](00-glossary.md#transport-success-vs-semantic-success).
+In production, the browser is not so patient. The moment it receives the `end` event, it closes the connection. That disconnect cancels your server code *before the save runs*. The user got their answer, the request returned `200 OK`, and the turn was never written to history. Nothing threw. Nothing logged. This is a [silent failure](glossary.md#transport-success-vs-semantic-success).
 
-> **[SSE (Server-Sent Events)](00-glossary.md#sse-server-sent-events)** — a long-lived HTTP response where the server sends small text frames over time, instead of one final body. It is how an agent streams progress to a browser.
+> **[SSE (Server-Sent Events)](glossary.md#sse-server-sent-events)** — a long-lived HTTP response where the server sends small text frames over time, instead of one final body. It is how an agent streams progress to a browser.
 
 ## What happens on disconnect
 
-[SSE](00-glossary.md#sse-server-sent-events) is a generator on the server: it `yield`s frames, and between yields it `await`s. When the browser closes the connection, the server framework (Starlette, FastAPI) cancels that generator at its **next `await`**.
+[SSE](glossary.md#sse-server-sent-events) is a generator on the server: it `yield`s frames, and between yields it `await`s. When the browser closes the connection, the server framework (Starlette, FastAPI) cancels that generator at its **next `await`**.
 
 ```mermaid
 sequenceDiagram
@@ -117,4 +121,4 @@ The happy-path test never catches this bug. You have to hang up early.
     ??? success "Answer"
         The server generator is cancelled at its next `await`, so `save_turn()` may never start. The user saw the answer and the stream ended cleanly, but history is missing. Start the required save as an owned background task before yielding the terminal frame, and test with a forced disconnect.
 
-*Next: [Step 6 · Distributed Locks](07-distributed-locks.md) — streaming made progress visible; locking makes sure only one worker owns the run.*
+*Next: [Step 6 · Distributed locks](step-6-distributed-locks.md) — streaming made progress visible; locking makes sure only one worker owns the run.*

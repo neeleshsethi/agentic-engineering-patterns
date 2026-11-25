@@ -1,4 +1,4 @@
-# Before Resume: The Proposal Turn, End to End
+# Source note 1 · Before resume: the proposal turn
 
 > Reconstructed from source notes. Genericized: product → "the platform"; brand → `BRAND_A`;
 > the memory service → "the memory service (STM/LTM)"; tables → `{env}-*`. Framework names

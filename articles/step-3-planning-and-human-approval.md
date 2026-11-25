@@ -1,10 +1,14 @@
-# Step 3 · Planning and Human Approval
+---
+summary: "Make the agent show its plan before expensive work begins."
+---
+
+# Step 3 · Planning and human approval
 
 The agent now has durable state and the right context at the model boundary. The next job is to stop it from doing expensive work too early.
 
 This chapter builds the planning gate: the model drafts a plan, the human approves or refines it, and only then does execution begin. That one design choice changes the topology of the system. The run can no longer live inside one HTTP request.
 
-> Terms below ([`interrupt()`](00-glossary.md#interrupt), [checkpoint](00-glossary.md#checkpoint), [gate](00-glossary.md#gate), [lease](00-glossary.md#lease), [replica](00-glossary.md#replica)) are defined once in the [glossary](00-glossary.md).
+> Terms below ([`interrupt()`](glossary.md#interrupt), [checkpoint](glossary.md#checkpoint), [gate](glossary.md#gate), [lease](glossary.md#lease), [replica](glossary.md#replica)) are defined once in the [Glossary](glossary.md).
 
 Some agent actions are expensive, slow, or irreversible. A research plan that hits external APIs, runs database queries, or spends real money should be shown to a human *before* it executes, not after.
 
@@ -77,7 +81,7 @@ The frontend renders the plan, the user clicks approve or asks for a change, and
 {"type": "refine", "feedback": "add a competitive analysis step"}
 ```
 
-LangGraph finds the paused graph in the [checkpoint](00-glossary.md#checkpoint), re-runs the node, and delivers the decision as the return value of `interrupt()`. In tests or an interim synchronous path, you may see this as `Command(resume=...)`. In the production approve path, the API writes the resume decision into the checkpoint first, queues work, and a worker later resumes with no graph input. Everything else in this article is built on top of that same pause/resume primitive.
+LangGraph finds the paused graph in the [checkpoint](glossary.md#checkpoint), re-runs the node, and delivers the decision as the return value of `interrupt()`. In tests or an interim synchronous path, you may see this as `Command(resume=...)`. In the production approve path, the API writes the resume decision into the checkpoint first, queues work, and a worker later resumes with no graph input. Everything else in this article is built on top of that same pause/resume primitive.
 
 ```mermaid
 sequenceDiagram
@@ -96,7 +100,7 @@ sequenceDiagram
     Note over C: Worker later reloads and resumes with input=None
 ```
 
-Between the two requests, **nothing is running**. The plan lives in the checkpoint, and any [replica](00-glossary.md#replica) can pick it up.
+Between the two requests, **nothing is running**. The plan lives in the checkpoint, and any [replica](glossary.md#replica) can pick it up.
 
 ## The Idempotency Rule You Cannot Ignore
 
@@ -367,7 +371,7 @@ table.put_item(
 
 The `expires_at` is the crash-recovery handle: if the first request crashes mid-run, its claim expires after 30 minutes and a retry can acquire it again. The `claim_token` UUID prevents a slow stream that outlived its lease from deleting a newer holder's claim when it eventually finishes.
 
-This is the same pattern at a smaller scale as the worker lock in [Distributed Locks](./07-distributed-locks.md).
+This is the same pattern at a smaller scale as the worker lock in [Step 6 · Distributed locks](./step-6-distributed-locks.md).
 
 ## An Implementation Path
 
@@ -386,7 +390,7 @@ Each step is runnable and testable before the next:
 
 The hardest step is 5: idempotency and stale-state bugs both surface there. Run the approve endpoint twice on the same payload and confirm the second call is a 409 or a safe no-op.
 
-Once a plan is locked, the run itself has to survive worker crashes and reconnects. [Queue and worker execution](./08-queue-and-worker-execution.md) covers that.
+Once a plan is locked, the run itself has to survive worker crashes and reconnects. [Step 7 · Queue and worker execution](./step-7-queue-and-worker-execution.md) covers that.
 
 ## Guardrails
 
@@ -414,4 +418,4 @@ Once a plan is locked, the run itself has to survive worker crashes and reconnec
     ??? success "Answer"
         The plan would now be authored by a separate out-of-band model call that does not share the agent's full prompt, tools, state, or conversation context. The gate tool should pause exactly once and return the human's feedback as a tool result. The agent loop should read that feedback, update the plan, and call `submit_plan()` again.
 
-*Next: [Step 4 · Identifiers](05-identifiers.md) — once a plan can pause, refine, and queue, you need to name the thread, plan, pause, attempt, stream events, and ownership token precisely.*
+*Next: [Step 4 · Identifiers that hold a run together](step-4-identifiers.md) — once a plan can pause, refine, and queue, you need to name the thread, plan, pause, attempt, stream events, and ownership token precisely.*

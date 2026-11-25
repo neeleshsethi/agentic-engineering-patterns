@@ -1,4 +1,4 @@
-# The Orchestrator: Prompt, Gate, and How to Build One
+# Source note 2 · The orchestrator: prompt, gate, and how to build one
 
 > Reconstructed from source notes. Genericized: product → "the platform"; brand → `BRAND_A`;
 > data sources → `SOURCE_A`/`SOURCE_B`/`SOURCE_C`/`SOURCE_D`; the retrieval tool → `query_source`.
