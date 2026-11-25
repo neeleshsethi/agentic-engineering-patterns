@@ -2,7 +2,7 @@
 summary: "The whole approve-to-worker run, end to end, before any piece is built."
 ---
 
-# Chapter 2 · End-to-end architecture and orchestrator flow
+# Chapter 3 · End-to-end architecture and orchestrator flow
 
 Before building state, prompts, queues, or locks one at a time, hold the whole run in your head.
 

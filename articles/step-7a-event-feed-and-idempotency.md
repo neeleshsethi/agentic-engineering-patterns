@@ -4,6 +4,8 @@ summary: "Make every progress frame appear exactly once, even after a crash and 
 
 # Step 7a · The event feed and idempotency
 
+> **Design question:** [What happens when it crashes halfway?](ch2-designing-a-deep-agent.md#crash-halfway) · **Principles:** Make Operations Idempotent
+
 The event feed is the live activity log the user watches while a deep run executes: *Querying regional… · REGIONAL 412 rows · Querying ONLINE… · Report ready.* It is a projection of the run, streamed to the browser over Server-Sent Events. This deep dive is the companion to [Step 7 · Queue and worker execution](step-7-queue-and-worker-execution.md): that chapter gets the run *onto* a worker; this one is about making the frames it emits appear **exactly once**, even though two independent mechanisms conspire to write them twice.
 
 The safe mental model is:

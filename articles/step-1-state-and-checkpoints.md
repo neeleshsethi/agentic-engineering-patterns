@@ -4,6 +4,8 @@ summary: "Give the agent memory that survives one request."
 
 # Step 1 · State and checkpoints
 
+> **Design question:** [What are the nouns and states?](ch2-designing-a-deep-agent.md#nouns-and-states) · **Principles:** Foundational Thinking, Encode Lessons in Structure
+
 A user asks, "What were sales in France?" The agent answers with a confident, well-formatted report — about **Germany**. The request returned `200 OK`. No error, no retry, no log line out of place. The previous question in that conversation had been about Germany, and somehow it leaked into this turn.
 
 This is the most common silent failure in a LangGraph agent. The node logic is fine; the bug is in how [state](glossary.md#state) carries over between turns. To see why, you have to know the one rule that governs every value your graph stores.

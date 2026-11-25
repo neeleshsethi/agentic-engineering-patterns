@@ -4,6 +4,8 @@ summary: "Name the run, plan, pause, attempt, event, lock tenure, and fact prove
 
 # Step 4 · Identifiers that hold a run together
 
+> **Design question:** [What are the nouns and states?](ch2-designing-a-deep-agent.md#nouns-and-states) · **Principles:** Model the Domain, Make Operations Idempotent
+
 A worker crashes mid-run. A second worker picks the run up from its [checkpoint](glossary.md#checkpoint) and re-emits the events the first one already produced. The user's report ends up with two copies of every section. `200 OK`, no error, duplicated content: a [silent failure](glossary.md#transport-success-vs-semantic-success).
 
 The cause is almost always the same: the code deduplicated events by their **[sequence number](glossary.md#sequence-number-seq)**, and on replay the sequence numbers came out different, so the reader thought the replayed events were new. The fix starts with seeing that a single run answers to *half a dozen different names*, each with a different job, and that using the wrong name for a job is its own class of bug.

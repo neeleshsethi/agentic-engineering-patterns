@@ -4,6 +4,8 @@ summary: "The one-pass contrast case: no plan, no approval, one prompt."
 
 # Step 8a · Reactive mode and its prompt
 
+> **Design question:** [Do I need a deep agent at all?](ch2-designing-a-deep-agent.md#do-you-need-a-deep-agent) · **Principles:** Laziness Protocol
+
 Reactive mode is the contrast case to deep mode: a one-pass router with no plan-gate loop, no approval pause, and no long research steps.
 
 ```text

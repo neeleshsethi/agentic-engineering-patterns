@@ -4,6 +4,8 @@ summary: "Let the user watch progress without letting the browser own correctnes
 
 # Step 5 · Streaming and background work
 
+> **Design question:** [Where does the human come in?](ch2-designing-a-deep-agent.md#where-the-human-comes-in) · **Principles:** Experience First, Test Behavior, Not Implementation
+
 The agent can now hold state, inject context, pause for approval, and name the pieces of a run. The next step is user experience: the browser should see progress while the system works.
 
 The browser still does not own the work. **Required work must outlive the HTTP connection showing its progress.** Here is what breaks when it cannot.

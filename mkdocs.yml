@@ -45,7 +45,8 @@ nav:
   - Home: index.md
   - Start here:
       - ch1-problem-and-plan.md
-      - ch2-architecture-and-flow.md
+      - ch2-designing-a-deep-agent.md
+      - ch3-architecture-and-flow.md
   - Build it step by step:
       - step-1-state-and-checkpoints.md
       - step-2-context-injection.md
@@ -100,7 +101,8 @@ plugins:
   - redirects:
       redirect_maps:
         01-problem-design-implementation-plan.md: ch1-problem-and-plan.md
-        02-end-to-end-architecture-and-orchestrator-flow.md: ch2-architecture-and-flow.md
+        02-end-to-end-architecture-and-orchestrator-flow.md: ch3-architecture-and-flow.md
+        ch2-architecture-and-flow.md: ch3-architecture-and-flow.md
         02-state-and-checkpoints.md: step-1-state-and-checkpoints.md
         03-context-injection.md: step-2-context-injection.md
         04-planning-and-human-approval.md: step-3-planning-and-human-approval.md

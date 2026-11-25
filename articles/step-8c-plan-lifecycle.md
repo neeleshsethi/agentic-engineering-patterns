@@ -4,6 +4,8 @@ summary: "Decide when to replan, extend the locked plan, or skip planning."
 
 # Step 8c · Plan lifecycle
 
+> **Design question:** [Do I need a deep agent at all?](ch2-designing-a-deep-agent.md#do-you-need-a-deep-agent) · **Principles:** Laziness Protocol, Model the Domain
+
 A deep plan is a durable, approved execution contract, and the agent does not create one for every user message. Once it is locked, follow-up turns either open a new plan cycle, extend the current cycle, or avoid planning altogether.
 
 ## The Full Plan Workflow

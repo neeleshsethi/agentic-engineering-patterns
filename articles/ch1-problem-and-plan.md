@@ -39,21 +39,22 @@ An ordinary API often lets you treat those as the same thing. A production deep 
 
 ## The design decisions
 
-The implementation follows six decisions. Each later chapter turns one of them into code.
+Six decisions shape the implementation. [Chapter 2](ch2-designing-a-deep-agent.md) argues each one as the answer to a design question, so here they get one line each.
 
-1. **Make state durable.** The run must survive a different request, worker, or deploy.
-2. **Inject context at a controlled boundary.** The model needs user and business context, but stale context must not leak into later phases.
-3. **Plan before execution.** The model drafts an inspectable plan, and a human approves it before expensive work begins.
-4. **Name every moving part.** A thread, plan, interrupt, run attempt, stream event, lock tenure, and retrieved fact are not the same thing.
-5. **Separate progress from truth.** SSE is for narration. Checkpoints and run-state are the durable source of truth.
-6. **Use code for boundaries and prompts for judgment.** Code enforces approval, tools, locks, and ownership. The prompt shapes planning, grounding, and reasoning order.
+1. **Make state durable**, so a run survives a different request, worker, or deploy. See [what the nouns are and what states they can be in](ch2-designing-a-deep-agent.md#nouns-and-states).
+2. **Inject context at a controlled boundary.** See [where the boundaries are](ch2-designing-a-deep-agent.md#boundaries).
+3. **Plan before execution**, with a human approving the plan. See [where the human comes in](ch2-designing-a-deep-agent.md#where-the-human-comes-in).
+4. **Name every moving part.** See [what the nouns are](ch2-designing-a-deep-agent.md#nouns-and-states).
+5. **Separate progress from truth.** See [what happens when two things happen at once](ch2-designing-a-deep-agent.md#two-at-once).
+6. **Use code for boundaries and prompts for judgment.** See [where the boundaries are](ch2-designing-a-deep-agent.md#boundaries).
 
 ## The implementation plan
 
 We will build the system in this order:
 
 ```text
-Chapter 2   End-to-end architecture and orchestrator flow
+Chapter 2   Designing a deep agent: the questions to ask
+Chapter 3   End-to-end architecture and orchestrator flow
 Step 1      State and checkpoints
 Step 2      Context injection
 Step 3      Planning and human approval
@@ -123,7 +124,7 @@ The rest of this series covers how to prevent the `200 OK`, wrong-answer failure
 
 ## Terms you'll meet
 
-Chapter 2 uses these words before the steps that teach them. One sentence each is enough to keep reading. Each links to its glossary entry and names the page that teaches it properly.
+Chapters 2 and 3 use these words before the steps that teach them. One sentence each is enough to keep reading. Each links to its glossary entry and names the page that teaches it properly.
 
 - **[Deep agent](glossary.md#deep-agent).** An agent that plans, pauses for approval, then executes over many steps with its state in a database. Defined above.
 - **[Checkpoint](glossary.md#checkpoint).** The saved copy of the graph's state after each step. Any process can reload it and continue the run. Taught in [Step 1](step-1-state-and-checkpoints.md).
@@ -149,4 +150,4 @@ Chapter 2 uses these words before the steps that teach them. One sentence each i
     ??? success "Answer"
         The approval can take minutes or days, because a human reads and approves asynchronously. Holding an HTTP connection open that long is not possible in practice (timeouts, load balancers, client disconnects). Approval changes the system topology: the first request produces the plan and returns; the human approves out-of-band; a second request resumes the run. This requires (1) durable checkpointed state so any replica can pick up the run, (2) a pause mechanism (`interrupt()`) that serializes the graph to storage rather than blocking a thread, and (3) a separate resume endpoint that delivers the human's decision. The single-function model doesn't survive crossing an HTTP boundary.
 
-*Next: [Chapter 2 · End-to-end architecture and orchestrator flow](ch2-architecture-and-flow.md) — the whole production path before we zoom into each mechanism.*
+*Next: [Chapter 2 · Designing a deep agent](ch2-designing-a-deep-agent.md) — you have been handed this problem; work out the questions to ask before drawing any boxes.*

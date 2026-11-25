@@ -4,6 +4,8 @@ summary: "Make the agent show its plan before expensive work begins."
 
 # Step 3 · Planning and human approval
 
+> **Design question:** [Where does the human come in?](ch2-designing-a-deep-agent.md#where-the-human-comes-in) · **Principles:** Never Block on the Human, Model the Domain, Make Operations Idempotent, Sequence work into verifiable units
+
 The agent now has durable state and the right context at the model boundary. The next job is to stop it from doing expensive work too early.
 
 This chapter builds the planning gate: the model drafts a plan, the human approves or refines it, and only then does execution begin. That one design choice changes the topology of the system. The run can no longer live inside one HTTP request.

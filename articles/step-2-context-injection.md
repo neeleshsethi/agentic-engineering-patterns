@@ -4,6 +4,8 @@ summary: "Put the right user and business context at the right model boundary."
 
 # Step 2 · Context injection
 
+> **Design question:** [Where are the boundaries?](ch2-designing-a-deep-agent.md#boundaries) · **Principles:** Boundary Discipline
+
 A user types: "Actually, give me sales for **France**." The agent replies about Australia, because somewhere before the model call your code helpfully attached "user's default country is Australia," and that injected line sat closer to the model's attention than the correction the user just typed.
 
 The prompt looked complete. Every field was populated. The request returned `200 OK`. And the answer was wrong, because the *right* context was attached at the *wrong* boundary. Context injection is one of the easiest ways to build a system that looks stable and answers incorrectly.

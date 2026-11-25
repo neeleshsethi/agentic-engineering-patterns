@@ -14,7 +14,7 @@ ARTICLES = ROOT / "articles"
 # old file -> (new file, H1). Reading order lives in mkdocs.yml nav.
 PAGES = {
     "01-problem-design-implementation-plan.md": ("ch1-problem-and-plan.md", "Chapter 1 · Problem, design, and implementation plan"),
-    "02-end-to-end-architecture-and-orchestrator-flow.md": ("ch2-architecture-and-flow.md", "Chapter 2 · End-to-end architecture and orchestrator flow"),
+    "02-end-to-end-architecture-and-orchestrator-flow.md": ("ch3-architecture-and-flow.md", "Chapter 3 · End-to-end architecture and orchestrator flow"),
     "02-state-and-checkpoints.md": ("step-1-state-and-checkpoints.md", "Step 1 · State and checkpoints"),
     "03-context-injection.md": ("step-2-context-injection.md", "Step 2 · Context injection"),
     "04-planning-and-human-approval.md": ("step-3-planning-and-human-approval.md", "Step 3 · Planning and human approval"),
