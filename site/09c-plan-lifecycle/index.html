@@ -889,6 +889,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../11-when-the-score-passes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone 2 · When the score passes and the work fails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -903,10 +930,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21" >
         
           
-          <label class="md-nav__link" for="__nav_20" id="__nav_20_label" tabindex="">
+          <label class="md-nav__link" for="__nav_21" id="__nav_21_label" tabindex="">
             
   
   
@@ -924,8 +951,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_20_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_21_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -980,10 +1007,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21_2" >
         
           
-          <label class="md-nav__link" for="__nav_20_2" id="__nav_20_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_21_2" id="__nav_21_2_label" tabindex="0">
             
   
   
@@ -1001,8 +1028,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_21_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21_2">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1257,7 +1284,7 @@
 
 
 <h1 id="deep-dive-plan-lifecycle">Deep Dive · Plan Lifecycle<a class="headerlink" href="#deep-dive-plan-lifecycle" title="Permanent link">&para;</a></h1>
-<p>The deep plan lifecycle is not "plan on every user message." A plan is a durable, approved execution contract. Once it is locked, follow-up turns either open a new plan cycle, extend the current cycle, or avoid planning altogether.</p>
+<p>A deep plan is a durable, approved execution contract, and the agent does not create one for every user message. Once it is locked, follow-up turns either open a new plan cycle, extend the current cycle, or avoid planning altogether.</p>
 <h2 id="the-full-plan-workflow">The Full Plan Workflow<a class="headerlink" href="#the-full-plan-workflow" title="Permanent link">&para;</a></h2>
 <p>The full workflow is:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>write_todos -&gt; submit_plan -&gt; interrupt() -&gt; approve/refine -&gt; execute
@@ -1275,10 +1302,10 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Turn 1: "Compare BRAND_A sales in Germany and France."
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  -&gt; plan-thread-123-1
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>Turn 2: "Now analyze launch uptake in Japan."
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>Turn 2: "Now analyze new-store sales in Canada."
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  -&gt; plan-thread-123-2
 </code></pre></div>
-<p>The second turn is not a small addition to the first approved question. It needs a fresh cycle, fresh todos, fresh approval, and a new <code>plan_id</code>.</p>
+<p>The second turn asks a different question from the first approved one, so it needs a fresh cycle, fresh todos, fresh approval, and a new <code>plan_id</code>.</p>
 <h2 id="when-we-extend-the-locked-plan">When We Extend The Locked Plan<a class="headerlink" href="#when-we-extend-the-locked-plan" title="Permanent link">&para;</a></h2>
 <p>An extension keeps the current locked plan and retrieves under the same <code>plan_id</code>. It is for small additions to the current approved question.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>User: "Also pull New Zealand."
@@ -1323,7 +1350,7 @@
 </tr>
 </tbody>
 </table>
-<p>The critical case is source elicitation. If the user answers "retail" after a source asked "retail or non-retail?", the system must not replan. It should invoke the graph normally on the same <code>thread_id</code>, keep the locked <code>plan_id</code>, and re-query only the open step.</p>
+<p>The critical case is source elicitation. If the user answers "retail" after a source asked "in-store or online?", the system must not replan. It should invoke the graph normally on the same <code>thread_id</code>, keep the locked <code>plan_id</code>, and re-query only the open step.</p>
 <h2 id="turn-routing-table">Turn Routing Table<a class="headerlink" href="#turn-routing-table" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1368,8 +1395,8 @@
 </table>
 <h2 id="the-invariant">The Invariant<a class="headerlink" href="#the-invariant" title="Permanent link">&para;</a></h2>
 <p>Once a plan is locked, nothing short of a genuinely new question should reopen approval.</p>
-<p>Replanning an elicitation reply would detach already-fetched evidence from the current cycle because current-cycle evidence is filtered by <code>plan_id</code>. Keeping the locked plan is what allows partial results to carry forward safely.</p>
-<p>That filter is deliberately string-based: a result belongs to the current cycle if rebuilding its <code>provenance_id</code> with the current locked <code>plan_id</code> reproduces the stored id. A new <code>plan_id</code> is not a harmless label change; it changes which accumulated <code>source_results</code> are considered current evidence.</p>
+<p>Replanning an elicitation reply would detach already-fetched evidence from the current cycle because current-cycle evidence is filtered by <code>plan_id</code>. Keeping the locked plan lets partial results carry forward safely.</p>
+<p>That filter is deliberately string-based: a result belongs to the current cycle if rebuilding its <code>provenance_id</code> with the current locked <code>plan_id</code> reproduces the stored id. Changing the <code>plan_id</code> changes which accumulated <code>source_results</code> count as current evidence.</p>
 <p>Entity and metric gaps are the opposite case. They happen before a safe plan exists, so the system asks one terminal clarification and avoids writing todos at all. Source ambiguity can ride the plan gate only when approving the plan is itself enough to resolve the ambiguity.</p>
 <hr />
 <div class="admonition check">

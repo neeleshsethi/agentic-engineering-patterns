@@ -16,7 +16,7 @@
         <link rel="prev" href="../lessons/">
       
       
-        <link rel="next" href="../00-glossary/">
+        <link rel="next" href="../11-when-the-score-passes/">
       
       
         
@@ -1127,6 +1127,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../11-when-the-score-passes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone 2 · When the score passes and the work fails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -1141,10 +1168,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21" >
         
           
-          <label class="md-nav__link" for="__nav_20" id="__nav_20_label" tabindex="">
+          <label class="md-nav__link" for="__nav_21" id="__nav_21_label" tabindex="">
             
   
   
@@ -1162,8 +1189,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_20_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_21_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1218,10 +1245,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21_2" >
         
           
-          <label class="md-nav__link" for="__nav_20_2" id="__nav_20_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_21_2" id="__nav_21_2_label" tabindex="0">
             
   
   
@@ -1239,8 +1266,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_21_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21_2">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1735,11 +1762,11 @@
 <h1 id="capstone-nine-silent-failures-in-one-langgraph-research-agent">Capstone · Nine Silent Failures In One LangGraph Research Agent<a class="headerlink" href="#capstone-nine-silent-failures-in-one-langgraph-research-agent" title="Permanent link">&para;</a></h1>
 <p>Use this as the final review exercise: a deep agent can look healthy, return <code>200 OK</code>, and still be wrong.</p>
 <blockquote>
-<p><strong>Capstone.</strong> This is where the series lands: the nine bugs below are the failure modes from the build path — state, context, planning, identifiers, streaming, locking, durability, and prompt boundaries — seen together in one real system. It also stands on its own, so a few ideas from earlier articles are re-introduced briefly here.</p>
+<p><strong>Capstone.</strong> This is where the series lands: the nine bugs below are the failure modes from the build path (state, context, planning, identifiers, streaming, locking, durability, and prompt boundaries) seen together in one real system. It also stands on its own, so a few ideas from earlier articles are re-introduced briefly here.</p>
 </blockquote>
-<p>This article is written for the engineer who has built normal Python APIs and is now trying to understand production agents. If that is you, here is the uncomfortable shift: with agent systems, "the request succeeded" is not the same as "the work was correct."</p>
-<p>We learned this while building a research agent for pharma business questions. The agent takes a question, proposes a multi-step research plan, pauses for human approval, then executes the approved plan and writes a report. On paper, the stack was ordinary enough: LangGraph for orchestration, middleware for context injection, DynamoDB for persistence, and Server-Sent Events for streaming progress to the browser.</p>
-<p>Before one release, code review found nine bugs. None crashed the app. None produced scary logs. None would have paged anyone. They all did something more dangerous: they completed successfully while corrupting the meaning of the run.</p>
+<p>This article is written for the engineer who has built normal Python APIs and is now trying to understand production agents. If that is you, the hardest adjustment is this: with agent systems, "the request succeeded" is not the same as "the work was correct."</p>
+<p>We learned this while building a commercial-strategy agent that helps commercial leaders answer where-to-play, what-to-play and how-to-win questions. The agent takes a question, proposes a multi-step research plan, pauses for human approval, then executes the approved plan and writes a report. On paper, the stack was ordinary enough: LangGraph for orchestration, middleware for context injection, DynamoDB for persistence, and Server-Sent Events for streaming progress to the browser.</p>
+<p>Before one release, code review found nine bugs. None crashed the app. None produced scary logs. None would have paged anyone. Each one completed successfully while corrupting the meaning of the run.</p>
 <p>That is the core lesson of this piece:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Transport success means:
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  the HTTP request finished
@@ -1761,7 +1788,7 @@
 <li>It resumes later, runs the research, streams progress, and saves the final answer.</li>
 </ol>
 <p>The hard part is that these steps do not happen inside one neat function call. A single user turn spans multiple HTTP requests, may resume on a different API replica, and depends on checkpointed state in DynamoDB.</p>
-<p>That is why the bugs below are interesting. They are not "the model hallucinated" stories. They are ordinary engineering bugs at the boundaries around the model.</p>
+<p>None of the bugs below are "the model hallucinated" stories. They are ordinary engineering bugs at the boundaries around the model.</p>
 <h2 id="vocabulary-for-a-new-engineer">Vocabulary for a new engineer<a class="headerlink" href="#vocabulary-for-a-new-engineer" title="Permanent link">&para;</a></h2>
 <p>You only need a handful of terms before the failure list. Each one is also in the <a href="../00-glossary/">glossary</a>, defined once for the whole series.</p>
 <p><code>thread_id</code> is the durable identity of one conversation or run. LangGraph uses it to find the right checkpoint. Same <code>thread_id</code>, same logical graph thread.</p>
@@ -1845,14 +1872,14 @@
 <p>Later, the worker receives the queue message and calls <code>agent.astream_events(None, config)</code>. The approval is not in the SQS message and not in an ordinary state channel; it is already staged in checkpoint pending writes.</p>
 <h3 id="why-the-checkpoint-and-the-resume-claim-live-in-the-same-dynamodb-table">Why the checkpoint and the resume claim live in the same DynamoDB table<a class="headerlink" href="#why-the-checkpoint-and-the-resume-claim-live-in-the-same-dynamodb-table" title="Permanent link">&para;</a></h3>
 <p>LangGraph does not support concurrent runs on a single thread. Two approve clicks racing, or two browser tabs both hitting approve, would execute the research plan twice and leave the final checkpoint to whichever process finished last. To prevent this, we write a claim item to DynamoDB before every resume:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>DynamoDB table: deep-checkpoints
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>DynamoDB table: agent-checkpoints
 <a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>|- Checkpoint items  (LangGraph's own PK/SK scheme per thread + step)
 <a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>\- Claim items       PK = "CLAIM#{thread_id}", SK = "RESUME"
 <a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>                     Fields: claim_token, expires_at, ttl
 </code></pre></div>
 <p>Both live in the same table because the claim needs the same durability and region as the checkpoint. If the checkpoint is in DynamoDB, an in-process claim would be invisible to other API replicas. The conditional write is atomic at the DynamoDB level:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">_dynamodb_client</span><span class="p">()</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span>
-<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="n">TableName</span><span class="o">=</span><span class="n">deep_checkpoints_table_name</span><span class="p">(),</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>    <span class="n">TableName</span><span class="o">=</span><span class="n">checkpoints_table_name</span><span class="p">(),</span>
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="n">Item</span><span class="o">=</span><span class="p">{</span>
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>        <span class="s2">"PK"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"CLAIM#</span><span class="si">{</span><span class="n">thread_id</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
 <a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>        <span class="s2">"SK"</span><span class="p">:</span> <span class="s2">"RESUME"</span><span class="p">,</span>
@@ -1920,7 +1947,7 @@
 <a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a>    <span class="n">middleware</span><span class="o">=</span><span class="p">[</span><span class="n">UserContextMiddleware</span><span class="p">(),</span> <span class="o">...</span><span class="p">],</span>
 <a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a><span class="p">)</span>
 </code></pre></div>
-<p>At compile time, LangGraph merges <code>DeepState</code> and <code>_UserContextState</code> into one checkpointed schema. At runtime they are indistinguishable, but in the source each channel declaration sits beside the code that writes it. Dropping <code>UserContextMiddleware</code> from the middleware list still compiles and runs. The channels just disappear from the checkpoint quietly, which is exactly the sort of structural gap Bug 5 exploited.</p>
+<p>At compile time, LangGraph merges <code>DeepState</code> and <code>_UserContextState</code> into one checkpointed schema. At runtime they are indistinguishable, but in the source each channel declaration sits beside the code that writes it. Dropping <code>UserContextMiddleware</code> from the middleware list still compiles and runs. The channels just disappear from the checkpoint quietly, the same kind of structural gap Bug 5 exploited.</p>
 <h3 id="why-middleware-for-context-injection">Why middleware for context injection<a class="headerlink" href="#why-middleware-for-context-injection" title="Permanent link">&para;</a></h3>
 <p>We needed to prepend user-specific context, including defaults and prior conversation entities, to the user's question before it hit the model. Four approaches were on the table:</p>
 <ul>
@@ -1952,10 +1979,10 @@
 <p>Two names matter here:</p>
 <ul>
 <li><strong>Raw question</strong> means the exact text the user typed, before the system adds anything.</li>
-<li><strong>Model input</strong> means what the LLM actually receives: system prompt, injected user context, conversation history, tool messages, and the raw question.</li>
+<li><strong>Model input</strong> means what the LLM receives: system prompt, injected user context, conversation history, tool messages, and the raw question.</li>
 </ul>
 <p>So if the user types <code>"Give me my sales for GERMANY"</code>, the raw question contains <code>GERMANY</code>. Middleware then wraps extra context around it before the model sees it.</p>
-<p>Here is the missing moment: <strong>Germany comes from the user's question and then from the human-approved plan.</strong> Australia is only the user's default.</p>
+<p><strong>Germany comes from the user's question and then from the human-approved plan.</strong> Australia is only the user's default.</p>
 <div class="scrubber" data-scrubber markdown="0">
   <div class="scrubber-stage">
     <div class="scrubber-step">
@@ -2015,7 +2042,7 @@ execution country = GERMANY   <span class="ok">correct</span></pre>
 <p>We also added one sentence in the orchestrator's execute step: "The [User context] block is for plan-time entity resolution only. Once the plan is locked, never re-resolve entities from it."</p>
 <p>Lesson: when context should only apply at one phase of a multi-phase pipeline, encode that constraint in the context itself. A prompt rule beats a code gate when the code gate has to reason about shared state across turns.</p>
 <h2 id="2-a-framework-dependency-swapped-in-a-synthetic-humanmessage-under-our-feet">2. A framework dependency swapped in a synthetic HumanMessage under our feet<a class="headerlink" href="#2-a-framework-dependency-swapped-in-a-synthetic-humanmessage-under-our-feet" title="Permanent link">&para;</a></h2>
-<p>The injection code was the context middleware's model-call wrapper — the <code>UserContextMiddleware._inject(...)</code> method shown earlier in this article. It runs immediately before each LLM call and rewrites the model request, not the checkpointed state.</p>
+<p>The injection code was the context middleware's model-call wrapper, the <code>UserContextMiddleware._inject(...)</code> method shown earlier in this article. It runs immediately before each LLM call and rewrites the model request, not the checkpointed state.</p>
 <p>The risky part was this pattern: scan the message list in reverse, find the latest <code>HumanMessage</code>, and attach the context block to it.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">_inject</span><span class="p">(</span><span class="n">request</span><span class="p">:</span> <span class="n">ModelRequest</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModelRequest</span><span class="p">:</span>
 <a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>    <span class="n">messages</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">messages</span><span class="p">)</span>
@@ -2045,7 +2072,7 @@ execution country = GERMANY   <span class="ok">correct</span></pre>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="k">if</span> <span class="n">msg</span><span class="o">.</span><span class="n">additional_kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"lc_source"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"summarization"</span><span class="p">:</span>
 <a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>    <span class="k">continue</span>
 </code></pre></div>
-<p>This helps because the injection code is not looking for "any human-shaped message." It is looking for the latest real user-authored message.</p>
+<p>The injection code needs the latest real user-authored message, not any human-shaped message.</p>
 <p>The synthetic summary is human-shaped because it is represented as a <code>HumanMessage</code>, but it is framework-authored. The <code>lc_source</code> tag is the only reliable clue in that list that the message came from summarization middleware.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>Before fix
 <a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>  reverse scan finds synthetic HumanMessage
@@ -2074,8 +2101,7 @@ execution country = GERMANY   <span class="ok">correct</span></pre>
 <a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a>  index 1 → AIMessage → skip
 <a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a>  index 0 → HumanMessage with string → MATCH → inject here ✗ WRONG TURN
 </code></pre></div>
-<p>Turn 2's context ("user defaults: Australia") gets injected into Turn 1's question. Turn 2's message receives no context at all. The model plans for Australia when the user asked about Germany — from a turn that already completed.</p>
-<p>The fix was to separate "not the target" from "the target exists but cannot be processed":</p>
+<p>Turn 2's context ("user defaults: Australia") gets injected into Turn 1's question. Turn 2's message receives no context at all. The model plans for Australia when the user asked about Germany, and the context lands on a turn that already completed.</p>
 <p>The fix was to separate "not the target" from "the target exists but cannot be processed":</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
 <a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>    <span class="n">msg</span> <span class="o">=</span> <span class="n">messages</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
@@ -2236,7 +2262,7 @@ execution country = GERMANY   <span class="ok">correct</span></pre>
 <tr>
 <th>Bug</th>
 <th>What "succeeded"</th>
-<th>What actually happened</th>
+<th>What happened</th>
 </tr>
 </thead>
 <tbody>
@@ -2291,11 +2317,11 @@ execution country = GERMANY   <span class="ok">correct</span></pre>
 <ul>
 <li>Test the content, not just the return code.</li>
 <li>Read library source, not just the docs.</li>
-<li>For every abstract pattern, such as injection, locking, or persistence, enumerate failure modes phase by phase and ask whether a transport-level success code actually means the semantic work completed.</li>
+<li>For every abstract pattern, such as injection, locking, or persistence, enumerate failure modes phase by phase and ask whether a transport-level success code means the semantic work completed.</li>
 </ul>
 <p>Built on LangGraph, Python 3.11, DynamoDB, and Starlette SSE. The stack is incidental. Context injection targeting, lock ownership, async cancellation, and writer-reader key mismatch are universal failure classes.</p>
 <h2 id="a-note-on-the-approval-code-snippet">A note on the approval code snippet<a class="headerlink" href="#a-note-on-the-approval-code-snippet" title="Permanent link">&para;</a></h2>
-<p>One detail to watch in the approval endpoint pattern above: the code shows a <code>plan_id</code> check, but <code>plan_id</code> is stable across refinements by design — it names the logical plan, not the exact interrupt. To reject a stale browser tab that approved an older revision, also validate <code>interrupt_id</code>, which is minted fresh for each pause:</p>
+<p>One detail to watch in the approval endpoint pattern above: the code shows a <code>plan_id</code> check, but <code>plan_id</code> is stable across refinements by design: it names the logical plan, not the exact interrupt. To reject a stale browser tab that approved an older revision, also validate <code>interrupt_id</code>, which is minted fresh for each pause:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-37-1" name="__codelineno-37-1" href="#__codelineno-37-1"></a><span class="n">gate</span> <span class="o">=</span> <span class="n">read_pending_gate</span><span class="p">(</span><span class="n">thread_id</span><span class="p">)</span>
 <a id="__codelineno-37-2" name="__codelineno-37-2" href="#__codelineno-37-2"></a><span class="k">if</span> <span class="n">gate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
 <a id="__codelineno-37-3" name="__codelineno-37-3" href="#__codelineno-37-3"></a>    <span class="k">raise</span> <span class="n">HTTPException</span><span class="p">(</span><span class="mi">404</span><span class="p">)</span>
@@ -2332,7 +2358,7 @@ execution country = GERMANY   <span class="ok">correct</span></pre>
 <p>The nine above came from a single pre-release review. These four arrived as production PRs in the following weeks. They follow the same pattern: the system reported success, and something semantic was wrong.</p>
 <h3 id="quadratic-writes-from-replace-semantics-streaming">Quadratic writes from replace-semantics streaming<a class="headerlink" href="#quadratic-writes-from-replace-semantics-streaming" title="Permanent link">&para;</a></h3>
 <p>A model that emits reasoning tokens sends many <code>thinking.delta</code> events, each carrying the <em>full accumulated</em> reasoning text to that point (replace semantics). Persisting each delta naively means N deltas write O(N²) bytes into one DynamoDB partition key, which hit the per-partition write-capacity ceiling (~1,000 WCU/s) mid-run.</p>
-<p>The fix: time-coalesce live frames in the curator — flush at most once per 2 seconds per step. The SSE path to the browser stays byte-identical; only the durable-log write is coalesced.</p>
+<p>The fix: time-coalesce live frames in the curator, flushing at most once per 2 seconds per step. The SSE path to the browser stays byte-identical; only the durable-log write is coalesced.</p>
 <p>The lesson: replace-semantics streaming plus per-delta persistence is quadratic. Identify the semantics (append vs. replace) before deciding whether to persist every frame or the last.</p>
 <h3 id="async-client-bound-to-a-per-job-event-loop">Async client bound to a per-job event loop<a class="headerlink" href="#async-client-bound-to-a-per-job-event-loop" title="Permanent link">&para;</a></h3>
 <p>Each worker job called <code>asyncio.run()</code>, which creates and closes a new event loop per job. A cached <code>httpx.AsyncClient</code> is bound to the event loop that created it; on the second job, the first client's loop is already closed, and the first Cortex call dies with <code>Event loop is closed</code>.</p>
@@ -2340,12 +2366,14 @@ execution country = GERMANY   <span class="ok">correct</span></pre>
 <p>The lesson: an async client must never cross event loops. In a worker process that runs many jobs, one process-lifetime runner is the only safe design.</p>
 <h3 id="burned-timeout-retried">Burned timeout retried<a class="headerlink" href="#burned-timeout-retried" title="Permanent link">&para;</a></h3>
 <p><code>ReadTimeout</code> was classified as a retryable error, so a call that already spent its entire 300-second timeout budget was replayed for another 300 seconds. Two exhausted attempts burned 600 seconds on work that had no chance of succeeding faster.</p>
-<p>The fix: only retry errors that fail <em>before the request was sent</em> — <code>ConnectError</code>, <code>ConnectTimeout</code> — plus rate-limit and gateway responses (<code>429</code>, <code>502</code>, <code>503</code>). Use jittered exponential backoff. A <code>ReadTimeout</code> means the server acknowledged the request and timed out during processing; retrying it from the start sends a duplicate with no guarantee the first copy was not processed.</p>
+<p>The fix: only retry errors that fail <em>before the request was sent</em> (<code>ConnectError</code>, <code>ConnectTimeout</code>), plus rate-limit and gateway responses (<code>429</code>, <code>502</code>, <code>503</code>). Use jittered exponential backoff. A <code>ReadTimeout</code> means the server acknowledged the request and timed out during processing; retrying it from the start sends a duplicate with no guarantee the first copy was not processed.</p>
 <p>The lesson: a burned timeout is spent budget, not a transient blip. Classify retryable errors at the transport layer, not at the exception class.</p>
 <h3 id="stale-plan-re-persisted-on-a-follow-up-turn">Stale plan re-persisted on a follow-up turn<a class="headerlink" href="#stale-plan-re-persisted-on-a-follow-up-turn" title="Permanent link">&para;</a></h3>
-<p>The <code>plan</code> channel is <code>LastValue</code>. The exit path persisted the plan onto every completed turn's DynamoDB record — including follow-up turns that never called <code>submit_plan</code>. This caused a stale prior-turn plan to be stamped onto a follow-up row and resurface later as the current plan.</p>
+<p>The <code>plan</code> channel is <code>LastValue</code>. The exit path persisted the plan onto every completed turn's DynamoDB record, including follow-up turns that never called <code>submit_plan</code>. This caused a stale prior-turn plan to be stamped onto a follow-up row and resurface later as the current plan.</p>
 <p>The fix: stamp <code>plan.minted_run_id = deep_run_id</code> at plan creation and persist only when <code>plan.minted_run_id</code> matches the current turn's <code>deep_run_id</code>. Fail open when either is absent.</p>
-<p>The lesson: a sticky <code>LastValue</code> channel written only at plan time, combined with end-of-run persistence on every turn, silently re-persists the old value. The per-turn reset signal — the turn's own run id — is the only safe discriminator.</p>
+<p>The lesson: a sticky <code>LastValue</code> channel written only at plan time, combined with end-of-run persistence on every turn, silently re-persists the old value. The turn's own run id is the only safe discriminator.</p>
+<hr />
+<p><strong>Next:</strong> <a href="../11-when-the-score-passes/">Capstone 2 · When the score passes and the work fails</a> moves up one layer, to tool results that aren't task results and evaluations that hide a tradeoff.</p>
 
 
 
@@ -2398,13 +2426,13 @@ execution country = GERMANY   <span class="ok">correct</span></pre>
         
         
           
-          <a href="../00-glossary/" class="md-footer__link md-footer__link--next" aria-label="Next: Glossary">
+          <a href="../11-when-the-score-passes/" class="md-footer__link md-footer__link--next" aria-label="Next: Capstone 2 · When the score passes and the work fails">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Glossary
+                Capstone 2 · When the score passes and the work fails
               </div>
             </div>
             <div class="md-footer__button md-icon">

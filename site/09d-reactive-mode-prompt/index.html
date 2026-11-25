@@ -878,6 +878,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../11-when-the-score-passes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone 2 · When the score passes and the work fails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -892,10 +919,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21" >
         
           
-          <label class="md-nav__link" for="__nav_20" id="__nav_20_label" tabindex="">
+          <label class="md-nav__link" for="__nav_21" id="__nav_21_label" tabindex="">
             
   
   
@@ -913,8 +940,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_20_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_21_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -969,10 +996,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21_2" >
         
           
-          <label class="md-nav__link" for="__nav_20_2" id="__nav_20_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_21_2" id="__nav_21_2_label" tabindex="0">
             
   
   
@@ -990,8 +1017,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_21_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21_2">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1235,7 +1262,7 @@
 
 
 <h1 id="deep-dive-reactive-mode-and-its-prompt">Deep Dive · Reactive Mode And Its Prompt<a class="headerlink" href="#deep-dive-reactive-mode-and-its-prompt" title="Permanent link">&para;</a></h1>
-<p>Reactive mode is the contrast case to deep mode. It does not run a plan-gate loop, does not pause for approval, and does not iterate through long research steps. It is a one-pass router.</p>
+<p>Reactive mode is the contrast case to deep mode: a one-pass router with no plan-gate loop, no approval pause, and no long research steps.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>decide -&gt; call at most the needed data tool once -&gt; answer
 </code></pre></div>
 <h2 id="prompt-shape">Prompt Shape<a class="headerlink" href="#prompt-shape" title="Permanent link">&para;</a></h2>
@@ -1294,7 +1321,7 @@
 </tr>
 </tbody>
 </table>
-<p>The important design point is that reactive mode spends prompt text on judgment because there is no plan gate to hold the model inside a multi-step workflow.</p>
+<p>Reactive mode spends prompt text on judgment because there is no plan gate to hold the model inside a multi-step workflow.</p>
 <h2 id="tool-decision-rule">Tool Decision Rule<a class="headerlink" href="#tool-decision-rule" title="Permanent link">&para;</a></h2>
 <p>The reactive prompt's first job on data questions is deciding whether to call a tool.</p>
 <table>
@@ -1404,7 +1431,7 @@
 </tr>
 </tbody>
 </table>
-<p>Reactive is not weaker by default. It is optimized for a different job: answer quickly when the question can be resolved in one pass. Deep exists for runs where planning, approval, attribution, and durable execution matter more than speed.</p>
+<p>Reactive is built for a different job, not a weaker version of deep: answer quickly when the question can be resolved in one pass. Deep exists for runs where planning, approval, attribution, and durable execution matter more than speed.</p>
 <hr />
 <div class="admonition check">
 <p class="admonition-title">You should now understand</p>

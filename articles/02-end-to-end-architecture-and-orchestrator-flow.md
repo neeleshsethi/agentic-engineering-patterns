@@ -168,7 +168,7 @@ The public lessons sometimes use `query_source` as a teaching simplification. In
 write_todos
 submit_plan
 query_cortex
-query_iqvia_gmi
+query_market_data
 run_analysis
 rebuild_artifacts
 read_file

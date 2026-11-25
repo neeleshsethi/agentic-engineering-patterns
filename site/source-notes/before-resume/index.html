@@ -774,6 +774,33 @@
       
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../../11-when-the-score-passes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone 2 · When the score passes and the work fails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -792,10 +819,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21" checked>
         
           
-          <label class="md-nav__link" for="__nav_20" id="__nav_20_label" tabindex="">
+          <label class="md-nav__link" for="__nav_21" id="__nav_21_label" tabindex="">
             
   
   
@@ -813,8 +840,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_20_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_20">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_21_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_21">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -871,10 +898,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21_2" checked>
         
           
-          <label class="md-nav__link" for="__nav_20_2" id="__nav_20_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_21_2" id="__nav_21_2_label" tabindex="0">
             
   
   
@@ -892,8 +919,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_2_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_20_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_21_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_21_2">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1529,7 +1556,7 @@
 <h1 id="before-resume-the-proposal-turn-end-to-end">Before Resume: The Proposal Turn, End to End<a class="headerlink" href="#before-resume-the-proposal-turn-end-to-end" title="Permanent link">&para;</a></h1>
 <blockquote>
 <p>Reconstructed from source notes. Genericized: product → "the platform"; brand → <code>BRAND_A</code>;
-the memory service → "the memory service (STM/LTM)"; tables → <code>app-{env}-*</code>. Framework names
+the memory service → "the memory service (STM/LTM)"; tables → <code>{env}-*</code>. Framework names
 (LangGraph, deepagents, DynamoDB) are real.</p>
 </blockquote>
 <p>This is the <em>before-approval</em> half of a deep agent: everything from the moment a research
@@ -1550,14 +1577,14 @@ persisted at end of run instead, from state.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>1. POST /chat/stream (mode=deep)
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>   Browser ──► API (ECS)
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>   │EventSource│   prepare_memory():  memory service STM+LTM
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>   │           │                      entity-state get_item → DynamoDB: entity-state
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>   │           │                      turn-entities get_item → DynamoDB: turn-entities
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>   │  SSE:     │   build_proposal_graph_input()
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>   │  plan     │◄─ graph.astream(...)  ── every super-step → saver.put()
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>   │  events + │        interrupt()
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>   │  interrupt│
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>   └───────────┘
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>                       2. the thread PARKS here (nothing is running)
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>                          DynamoDB: deep-checkpoints
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>                          DynamoDB: agent-checkpoints
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>                            full graph state + the pending interrupt
 <a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
 <a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>3. POST /deep/{thread}/plan/refine   (loop 0..n times)
@@ -1585,13 +1612,13 @@ nothing lives in process memory.</strong></p>
 <tbody>
 <tr>
 <td><strong>Checkpoint table</strong></td>
-<td><code>app-{env}-deep-checkpoints</code></td>
+<td><code>{env}-agent-checkpoints</code></td>
 <td>The whole ballgame: every super-step's state snapshot, the pending interrupt, and the resume-claim lease</td>
 <td>Written by LangGraph's saver; read by resume</td>
 </tr>
 <tr>
-<td><strong>Entity-state table</strong></td>
-<td><code>app-{env}-entity-state</code></td>
+<td><strong>Turn-entities table</strong></td>
+<td><code>{env}-turn-entities</code></td>
 <td>The previous turn's resolved <code>{country, brand, period}</code> groups — quick or deep, same row</td>
 <td>One <code>get_item</code> per proposal</td>
 </tr>
@@ -1603,13 +1630,13 @@ nothing lives in process memory.</strong></p>
 </tr>
 <tr>
 <td><strong>Chat history</strong></td>
-<td><code>app-{env}-chat-history</code></td>
+<td><code>{env}-message-history</code></td>
 <td>Fallback memory source when the memory service is off</td>
 <td>Read-only here; <strong>deliberately not written</strong></td>
 </tr>
 <tr>
 <td><strong>S3 offload bucket</strong></td>
-<td><code>$DEEP_CHECKPOINT_S3_BUCKET</code></td>
+<td><code>$CHECKPOINT_OFFLOAD_BUCKET</code></td>
 <td>Checkpoints past ~350 KB offload transparently; the table keeps a pointer</td>
 <td>Written by the saver when needed</td>
 </tr>
@@ -1642,11 +1669,11 @@ nothing lives in process memory.</strong></p>
 <td><code>question_ts</code></td>
 <td>Server clock at question arrival</td>
 <td>One turn</td>
-<td>Orders entity-state writes at end of run by <em>arrival</em> time (completion order inverts under slow runs)</td>
+<td>Orders turn-entities writes at end of run by <em>arrival</em> time (completion order inverts under slow runs)</td>
 </tr>
 <tr>
 <td><code>plan_id</code></td>
-<td>Derived (<code>plan-{thread_id}</code>) per question cycle</td>
+<td>Derived (<code>plan-{thread_id}-{cycle}</code>) per question cycle</td>
 <td>One question's cycle</td>
 <td>Stable across refinements by design — which is why it alone cannot authorize an approve</td>
 </tr>
@@ -1744,7 +1771,7 @@ machinery verbatim:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">prepare_memory</span><span class="p">(</span><span class="n">user_id</span><span class="p">,</span> <span class="n">chat_id</span><span class="p">,</span> <span class="n">query</span><span class="p">):</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="c1"># 1. STM: recent turns for (actor=user_id, session=chat_id) + session summary, prepended as</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="c1">#    a system message. Fallback when the memory service is off/down: raw DynamoDB chat history.</span>
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="c1"># 2. entity-state get_item(chat_id): ALWAYS consulted, even when the memory view above is</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="c1"># 2. turn-entities get_item(chat_id): ALWAYS consulted, even when the memory view above is</span>
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="c1">#    empty — the sole carryover source must survive a degraded memory backend.</span>
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="c1"># 3. LTM search (actor=user_id, cross-session): semantic insights + parsed "User preferences:"</span>
 </code></pre></div>
@@ -1767,7 +1794,7 @@ entry point that starts a proposal turn MUST build its input the same way:</p>
   turn's value — a follow-up with nothing to inject would silently plan against the last
   question's context block.</li>
 <li><strong><code>question_ts</code> is arrival time, not completion time.</strong> A 45-minute run that completes after a
-  newer question in the same chat must <em>lose</em> the entity-state write to that newer question.
+  newer question in the same chat must <em>lose</em> the turn-entities write to that newer question.
   Completion order inverts under slow runs; arrival order never does.</li>
 </ul>
 <p>The rendered <code>[User context]</code> block itself:</p>
@@ -1813,7 +1840,7 @@ Three consequences:</p>
 <tbody>
 <tr>
 <td>Table</td>
-<td><code>app-{env}-deep-checkpoints</code></td>
+<td><code>{env}-agent-checkpoints</code></td>
 <td>Generic PK/SK saver schema; name discovered via env slug, published to SSM</td>
 </tr>
 <tr>
@@ -1823,7 +1850,7 @@ Three consequences:</p>
 </tr>
 <tr>
 <td>TTL</td>
-<td>30 days (<code>DEEP_CHECKPOINT_TTL_SECONDS</code>)</td>
+<td>30 days (<code>CHECKPOINT_TTL_SECONDS</code>)</td>
 <td>A gate parked longer than this is abandoned by definition</td>
 </tr>
 <tr>
@@ -1833,12 +1860,12 @@ Three consequences:</p>
 </tr>
 <tr>
 <td>S3 offload</td>
-<td>&gt; ~350 KB → <code>s3://$DEEP_CHECKPOINT_S3_BUCKET/deep-checkpoints/…</code></td>
+<td>&gt; ~350 KB → <code>s3://$CHECKPOINT_OFFLOAD_BUCKET/agent-checkpoints/…</code></td>
 <td>DynamoDB's 400 KB item cap; transparent to the app</td>
 </tr>
 <tr>
 <td>Fallback</td>
-<td><code>InMemorySaver</code> when <code>DEEP_CHECKPOINTER_BACKEND=memory</code></td>
+<td><code>InMemorySaver</code> when <code>CHECKPOINTER_BACKEND=memory</code></td>
 <td>Single-process only (local dev, unit tests); misconfiguration <em>raises</em> rather than degrades</td>
 </tr>
 </tbody>
@@ -1855,7 +1882,7 @@ owns that channel), then calls the gate tool <code>submit_plan</code>:</p>
 <li>Projects the raw todos into the typed <code>Plan</code>: stable step ids (<code>step-1…</code>), title, scope,
    <code>plan_id</code> derived from the thread, <code>modification_count</code>.</li>
 <li>Detects a new question cycle: a prior with <code>status == "locked"</code> means this submit starts a
-   fresh question on the same thread — <code>plan_id</code> increments (<code>plan-{thread}-2</code>),
+   fresh question on the same thread — <code>plan_id</code> increments (<code>plan-{thread_id}-2</code>),
    <code>modification_count</code> resets, and <code>entity_groups</code> reset (carrying the previous question's groups
    forward would persist wrong-country entities; <strong>empty beats wrong</strong>).</li>
 <li>Calls <code>interrupt()</code> with the payload the whole "before resume" phase hands to the "after":</li>
@@ -1877,7 +1904,7 @@ plan's stated defaults.</p>
 <h2 id="part-3-anatomy-of-a-parked-thread">Part 3 — Anatomy of a parked thread<a class="headerlink" href="#part-3-anatomy-of-a-parked-thread" title="Permanent link">&para;</a></h2>
 <p>While the user reads the plan — for seconds or for days — this is the complete physical state of
 the system:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>DynamoDB: deep-checkpoints, thread = chat_id
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>DynamoDB: agent-checkpoints, thread = chat_id
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  checkpoint chain (one per super-step, gzipped, TTL 30d)
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  latest checkpoint:
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    messages        full planning transcript (Human + AI + Tool)
@@ -1893,7 +1920,7 @@ the system:</p>
 <a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>
 <a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>Everything else: NOTHING.
 <a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>  no process holds the thread          any API replica can resume it
-<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>  no chat-history rows for this turn    no entity-state write yet
+<a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>  no message-history rows for this turn    no turn-entities write yet
 <a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>  no SQS message, no events             no lock, no run-state
 </code></pre></div>
 <p>That last box is the point of the whole design. <strong>"Resume" is not reconnection to a waiting
@@ -1993,7 +2020,7 @@ reconstructed).</p>
 <li><strong>Synchronous (shipped early):</strong> the same request keeps streaming and execution runs in the API
   process.</li>
 <li><strong>Async (the other note):</strong> the endpoint flips to checkpoint-then-enqueue — write <code>run#{thread}
-  queued</code>, <code>send({thread_id, run_id})</code> to <code>deep-run.fifo</code>, return <code>202</code>, and the worker picks it
+  queued</code>, <code>send({thread_id, run_id})</code> to <code>agent-runs.fifo</code>, return <code>202</code>, and the worker picks it
   up.</li>
 </ul>
 <p>Either way: <code>life-of-a-deep-run.md</code> takes it from here.</p>
@@ -2017,7 +2044,7 @@ reconstructed).</p>
 </li>
 <li>
 <p><strong>B4. Follow-up question on a thread with a locked plan.</strong> New-cycle detection: the next
-  <code>submit_plan</code> sees <code>prior.status == "locked"</code> → new <code>plan_id</code> (<code>plan-{thread}-2</code>),
+  <code>submit_plan</code> sees <code>prior.status == "locked"</code> → new <code>plan_id</code> (<code>plan-{thread_id}-2</code>),
   <code>modification_count</code> resets, <code>entity_groups</code> reset (the old plan's entities must not leak onto
   the new one). The proposal request itself overwrites <code>raw_question</code> / <code>user_context</code> /
   <code>question_ts</code> / <code>deep_run_id</code>.</p>
@@ -2030,7 +2057,7 @@ reconstructed).</p>
 <li>
 <p><strong>B6. The memory service is down at proposal time.</strong> Fail-safe reads all the way down. STM/LTM
   return nothing, the memory view degrades to raw DynamoDB history (or nothing) — but the
-  entity-state <code>get_item</code> is still consulted. In that case the context block is empty and
+  turn-entities <code>get_item</code> is still consulted. In that case the context block is empty and
   <code>user_context</code> is <em>written</em> as empty, not omitted (or the previous turn's block would leak in).</p>
 </li>
 <li>
@@ -2075,7 +2102,7 @@ source of truth.</p>
 <code>CLAIM#{thread_id}</code> in the checkpoint table. Atomic server-side; the loser gets <code>409</code>.</p>
 <p><strong>Why does the deep proposal reuse quick mode's memory functions?</strong> Because the product
 requirement is one conversation across modes. A deep follow-up to a quick turn must see the same
-carryover row and the same memory view. One <code>prepare_memory()</code>, one entity-state table, two
+carryover row and the same memory view. One <code>prepare_memory()</code>, one turn-entities table, two
 graphs.</p>
 
 

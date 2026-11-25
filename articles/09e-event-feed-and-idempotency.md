@@ -1,6 +1,6 @@
 # Deep Dive · The Event Feed and Idempotency
 
-The event feed is the live activity log the user watches while a deep run executes: *Querying subnational… · SUBNATIONAL 412 rows · Querying CRP… · Report ready.* It is a projection of the run, streamed to the browser over Server-Sent Events. This deep dive is the companion to [Step 7 · Queue and worker execution](08-queue-and-worker-execution.md): that chapter gets the run *onto* a worker; this one is about making the frames it emits appear **exactly once**, even though two independent mechanisms conspire to write them twice.
+The event feed is the live activity log the user watches while a deep run executes: *Querying regional… · REGIONAL 412 rows · Querying ONLINE… · Report ready.* It is a projection of the run, streamed to the browser over Server-Sent Events. This deep dive is the companion to [Step 7 · Queue and worker execution](08-queue-and-worker-execution.md): that chapter gets the run *onto* a worker; this one is about making the frames it emits appear **exactly once**, even though two independent mechanisms conspire to write them twice.
 
 The safe mental model is:
 
@@ -17,7 +17,7 @@ A naive feed that appends a row per event double-counts under both. The fix give
 
 ## Two Values, Opposite Jobs
 
-The `deep-events` table is the one place a sequence number is a real, writer-allocated counter (DynamoDB has no auto-increment). Every row carries both a `seq` and an `idem_key`:
+The `agent-events` table is the one place a sequence number is a real, writer-allocated counter (DynamoDB has no auto-increment). Every row carries both a `seq` and an `idem_key`:
 
 | Value | Question it answers | Behavior on replay | Derivation |
 |---|---|---|---|
@@ -99,16 +99,16 @@ Step through a crash-and-replay to see the writer climb while the reader collaps
     <div class="scrubber-step">
       <span class="scrubber-time">Attempt 1 · writes</span>
       <div class="scrubber-caption">Node A then node B emit four feed lines. seq climbs; each line's idem_key is its execution position.</div>
-      <pre class="scrubber-item">seq 1  taskA#0  Querying subnational...
-seq 2  taskA#1  SUBNATIONAL 412 rows
-seq 3  taskB#0  Querying CRP...
-seq 4  taskB#1  CRP 88 rows          <span class="warn">← crash before commit</span></pre>
+      <pre class="scrubber-item">seq 1  taskA#0  Querying regional...
+seq 2  taskA#1  REGIONAL 412 rows
+seq 3  taskB#0  Querying ONLINE...
+seq 4  taskB#1  ONLINE 88 rows          <span class="warn">← crash before commit</span></pre>
     </div>
     <div class="scrubber-step">
       <span class="scrubber-time">Attempt 2 · replays</span>
       <div class="scrubber-caption">A new worker resumes and re-runs node B from the same input checkpoint. seq is re-seeded above the max, so the replayed lines get NEW seqs but the same idem_keys.</div>
-      <pre class="scrubber-item">seq 5  taskB#0  Querying CRP...       <span class="warn">← duplicate content, new seq</span>
-seq 6  taskB#1  CRP 88 rows          <span class="warn">← duplicate content, new seq</span>
+      <pre class="scrubber-item">seq 5  taskB#0  Querying ONLINE...       <span class="warn">← duplicate content, new seq</span>
+seq 6  taskB#1  ONLINE 88 rows          <span class="warn">← duplicate content, new seq</span>
 seq 7  taskC#0  Report ready</pre>
     </div>
     <div class="scrubber-step">
@@ -167,9 +167,9 @@ There are eight wire types: `status`, `content`, `artifact`, `warning`, `error`,
 # Attempt 1 — one Cortex call (taskB) streams 3 live deltas, then 2 deterministic frames
 id: 43
 data: {"type":"artifact","data":{"artifact":"cortex_thinking","operation":"replace",
-       "value":["...final: retail, non-retail, and CRP channels."]}}   ← taskB~cs#2 (live, terminal)
+       "value":["...final: in-store, online, and wholesale channels."]}}   ← taskB~cs#2 (live, terminal)
 id: 44
-data: {"type":"status","data":{"message":"SUBNATIONAL returned 412 rows","state":"completed"}}  ← taskB#0
+data: {"type":"status","data":{"message":"REGIONAL returned 412 rows","state":"completed"}}  ← taskB#0
 id: 45
 data: {"type":"plan","data":{"plan_id":"plan-abc-1","steps":[{"id":"step-1","status":"done"}]}}  ← taskB#1
 

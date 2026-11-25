@@ -8,7 +8,7 @@ This chapter builds the planning gate: the model drafts a plan, the human approv
 
 Some agent actions are expensive, slow, or irreversible. A research plan that hits external APIs, runs database queries, or spends real money should be shown to a human *before* it executes, not after.
 
-The running example is a pharmaceutical commercial-analytics agent: it plans a set of data-retrieval steps, a human approves or refines the plan, and only then does it query anything. The identifiers are generic (`BRAND_A`, `SOURCE_A`, `query_source`), but the shape applies to any agent with a costly execute phase.
+The running example is a retail commercial-analytics agent: it plans a set of data-retrieval steps, a human approves or refines the plan, and only then does it query anything. The identifiers are generic (`BRAND_A`, `SOURCE_A`, `query_source`), but the shape applies to any agent with a costly execute phase.
 
 ## The Big Picture First
 
@@ -265,7 +265,7 @@ Here are both outcomes, approve and refine, with what the tool returns to the ag
               ▼                                     ▼
     AGENT reads ToolMessage               AGENT reads ToolMessage
     → runs query_cortex,                  → edits its own todo steps
-      query_iqvia_gmi, etc.               → calls submit_plan again
+      query_market_data, etc.               → calls submit_plan again
     → writes report                       → back to interrupt() ↑
 ```
 
@@ -386,7 +386,7 @@ Each step is runnable and testable before the next:
 
 The hardest step is 5: idempotency and stale-state bugs both surface there. Run the approve endpoint twice on the same payload and confirm the second call is a 409 or a safe no-op.
 
-Once a plan is locked, the run itself has to survive worker crashes and reconnects. [Durable Async Agent Runs](./08-queue-and-worker-execution.md) covers that.
+Once a plan is locked, the run itself has to survive worker crashes and reconnects. [Queue and worker execution](./08-queue-and-worker-execution.md) covers that.
 
 ## Guardrails
 

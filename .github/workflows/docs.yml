@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "articles/**"
+      - "lessons/**"
+      - "mkdocs_hooks.py"
       - "mkdocs.yml"
       - "requirements-docs.txt"
       - ".github/workflows/docs.yml"

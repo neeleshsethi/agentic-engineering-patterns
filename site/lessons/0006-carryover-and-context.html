@@ -137,9 +137,9 @@
       <div class="grid">
         <div class="panel"><span class="label">source_results item (state · MB)</span>
 <pre style="margin-top:0.3rem;"><code>{
-  "provenance_id": "SUBNATIONAL:plan-c1-1:step-1:a3f9c2d1",
-  "source": "iqvia_gmi",
-  "sub_question": "NZ subnational sales by region, 2024",
+  "provenance_id": "REGIONAL:plan-c1-1:step-1:a3f9c2d1",
+  "source": "market_data",
+  "sub_question": "NZ sales by region, 2024",
   "success": true,
   "retrieved_at": "2026-09-14",
   "answer": "Auckland led at 32%, then Wellington…",
@@ -151,10 +151,10 @@
   | retrieved {retrieved_at[:10]}
   | {sub_question[:80]}
 
-→ SUBNATIONAL:plan-c1-1:step-1:a3f9c2d1
+→ REGIONAL:plan-c1-1:step-1:a3f9c2d1
   | ok=True | rows=412
   | retrieved 2026-09-14
-  | NZ subnational sales by region, 2024</code></pre></div>
+  | NZ sales by region, 2024</code></pre></div>
       </div>
       <p class="lead">The row <em>count</em> rides the wire; the rows never do.</p>
     </section>
@@ -218,8 +218,8 @@
       <h2>Reuse is a plan step, not a hidden optimization</h2>
       <p class="lead">At plan time the orchestrator writes a step with <strong>no <code>[source:]</code> tag</strong> that names the held result by its provenance id, so a reviewer sees the reuse before approving.</p>
       <div class="grid">
-        <div class="panel accent"><span class="label">Reuse step (no source tag)</span><code>Reuse the sales already retrieved (SUBNATIONAL:plan-c1-1:step-1:a3f9c2d1) [group: 1 parallel]</code></div>
-        <div class="panel warn"><span class="label">Retrieval step (source tag)</span><code>[source: iqvia_gmi] Pull Auckland sales broken down by store, 2024 [group: 1]</code></div>
+        <div class="panel accent"><span class="label">Reuse step (no source tag)</span><code>Reuse the sales already retrieved (REGIONAL:plan-c1-1:step-1:a3f9c2d1) [group: 1 parallel]</code></div>
+        <div class="panel warn"><span class="label">Retrieval step (source tag)</span><code>[source: market_data] Pull Auckland sales broken down by store, 2024 [group: 1]</code></div>
       </div>
     </section>
 
@@ -303,31 +303,31 @@
 
   const STEPS = [
     function () {
-      capEl.innerHTML = "① <b>Turn 1</b> — query_cortex('NZ subnational sales…') returns an answer + a <b>412-row</b> table. The full result is appended to state.";
-      stateEl.insertAdjacentHTML("beforeend", card({ id:1, pid:"SUBNATIONAL:plan-c1-1:step-1:a3f9c2d1", date:"2026-09-14", answer:"Auckland led at 32%…", rows:412, size:"1.4 MB" }));
+      capEl.innerHTML = "① <b>Turn 1</b> — query_cortex('NZ regional sales…') returns an answer + a <b>412-row</b> table. The full result is appended to state.";
+      stateEl.insertAdjacentHTML("beforeend", card({ id:1, pid:"REGIONAL:plan-c1-1:step-1:a3f9c2d1", date:"2026-09-14", answer:"Auckland led at 32%…", rows:412, size:"1.4 MB" }));
       mb += 1.4; meter();
     },
     function () {
       capEl.innerHTML = "② The manifest keeps a <b>~112-byte pointer</b>, not the 412 rows. Only metadata enters the context.";
       ensureSentinel();
-      ctxEl.insertAdjacentHTML("beforeend", line({ id:1, pid:"SUBNATIONAL:plan-c1-1:step-1:a3f9c2d1", rows:412, date:"2026-09-14", q:"NZ subnational sales by region, 2024" }));
+      ctxEl.insertAdjacentHTML("beforeend", line({ id:1, pid:"REGIONAL:plan-c1-1:step-1:a3f9c2d1", rows:412, date:"2026-09-14", q:"NZ sales by region, 2024" }));
       bytes += 112; ctxLines++; meter();
     },
     function () {
-      capEl.innerHTML = "③ <b>Turn 2</b> — query_cortex('CRP channel share') returns an <b>88-row</b> table. State keeps growing.";
-      stateEl.insertAdjacentHTML("beforeend", card({ id:2, pid:"CRP:plan-c1-1:step-2:b7e0aa14", date:"2026-09-14", answer:"CRP share was 21%…", rows:88, size:"0.3 MB" }));
+      capEl.innerHTML = "③ <b>Turn 2</b> — query_cortex('online channel share') returns an <b>88-row</b> table. State keeps growing.";
+      stateEl.insertAdjacentHTML("beforeend", card({ id:2, pid:"ONLINE:plan-c1-1:step-2:b7e0aa14", date:"2026-09-14", answer:"Online share was 21%…", rows:88, size:"0.3 MB" }));
       mb += 0.3; meter();
     },
     function () {
       capEl.innerHTML = "④ Second pointer injected. Notice the gap: <span class='cm-cap'></span> <b class='st'>state ≈ 1.7 MB</b> vs <b class='cx'>context ≈ 224 B</b>.";
-      ctxEl.insertAdjacentHTML("beforeend", line({ id:2, pid:"CRP:plan-c1-1:step-2:b7e0aa14", rows:88, date:"2026-09-14", q:"CRP channel share, NZ, 2024" }));
+      ctxEl.insertAdjacentHTML("beforeend", line({ id:2, pid:"ONLINE:plan-c1-1:step-2:b7e0aa14", rows:88, date:"2026-09-14", q:"online channel share, NZ, 2024" }));
       bytes += 112; ctxLines++; meter();
     },
     function () {
-      capEl.innerHTML = "⑤ <b>Turn 3</b> — “what was CRP's share again?” The held prose already states it, retrieved today → <b>REUSE</b>.";
+      capEl.innerHTML = "⑤ <b>Turn 3</b> — “what was the online share again?” The held prose already states it, retrieved today → <b>REUSE</b>.";
       document.getElementById("card-2").classList.add("hot");
       document.getElementById("line-2").classList.add("hot");
-      decide("reuse", "<strong>✓ Reuse (no re-query).</strong> Prose covers it · fresh today. Plan step, no <code>[source:]</code> tag: <code>Reuse the CRP share already retrieved (CRP:plan-c1-1:step-2:b7e0aa14)</code>");
+      decide("reuse", "<strong>✓ Reuse (no re-query).</strong> Prose covers it · fresh today. Plan step, no <code>[source:]</code> tag: <code>Reuse the online share already retrieved (ONLINE:plan-c1-1:step-2:b7e0aa14)</code>");
     },
     function () {
       capEl.innerHTML = "⑥ <b>Turn 4</b> — “break Auckland down by store.” Those rows aren't in the prose → <b>RE-QUERY</b> (never estimate).";
@@ -335,7 +335,7 @@
       document.getElementById("line-2").classList.remove("hot");
       document.getElementById("card-1").classList.add("warn");
       document.getElementById("line-1").classList.add("warn");
-      decide("requery", "<strong>✗ Cannot reuse.</strong> The 412 rows are in <em>state</em>, not context — prose-only boundary. Plan a retrieval step: <code>[source: iqvia_gmi] Auckland sales by store, 2024</code>");
+      decide("requery", "<strong>✗ Cannot reuse.</strong> The 412 rows are in <em>state</em>, not context — prose-only boundary. Plan a retrieval step: <code>[source: market_data] Auckland sales by store, 2024</code>");
     },
     function () {
       capEl.innerHTML = "⑦ Result: state holds megabytes for assembly; the window ever only carried a few hundred bytes of pointers. Reuse stayed possible; nothing was estimated from memory.";
