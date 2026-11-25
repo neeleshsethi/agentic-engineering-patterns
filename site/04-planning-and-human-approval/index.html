@@ -966,6 +966,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../11-when-the-score-passes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone 2 · When the score passes and the work fails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -980,10 +1007,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21" >
         
           
-          <label class="md-nav__link" for="__nav_20" id="__nav_20_label" tabindex="">
+          <label class="md-nav__link" for="__nav_21" id="__nav_21_label" tabindex="">
             
   
   
@@ -1001,8 +1028,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_20_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_21_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1057,10 +1084,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21_2" >
         
           
-          <label class="md-nav__link" for="__nav_20_2" id="__nav_20_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_21_2" id="__nav_21_2_label" tabindex="0">
             
   
   
@@ -1078,8 +1105,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_21_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21_2">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1414,12 +1441,12 @@
 <p>The agent now has durable state and the right context at the model boundary. The next job is to stop it from doing expensive work too early.</p>
 <p>This chapter builds the planning gate: the model drafts a plan, the human approves or refines it, and only then does execution begin. That one design choice changes the topology of the system. The run can no longer live inside one HTTP request.</p>
 <blockquote>
-<p>Terms below — <a href="../00-glossary/#interrupt"><code>interrupt()</code></a>, <a href="../00-glossary/#checkpoint">checkpoint</a>, <a href="../00-glossary/#gate">gate</a>, <a href="../00-glossary/#lease">lease</a>, <a href="../00-glossary/#replica">replica</a> — are defined once in the <a href="../00-glossary/">glossary</a>.</p>
+<p>Terms below (<a href="../00-glossary/#interrupt"><code>interrupt()</code></a>, <a href="../00-glossary/#checkpoint">checkpoint</a>, <a href="../00-glossary/#gate">gate</a>, <a href="../00-glossary/#lease">lease</a>, <a href="../00-glossary/#replica">replica</a>) are defined once in the <a href="../00-glossary/">glossary</a>.</p>
 </blockquote>
-<p>Some agent actions are expensive, slow, or irreversible. A research plan that hits external APIs, runs database queries, or spends real money should be shown to a human <em>before</em> it executes, not after. This article builds that approval gate from the ground up.</p>
-<p>The running example is a pharmaceutical commercial-analytics agent: it plans a set of data-retrieval steps, a human approves or refines the plan, and only then does it query anything. The identifiers are generic (<code>BRAND_A</code>, <code>SOURCE_A</code>, <code>query_source</code>), but the shape applies to any agent with a costly execute phase.</p>
+<p>Some agent actions are expensive, slow, or irreversible. A research plan that hits external APIs, runs database queries, or spends real money should be shown to a human <em>before</em> it executes, not after.</p>
+<p>The running example is a retail commercial-analytics agent: it plans a set of data-retrieval steps, a human approves or refines the plan, and only then does it query anything. The identifiers are generic (<code>BRAND_A</code>, <code>SOURCE_A</code>, <code>query_source</code>), but the shape applies to any agent with a costly execute phase.</p>
 <h2 id="the-big-picture-first">The Big Picture First<a class="headerlink" href="#the-big-picture-first" title="Permanent link">&para;</a></h2>
-<p>Before diving into code, here is the shape of the whole system this chapter builds:</p>
+<p>Here is the shape of the whole system this chapter builds:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a> WITHOUT approval gate          WITH approval gate
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a> ───────────────────            ──────────────────
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
@@ -1446,12 +1473,12 @@
 <a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>                         ▼
 <a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>                       Answer
 </code></pre></div>
-<p>The key idea: the <code>submit_plan</code> <strong>tool</strong> is the bridge between the agent and the human. The agent calls the tool. The tool pauses everything and shows the human the plan. When the human decides, the tool gets the decision back and <strong>tells the agent what to do next</strong> via a ToolMessage. The agent never talks to the human directly.</p>
+<p>The <code>submit_plan</code> <strong>tool</strong> is the bridge between the agent and the human. The agent calls the tool. The tool pauses everything and shows the human the plan. When the human decides, the tool gets the decision back and <strong>tells the agent what to do next</strong> via a ToolMessage. The agent never talks to the human directly.</p>
 <h2 id="start-with-the-naive-version">Start With The Naive Version<a class="headerlink" href="#start-with-the-naive-version" title="Permanent link">&para;</a></h2>
 <p>Before any approval machinery, the baseline agent is one straight line:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>user question -&gt; LLM plans (internal, never shown) -&gt; agent executes -&gt; answer
 </code></pre></div>
-<p>Everything happens in one HTTP request, one graph invocation, one stream. The problem is not correctness — the LLM might plan correctly. The problem is trust and cost. If the model misread the question, you want to catch it before three source calls run, not after. So you want to show the plan first, and wait.</p>
+<p>Everything happens in one HTTP request, one graph invocation, one stream. The LLM might plan correctly. The problem is trust and cost. If the model misread the question, you want to catch it before three source calls run, not after. So you want to show the plan first, and wait.</p>
 <h2 id="the-one-primitive-interrupt">The One Primitive: <code>interrupt()</code><a class="headerlink" href="#the-one-primitive-interrupt" title="Permanent link">&para;</a></h2>
 <p>LangGraph gives you exactly one primitive for pausing a graph and waiting for a human: <code>interrupt()</code>. It serializes the current graph state to the checkpointer and raises a special exception the runner catches. The HTTP response returns with whatever has streamed so far. The graph is frozen in durable storage, waiting.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">langgraph.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">interrupt</span><span class="p">,</span> <span class="n">Command</span>
@@ -1483,15 +1510,15 @@
     A-&gt;&gt;C: saver.put_writes() stages resume decision
     A--&gt;&gt;U: 202 queued
     Note over C: Worker later reloads and resumes with input=None</code></pre>
-<p>The dashed pause is the whole point: between the two requests, <strong>nothing is running</strong>. The plan lives in the checkpoint, and any <a href="../00-glossary/#replica">replica</a> can pick it up.</p>
+<p>Between the two requests, <strong>nothing is running</strong>. The plan lives in the checkpoint, and any <a href="../00-glossary/#replica">replica</a> can pick it up.</p>
 <h2 id="the-idempotency-rule-you-cannot-ignore">The Idempotency Rule You Cannot Ignore<a class="headerlink" href="#the-idempotency-rule-you-cannot-ignore" title="Permanent link">&para;</a></h2>
-<p>When a graph resumes, LangGraph re-runs the current node <strong>from the beginning</strong> — not from the <code>interrupt()</code> line. Everything before <code>interrupt()</code> runs again, on every resume.</p>
+<p>When a graph resumes, LangGraph re-runs the current node <strong>from the beginning</strong>, not from the <code>interrupt()</code> line. Everything before <code>interrupt()</code> runs again, on every resume.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">submit_plan</span><span class="p">(</span><span class="n">plan</span><span class="p">,</span> <span class="n">thread_id</span><span class="p">):</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    <span class="n">send_slack_notification</span><span class="p">(</span><span class="n">thread_id</span><span class="p">,</span> <span class="n">plan</span><span class="p">)</span>   <span class="c1"># runs on EVERY resume</span>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    <span class="k">return</span> <span class="n">interrupt</span><span class="p">({</span><span class="o">...</span><span class="p">})</span>
 </code></pre></div>
 <p>Refine the plan twice and that notification fires three times: once on the initial proposal, once per resume. This is the single most common bug in resumable graphs. The fix is one of two things: move side effects to <em>after</em> <code>interrupt()</code>, or make them idempotent (check whether the work was already done before doing it).</p>
-<p>The deeper consequence: all code before <code>interrupt()</code> must be a pure, deterministic function of durable state. If it computes the plan, that computation has to produce the identical plan every time it re-runs — which drives the design in the rest of this article.</p>
+<p>It follows that all code before <code>interrupt()</code> must be a pure, deterministic function of durable state. If it computes the plan, that computation has to produce the identical plan every time it re-runs. That requirement drives the design in the rest of this article.</p>
 <h2 id="designing-the-interrupt-payload">Designing The Interrupt Payload<a class="headerlink" href="#designing-the-interrupt-payload" title="Permanent link">&para;</a></h2>
 <p>The payload is the contract between backend and frontend. Changing it later is a frontend migration, so design it deliberately. It needs to carry two different kinds of thing:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="n">interrupt</span><span class="p">({</span>
@@ -1531,9 +1558,9 @@
 <a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>        <span class="n">plan</span> <span class="o">=</span> <span class="n">call_llm_to_update_plan</span><span class="p">(</span><span class="n">plan</span><span class="p">,</span> <span class="n">decision</span><span class="p">[</span><span class="s2">"feedback"</span><span class="p">])</span>   <span class="c1"># the problem</span>
 <a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>        <span class="k">continue</span>
 </code></pre></div>
-<p>The problem is the marked line. Applying "add a competitive analysis step" means interpreting prose and rewriting research steps — that is LLM work. But you are inside a tool: plain Python, mid-way through the agent's own graph. To regenerate the plan you would make a <em>separate, out-of-band</em> LLM call — a second model that does not share the agent's system prompt, tools, or conversation. Now two different models author the plan. Formats drift, context is lost, and the plan the human finally approves was never seen whole by the agent that will execute it.</p>
+<p>The problem is the marked line. Applying "add a competitive analysis step" means interpreting prose and rewriting research steps, which is LLM work. But you are inside a tool: plain Python, mid-way through the agent's own graph. To regenerate the plan you would make a <em>separate, out-of-band</em> LLM call to a second model that does not share the agent's system prompt, tools, or conversation. Now two different models author the plan. Formats drift, context is lost, and the plan the human finally approves was never seen whole by the agent that will execute it.</p>
 <h2 id="refine-is-the-agent-loop">Refine Is The Agent Loop<a class="headerlink" href="#refine-is-the-agent-loop" title="Permanent link">&para;</a></h2>
-<p>The structural fix: the tool never applies feedback. It hands the feedback back to the agent as its tool result, and the "loop" becomes the agent's own loop. Each <code>submit_plan</code> call interrupts exactly once and returns.</p>
+<p>The fix is structural. The tool never applies feedback. It hands the feedback back to the agent as its tool result, and the "loop" becomes the agent's own loop. Each <code>submit_plan</code> call interrupts exactly once and returns.</p>
 <p>Here is who does what at each step of a refine round:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>┌─────────┐         ┌──────────┐         ┌──────────┐         ┌──────────┐
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>│ Browser │         │   API    │         │  Agent   │         │  Tool    │
@@ -1566,7 +1593,7 @@
 <a id="__codelineno-8-29" name="__codelineno-8-29" href="#__codelineno-8-29"></a>     │◀──────────────────│                    │                    │
 <a id="__codelineno-8-30" name="__codelineno-8-30" href="#__codelineno-8-30"></a>     │                   │                    │                    │
 </code></pre></div>
-<p><strong>The key insight:</strong> the <code>submit_plan</code> tool is a messenger, not an editor. It passes the human's feedback to the agent as a tool result and pauses again. The agent is the one that reads the feedback and rewrites the plan steps. The tool never touches the plan content itself.</p>
+<p>The <code>submit_plan</code> tool is a messenger, not an editor. It passes the human's feedback to the agent as a tool result and pauses again. The agent is the one that reads the feedback and rewrites the plan steps. The tool never touches the plan content itself.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">submit_plan</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">runtime</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Command</span><span class="p">:</span>
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>    <span class="n">plan</span> <span class="o">=</span> <span class="n">project_plan</span><span class="p">(</span><span class="n">runtime</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"todos"</span><span class="p">))</span>   <span class="c1"># from the agent's own todos</span>
 <a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    <span class="n">decision</span> <span class="o">=</span> <span class="n">interrupt</span><span class="p">({</span><span class="s2">"plan"</span><span class="p">:</span> <span class="n">plan</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()})</span>  <span class="c1"># ONE interrupt, no loop</span>
@@ -1589,7 +1616,7 @@
 <a id="__codelineno-9-20" name="__codelineno-9-20" href="#__codelineno-9-20"></a>            <span class="s2">"Update the todo list, then call submit_plan again. Do not retrieve anything yet."</span><span class="p">)],</span>
 <a id="__codelineno-9-21" name="__codelineno-9-21" href="#__codelineno-9-21"></a>    <span class="p">})</span>
 </code></pre></div>
-<p>Here is the complete picture of both outcomes — approve and refine — showing exactly what the tool returns to the agent each time:</p>
+<p>Here are both outcomes, approve and refine, with what the tool returns to the agent each time:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>                    AGENT calls submit_plan tool
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>                              │
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>                              ▼
@@ -1620,13 +1647,13 @@
 <a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a>              ▼                                     ▼
 <a id="__codelineno-10-29" name="__codelineno-10-29" href="#__codelineno-10-29"></a>    AGENT reads ToolMessage               AGENT reads ToolMessage
 <a id="__codelineno-10-30" name="__codelineno-10-30" href="#__codelineno-10-30"></a>    → runs query_cortex,                  → edits its own todo steps
-<a id="__codelineno-10-31" name="__codelineno-10-31" href="#__codelineno-10-31"></a>      query_iqvia_gmi, etc.               → calls submit_plan again
+<a id="__codelineno-10-31" name="__codelineno-10-31" href="#__codelineno-10-31"></a>      query_market_data, etc.               → calls submit_plan again
 <a id="__codelineno-10-32" name="__codelineno-10-32" href="#__codelineno-10-32"></a>    → writes report                       → back to interrupt() ↑
 </code></pre></div>
-<p><strong>The tool is the messenger in both directions.</strong> Going in: it carries the plan to the human via <code>interrupt()</code>. Coming back: it tells the agent what the human decided. The agent never talks to the human directly — it only ever reads a ToolMessage.</p>
+<p>The tool carries messages in both directions. Going in, it carries the plan to the human via <code>interrupt()</code>. Coming back, it tells the agent what the human decided in a ToolMessage.</p>
 <p>Each refine round is one full trip: a new tool call, a new <code>interrupt()</code>, a new HTTP request. The tool stays dumb; the agent stays the sole author of the plan. The human's feedback reaches the agent as conversational input, never as a direct edit the code performs.</p>
 <h2 id="the-plan-is-a-read-only-projection">The Plan Is A Read-Only Projection<a class="headerlink" href="#the-plan-is-a-read-only-projection" title="Permanent link">&para;</a></h2>
-<p>The refine design has a prerequisite that also solves the idempotency problem: the agent never writes a <code>Plan</code> object directly. It writes plain todo items — natural-language steps with routing tags in their text — and the typed <code>Plan</code> is <em>derived</em> from those todos by a pure function every time it is needed.</p>
+<p>The refine design has a prerequisite that also solves the idempotency problem: the agent never writes a <code>Plan</code> object directly. It writes plain todo items (natural-language steps with routing tags in their text), and the typed <code>Plan</code> is <em>derived</em> from those todos by a pure function every time it is needed.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">submit_plan</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">scope</span><span class="p">,</span> <span class="n">runtime</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Command</span><span class="p">:</span>
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>    <span class="n">todos</span> <span class="o">=</span> <span class="n">runtime</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"todos"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]</span>
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>    <span class="n">plan</span> <span class="o">=</span> <span class="n">project_plan</span><span class="p">(</span><span class="n">todos</span><span class="p">,</span> <span class="n">thread_id</span><span class="o">=</span><span class="n">thread_id</span><span class="p">,</span> <span class="n">prior</span><span class="o">=</span><span class="n">prior</span><span class="p">)</span>   <span class="c1"># pure: same in, same out</span>
@@ -1634,10 +1661,10 @@
 </code></pre></div>
 <p>Two payoffs:</p>
 <ul>
-<li><strong>The agent cannot corrupt the plan.</strong> It can only write inconsistent todos; the projection is a sanitizing layer between raw model output and the typed structure the frontend receives. A malformed routing tag fails soft — the raw text stays visible in the step title, and the routing field is left unset for the executor to skip.</li>
+<li><strong>The agent cannot corrupt the plan.</strong> It can only write inconsistent todos; the projection is a sanitizing layer between raw model output and the typed structure the frontend receives. A malformed routing tag fails soft: the raw text stays visible in the step title, and the routing field is left unset for the executor to skip.</li>
 <li><strong>Resume is safe by construction.</strong> Because <code>project_plan</code> is pure and the plan id is derived deterministically from the thread, re-running <code>submit_plan</code> on every resume rebuilds the bit-for-bit identical plan. A random id or a timestamp here would fork a different plan on each resume and break the <code>plan_id</code> validation above.</li>
 </ul>
-<p>Refine, then, is just: the agent edits its todos, calls <code>submit_plan</code> again, and the projection produces the revised plan automatically. There is no plan object being mutated in place.</p>
+<p>So a refine round means the agent edits its todos, calls <code>submit_plan</code> again, and the projection produces the revised plan automatically. There is no plan object being mutated in place.</p>
 <h2 id="the-gate-does-not-run-on-every-turn">The Gate Does Not Run On Every Turn<a class="headerlink" href="#the-gate-does-not-run-on-every-turn" title="Permanent link">&para;</a></h2>
 <p>The full plan workflow is expensive and state-changing:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>write_todos -&gt; submit_plan -&gt; interrupt() -&gt; approve/refine -&gt; execute
@@ -1684,10 +1711,10 @@
 </tr>
 </tbody>
 </table>
-<p>This is why the plan's lifetime matters. A locked plan keeps its <code>plan_id</code>, step ids, and carried evidence attached to the same cycle. Re-opening the gate for a source-elicitation reply would mint a new <code>plan_id</code>, orphan already-fetched results from the current cycle, and ask the human to approve the same question twice.</p>
+<p>A locked plan keeps its <code>plan_id</code>, step ids, and carried evidence attached to the same cycle. Re-opening the gate for a source-elicitation reply would mint a new <code>plan_id</code>, orphan already-fetched results from the current cycle, and ask the human to approve the same question twice.</p>
 <p>The rule is simple enough to review: clarification about the user's intended entity or metric happens before planning; source ambiguity can ride the plan gate; once a plan is locked, only a genuinely new question reopens planning.</p>
 <h2 id="the-state-machine-lives-in-code">The State Machine Lives In Code<a class="headerlink" href="#the-state-machine-lives-in-code" title="Permanent link">&para;</a></h2>
-<p>The plan has a lifecycle, and the code — not the model — owns every transition:</p>
+<p>The plan has a lifecycle, and code owns every transition, not the model:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>DRAFT --(interrupt: human sees plan)--&gt; DRAFT (modification_count++)   [refine]
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>      --(approve)--&gt; LOCKED --&gt; EXECUTING --&gt; COMPLETE
 </code></pre></div>
@@ -1697,11 +1724,11 @@
 <li><strong>EXECUTING</strong> is guarded against a second concurrent run.</li>
 <li><strong>COMPLETE</strong> is terminal.</li>
 </ul>
-<p>The model only ever writes plan <em>content</em>, and only in DRAFT. The <code>locked</code> transition happens in code on approve, via <code>model_copy</code>. The model cannot accidentally lock or unlock a plan, and it cannot execute an unlocked one — because the gate structurally blocks continuation until the human resumes. If you try to prompt the model into enforcing this ("only proceed if the plan is approved"), you have put a state decision in the one place that cannot guarantee it.</p>
+<p>The model only ever writes plan <em>content</em>, and only in DRAFT. The <code>locked</code> transition happens in code on approve, via <code>model_copy</code>. The model cannot accidentally lock or unlock a plan, and it cannot execute an unlocked one, because the gate structurally blocks continuation until the human resumes. If you try to prompt the model into enforcing this ("only proceed if the plan is approved"), you have put a state decision in the one place that cannot guarantee it.</p>
 <h2 id="concurrency-one-resume-at-a-time">Concurrency: One Resume At A Time<a class="headerlink" href="#concurrency-one-resume-at-a-time" title="Permanent link">&para;</a></h2>
 <p>Imagine a user opens the plan approval screen in two browser tabs. Both show the same plan. Both have an "Approve" button. If they click approve in tab A and then again in tab B half a second later, two HTTP requests hit your server at almost the same moment — both trying to resume the same graph thread.</p>
 <p>LangGraph does not support two runs on the same thread at once. If both requests succeed, the graph executes the research plan twice in parallel, each writing to the same checkpoint. Whichever finishes last wins and overwrites the other's work. The user gets one result, one run's state is silently lost, and nothing logs an error.</p>
-<p>The fix is a <strong>claim</strong>: before resuming, write a small record to the database that says "I own this thread right now." The write is conditional — it only succeeds if no one else already holds the claim. The second request races to write the same record, loses the race, and gets a <code>409 Conflict</code> back. Exactly one resume proceeds.</p>
+<p>The fix is a <strong>claim</strong>: before resuming, write a small record to the database that says "I own this thread right now." The write is conditional: it only succeeds if no one else already holds the claim. The second request races to write the same record, loses the race, and gets a <code>409 Conflict</code> back. Exactly one resume proceeds.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>Tab A clicks approve:
 <a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>  → try to write CLAIM#thread-123 to database
 <a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>  → nobody holds it yet, write succeeds
@@ -1738,7 +1765,7 @@
 <a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a>7. Add the concurrency claim or worker lock. Two simultaneous approves -&gt; one queued run, one conflict or safe duplicate.
 </code></pre></div>
 <p>The hardest step is 5: idempotency and stale-state bugs both surface there. Run the approve endpoint twice on the same payload and confirm the second call is a 409 or a safe no-op.</p>
-<p>Once a plan is locked, the run itself has to survive worker crashes and reconnects — that is <a href="../08-queue-and-worker-execution/">Durable Async Agent Runs</a>.</p>
+<p>Once a plan is locked, the run itself has to survive worker crashes and reconnects. <a href="../08-queue-and-worker-execution/">Queue and worker execution</a> covers that.</p>
 <h2 id="guardrails">Guardrails<a class="headerlink" href="#guardrails" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Treat everything before <code>interrupt()</code> as code that re-runs on every resume</li>

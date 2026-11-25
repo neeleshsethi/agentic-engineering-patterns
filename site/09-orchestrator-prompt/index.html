@@ -972,6 +972,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../11-when-the-score-passes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone 2 · When the score passes and the work fails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -986,10 +1013,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21" >
         
           
-          <label class="md-nav__link" for="__nav_20" id="__nav_20_label" tabindex="">
+          <label class="md-nav__link" for="__nav_21" id="__nav_21_label" tabindex="">
             
   
   
@@ -1007,8 +1034,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_20_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_21_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1063,10 +1090,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21_2" >
         
           
-          <label class="md-nav__link" for="__nav_20_2" id="__nav_20_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_21_2" id="__nav_21_2_label" tabindex="0">
             
   
   
@@ -1084,8 +1111,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_21_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21_2">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1423,20 +1450,20 @@
 
 
 <h1 id="step-8-orchestrator-prompt">Step 8 · Orchestrator Prompt<a class="headerlink" href="#step-8-orchestrator-prompt" title="Permanent link">&para;</a></h1>
-<p>Once an agent's control flow lives in code — a gate, a state machine, a set of endpoints — a question sharpens: what is the prompt still <em>for</em>? The answer is a dividing line worth stating up front.</p>
+<p>Once an agent's control flow lives in code (a gate, a state machine, a set of endpoints), the prompt has a narrower job.</p>
 <blockquote>
 <p>The prompt shapes judgment. The code enforces boundaries.</p>
 </blockquote>
-<p>The prompt decides what the model should <em>think about</em> — how to break a question into steps, how to interpret feedback, what counts as evidence. The code decides what the model is <em>allowed to do</em> — which tools exist, when execution may start, who may approve. Every time you find yourself writing a prompt sentence that tries to guarantee a boundary, you have found something that belongs in code instead.</p>
-<p>The running example is a pharmaceutical commercial-analytics orchestrator. Identifiers are generic (<code>BRAND_A</code>, <code>SOURCE_A..D</code>, <code>query_source</code>), but the domain matters here: in regulated analytics, some of these rules are law, not style, and that changes where they have to live.</p>
+<p>The prompt decides what the model should <em>think about</em>: how to break a question into steps, how to interpret feedback, what counts as evidence. The code decides what the model is <em>allowed to do</em>: which tools exist, when execution may start, who may approve. Every time you find yourself writing a prompt sentence that tries to guarantee a boundary, you have found something that belongs in code instead.</p>
+<p>The running example is a retail commercial-analytics orchestrator. Identifiers are generic (<code>BRAND_A</code>, <code>SOURCE_A..D</code>, <code>query_source</code>), but the domain matters here: when data is licensed per market and the numbers feed real decisions, some of these rules are contractual, not style, and that changes where they have to live.</p>
 <blockquote>
-<p>Terms used below — <a href="../00-glossary/#gate">gate</a>, <a href="../00-glossary/#middleware">middleware</a>, <a href="../00-glossary/#toolmessage">ToolMessage</a>, <a href="../00-glossary/#grounding">grounding</a>, <a href="../00-glossary/#entity-resolution">entity resolution</a> — are in the <a href="../00-glossary/">glossary</a>. This article builds on <a href="../04-planning-and-human-approval/">Human-in-the-Loop Approval</a>.</p>
+<p>Terms used below (<a href="../00-glossary/#gate">gate</a>, <a href="../00-glossary/#middleware">middleware</a>, <a href="../00-glossary/#toolmessage">ToolMessage</a>, <a href="../00-glossary/#grounding">grounding</a>, <a href="../00-glossary/#entity-resolution">entity resolution</a>) are in the <a href="../00-glossary/">glossary</a>. This article builds on <a href="../04-planning-and-human-approval/">Planning and Human Approval</a>.</p>
 </blockquote>
 <h2 id="the-test-prompt-or-structure">The Test: Prompt Or Structure?<a class="headerlink" href="#the-test-prompt-or-structure" title="Permanent link">&para;</a></h2>
 <p>For any rule the agent must follow, ask one question: <strong>can code enforce it deterministically?</strong></p>
 <ul>
 <li>If yes, put it in code and spend zero prompt tokens on it. Prompt instructions compete with the model's other instincts and occasionally lose. Structure does not.</li>
-<li>If no — because enforcement would require reading the model's mind — the prompt is the only surface available, and the sentence has to be exact.</li>
+<li>If no, because enforcement would require reading the model's mind, the prompt is the only surface available, and the sentence has to be exact.</li>
 </ul>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>                    ┌─────────────────────────────────────┐
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>                    │  Can code enforce this deterministically?  │
@@ -1460,7 +1487,7 @@
 <p>The rest of this article is that test applied to a real orchestrator, in both directions.</p>
 <h2 id="what-the-code-enforces-not-the-prompt">What The Code Enforces (Not The Prompt)<a class="headerlink" href="#what-the-code-enforces-not-the-prompt" title="Permanent link">&para;</a></h2>
 <p>Start with the boundaries, because they are the easy calls. None of these appear in the prompt at all.</p>
-<p><strong>Tool availability.</strong> The agent framework injects several built-in tools by default, including one that spawns sub-agents. A sub-agent would run its retrievals <em>outside</em> the approval gate — exactly the thing the whole design exists to prevent.</p>
+<p><strong>Tool availability.</strong> The agent framework injects several built-in tools by default, including one that spawns sub-agents. A sub-agent would run its retrievals <em>outside</em> the approval gate, which is what the gate exists to prevent.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>❌ WRONG — using the prompt to forbid a tool:
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  System prompt: "Do not use the spawn_subagent tool."
@@ -1486,11 +1513,11 @@
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>        <span class="n">tools</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">tools</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_allowed</span><span class="p">]</span>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>        <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">override</span><span class="p">(</span><span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">)</span>   <span class="c1"># the model never sees the rest</span>
 </code></pre></div>
-<p>The production orchestrator allowed exactly seven tools — the rest were invisible:</p>
+<p>The production orchestrator allowed exactly seven tools, and the rest were invisible:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>write_todos      ← planning only (before approval)
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>submit_plan      ← the gate tool
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>query_cortex     ← retrieval (plan-gated, only after approval)
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>query_iqvia_gmi  ← retrieval (plan-gated, only after approval)
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>query_market_data  ← retrieval (plan-gated, only after approval)
 <a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>run_analysis     ← synthesis over already-held data
 <a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>rebuild_artifacts← re-render charts from existing evidence
 <a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>read_file        ← playbooks only, path-guarded by middleware
@@ -1543,8 +1570,8 @@
 </tr>
 </tbody>
 </table>
-<p>The order is not decorative. LangChain runs <code>after_agent</code> hooks in reverse registration order, so the sufficiency gate must run before the exit path writes the report. The retrieval budget uses model-call hooks, so it can meter loop depth without perturbing that exit ordering.</p>
-<p><strong>Gate sequencing, status, concurrency.</strong> Whether the plan is approved, when it locks, how many times it was refined, whether two requests raced — all of that is code (the gate's <code>interrupt()</code>, <code>model_copy</code> on the plan status, a DynamoDB claim). See <a href="../04-planning-and-human-approval/">Human-in-the-Loop Plan Approval</a> for the mechanism. Here the point is only that these were <em>not</em> delegated to the prompt.</p>
+<p>Registration order matters. LangChain runs <code>after_agent</code> hooks in reverse registration order, so the sufficiency gate must run before the exit path writes the report. The retrieval budget uses model-call hooks, so it can meter loop depth without perturbing that exit ordering.</p>
+<p><strong>Gate sequencing, status, concurrency.</strong> Whether the plan is approved, when it locks, how many times it was refined, whether two requests raced: all of that is code (the gate's <code>interrupt()</code>, <code>model_copy</code> on the plan status, a DynamoDB claim). See <a href="../04-planning-and-human-approval/">Human-in-the-Loop Plan Approval</a> for the mechanism. None of it was delegated to the prompt.</p>
 <table>
 <thead>
 <tr>
@@ -1579,7 +1606,7 @@
 <h2 id="what-the-prompt-shapes-not-the-code">What The Prompt Shapes (Not The Code)<a class="headerlink" href="#what-the-prompt-shapes-not-the-code" title="Permanent link">&para;</a></h2>
 <p>Now the other side: the judgments no code can make. These are where prompt wording is load-bearing, and where a wrong word ships a bug.</p>
 <h3 id="the-phase-machine">The phase machine<a class="headerlink" href="#the-phase-machine" title="Permanent link">&para;</a></h3>
-<p>The workflow is written as five numbered, labeled steps — PLAN, SUBMIT, REFINE, EXECUTE, FOLLOW-UP — not as prose. The numbering is not decoration. It gives the model a phase machine it can locate itself in: at any point in a long conversation it matches its situation ("I just received refine feedback") to a step and reads off what to do.</p>
+<p>The workflow is written as five numbered, labeled steps (PLAN, SUBMIT, REFINE, EXECUTE, FOLLOW-UP) instead of prose. The numbering gives the model a phase machine it can locate itself in: at any point in a long conversation it matches its situation ("I just received refine feedback") to a step and reads off what to do.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>┌──────────────────────────────────────────────────────────┐
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>│           ORCHESTRATOR PHASE MACHINE                     │
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>│                                                          │
@@ -1603,7 +1630,7 @@
 <a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>   - calls query_source at ② instead of waiting for ④
 <a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a>   - re-runs old plan at ③ instead of updating todos first
 </code></pre></div>
-<p>Unnumbered prose loses this — models skip phases when the phases have no names.</p>
+<p>Unnumbered prose loses this, because models skip phases when the phases have no names.</p>
 <h3 id="ordering-the-models-reasoning">Ordering the model's reasoning<a class="headerlink" href="#ordering-the-models-reasoning" title="Permanent link">&para;</a></h3>
 <p>Some rules the code physically cannot impose because there is no code between the model's thoughts. Evaluation order is one.</p>
 <blockquote>
@@ -1617,8 +1644,8 @@
 <a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    Model picks SOURCE_A (handles "sales" questions)
 <a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>
 <a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>  Step 2: Resolve entities
-<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>    "my" → user default is JAPAN
-<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>    SOURCE_A does not cover JAPAN
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>    "my" → user default is CANADA
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>    SOURCE_A does not cover CANADA
 <a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>
 <a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>  Result: plan routes to a source that cannot serve the entity
 <a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>          → retrieval fails, or wrong data returned
@@ -1630,10 +1657,10 @@
 <a id="__codelineno-6-19" name="__codelineno-6-19" href="#__codelineno-6-19"></a>  Question: "Give me my sales"
 <a id="__codelineno-6-20" name="__codelineno-6-20" href="#__codelineno-6-20"></a>
 <a id="__codelineno-6-21" name="__codelineno-6-21" href="#__codelineno-6-21"></a>  Step 1: Resolve entities
-<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a>    "my" → user default is JAPAN, brand = PAXLOVID
+<a id="__codelineno-6-22" name="__codelineno-6-22" href="#__codelineno-6-22"></a>    "my" → user default is CANADA, brand = BRAND_C
 <a id="__codelineno-6-23" name="__codelineno-6-23" href="#__codelineno-6-23"></a>
 <a id="__codelineno-6-24" name="__codelineno-6-24" href="#__codelineno-6-24"></a>  Step 2: Pick source
-<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a>    JAPAN + PAXLOVID → SOURCE_B handles this combination
+<a id="__codelineno-6-25" name="__codelineno-6-25" href="#__codelineno-6-25"></a>    CANADA + BRAND_C → SOURCE_B handles this combination
 <a id="__codelineno-6-26" name="__codelineno-6-26" href="#__codelineno-6-26"></a>
 <a id="__codelineno-6-27" name="__codelineno-6-27" href="#__codelineno-6-27"></a>  Result: correct source chosen for the correct entity ✓
 </code></pre></div>
@@ -1660,9 +1687,9 @@
 <a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>   "Entities named in the question always override defaults"
 <a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>   Model reads GERMANY in the question → applies priority rule → plans for GERMANY
 </code></pre></div>
-<p>The code never sees the defaults — the context block is injected into the model request by middleware and never checkpointed — so only the model can apply the precedence, and only if told to.</p>
+<p>The code never sees the defaults, because middleware injects the context block into the model request and never checkpoints it. Only the model can apply the precedence, and only if told to.</p>
 <h2 id="the-case-that-has-to-be-both">The Case That Has To Be Both<a class="headerlink" href="#the-case-that-has-to-be-both" title="Permanent link">&para;</a></h2>
-<p>The sharpest example is a rule that is enforced by <em>neither</em> side cleanly. During execution, middleware still injects defaults on every model call — it does not know what phase the run is in. But the human already approved a plan with specific entities.</p>
+<p>The sharpest example is a rule that is enforced by <em>neither</em> side cleanly. During execution, middleware still injects defaults on every model call; it does not know what phase the run is in. But the human already approved a plan with specific entities.</p>
 <p>Quick vocabulary check:</p>
 <ul>
 <li><strong>Raw question</strong> is only what the user typed.</li>
@@ -1716,7 +1743,7 @@ report country = GERMANY   <span class="ok">correct</span></pre>
 
 <p>Germany did not appear randomly. It entered the run when the user explicitly asked for Germany, then became durable when the human approved a plan whose entities said Germany. The bug is that Australia kept re-entering later as injected default context.</p>
 <p>There is no code that can detect "the model re-resolved an entity mid-execution." The prompt is the only thing holding this invariant. When this line was missing, the model produced a confident, well-formatted report for the wrong country.</p>
-<p>The lesson: <strong>know which invariants have no structural enforcement, and treat those prompt lines as load-bearing — nothing else is holding the weight.</strong></p>
+<p><strong>Know which invariants have no structural enforcement, and treat those prompt lines as load-bearing.</strong></p>
 <h2 id="clarification-is-a-control-flow-event">Clarification Is A Control-Flow Event<a class="headerlink" href="#clarification-is-a-control-flow-event" title="Permanent link">&para;</a></h2>
 <p>A clarification is any turn where the system asks the user something instead of answering. The prompt shapes the wording, but the source of the pause decides the machinery:</p>
 <table>
@@ -1755,7 +1782,7 @@ report country = GERMANY   <span class="ok">correct</span></pre>
 </tr>
 </tbody>
 </table>
-<p>The confusing case is source elicitation. Suppose one source returns promo ROI data while another asks, "retail or non-retail?" Deep does not ship a partial report. <code>pending_elicitation</code> is a whole-cycle gate: if any open step is waiting on the user, the report writer skips report generation. The completed source result stays in <code>source_results</code>, and the next user reply re-queries only the asking step.</p>
+<p>The confusing case is source elicitation. Suppose one source returns promotion lift data while another asks, "in-store or online?" Deep does not ship a partial report. <code>pending_elicitation</code> is a whole-cycle gate: if any open step is waiting on the user, the report writer skips report generation. The completed source result stays in <code>source_results</code>, and the next user reply re-queries only the asking step.</p>
 <p>That reply is <strong>not</strong> <code>Command(resume=...)</code>. Only the plan approval gate leaves a pending <code>interrupt()</code>. A source elicitation turn completes normally after relaying the question. The user's answer enters as a fresh graph invocation on the same <code>thread_id</code>, under the same locked <code>plan_id</code>; the carried result is reused, the clarified step gets a new <code>provenance_id</code>, and the changed evidence set can now report.</p>
 <p>This is the boundary between prompt and code again:</p>
 <ul>
@@ -1764,7 +1791,7 @@ report country = GERMANY   <span class="ok">correct</span></pre>
 <li>The locked plan prevents a second approval loop and keeps carried evidence attached to the same cycle.</li>
 </ul>
 <h2 id="budgets-meter-depth-not-breadth">Budgets Meter Depth, Not Breadth<a class="headerlink" href="#budgets-meter-depth-not-breadth" title="Permanent link">&para;</a></h2>
-<p>A deep agent needs a real loop bound that fits its execution shape. Counting individual tool calls punishes parallel fan-out, which is exactly what a research agent should use to reduce wall-clock time. The production design instead meters retrieval rounds:</p>
+<p>A deep agent needs a real loop bound that fits its execution shape. Counting individual tool calls punishes parallel fan-out, which a research agent should use to reduce wall-clock time. The production design instead meters retrieval rounds:</p>
 <table>
 <thead>
 <tr>
@@ -1793,10 +1820,10 @@ report country = GERMANY   <span class="ok">correct</span></pre>
 </table>
 <p>A round is one model turn that issued one or more retrieval calls. A turn that queries three sources in parallel spends one round, not three. Gap-fill turns from the sufficiency gate spend the same budget, and the budget resets when a genuinely new question opens a new plan cycle.</p>
 <h2 id="grounding-the-purely-prompt-invariant">Grounding: The Purely-Prompt Invariant<a class="headerlink" href="#grounding-the-purely-prompt-invariant" title="Permanent link">&para;</a></h2>
-<p>The clearest case of a prompt-only rule is grounding — making sure every number in the report came from a real tool call, not from the model's memory.</p>
+<p>The clearest case of a prompt-only rule is grounding: making sure every number in the report came from a real tool call, not from the model's memory.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>❌ WITHOUT grounding rule:
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
-<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>  Step 2: query IQVIA for PAXLOVID market share
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>  Step 2: query market data for BRAND_C market share
 <a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>    → API timeout, retrieval fails
 <a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
 <a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>  Base prompt says: "keep iterating until the task is done"
@@ -1804,7 +1831,7 @@ report country = GERMANY   <span class="ok">correct</span></pre>
 <a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>  Model's other way: its training data
 <a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>
 <a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>  Report includes:
-<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>  "PAXLOVID market share in Q3 2024: approximately 34%"
+<a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>  "BRAND_C market share last quarter: approximately 30%"
 <a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>                                      ↑
 <a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>                              fabricated from training data
 <a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>                              looks identical to real data
@@ -1818,15 +1845,15 @@ report country = GERMANY   <span class="ok">correct</span></pre>
 <a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a>   If retrieval fails, mark the step completed and state
 <a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a>   that retrieval failed. Never estimate or approximate."
 <a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a>
-<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a>  Step 2: query IQVIA → fails
+<a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a>  Step 2: query market data → fails
 <a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a>
 <a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a>  Report includes:
-<a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a>  "PAXLOVID market share: retrieval failed for this step.
+<a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a>  "BRAND_C market share: retrieval failed for this step.
 <a id="__codelineno-8-29" name="__codelineno-8-29" href="#__codelineno-8-29"></a>   Data not available in this report."
 <a id="__codelineno-8-30" name="__codelineno-8-30" href="#__codelineno-8-30"></a>                          ↑
 <a id="__codelineno-8-31" name="__codelineno-8-31" href="#__codelineno-8-31"></a>                    honest, auditable, compliant
 </code></pre></div>
-<p>Why this cannot be code: there is no way to detect at inference time whether a specific sentence in the model's output came from a tool result or from its training data. The enforcement surface is the prompt only.</p>
+<p>This cannot be code, because there is no way to detect at inference time whether a specific sentence in the model's output came from a tool result or from its training data. The enforcement surface is the prompt only.</p>
 <p>Two wording details, each scar tissue from a real failure:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>"Never state, estimate, OR approximate"
 <a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>         ↑        ↑           ↑
@@ -1883,7 +1910,7 @@ report country = GERMANY   <span class="ok">correct</span></pre>
 <li>Remove forbidden tools from the request instead of forbidding them in prose</li>
 <li>Keep gate sequencing, status transitions, and concurrency entirely in code</li>
 <li>Reserve the prompt for judgment and for invariants with no structural enforcement</li>
-<li>Treat those unenforceable prompt lines as load-bearing — they are the only thing holding the invariant</li>
+<li>Treat those unenforceable prompt lines as load-bearing; they are the only thing holding the invariant</li>
 <li>Enumerate the exact misbehaviors when the model negotiates around a rule</li>
 <li>Number and name workflow phases so the model can locate itself</li>
 <li>Deliver post-decision instructions as tool results, not only as system-prompt text</li>

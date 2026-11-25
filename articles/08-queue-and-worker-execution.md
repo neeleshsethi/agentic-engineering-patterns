@@ -217,7 +217,7 @@ Two more properties round it out:
 - **Termination is on status, not a sentinel.** A crashed worker never writes a "done" event. If the only exit were a sentinel event, the user would watch a spinner forever. The run-state record can be flipped to `failed` by a detector that is not the worker.
 - **Dedup makes at-least-once look exactly-once.** Every duplicated feed line from a redelivery collapses on the idempotency key at read time.
 
-See [SSE Cancellation](./06-streaming-and-background-work.md) for what happens to server-side work when that client connection closes.
+See [Streaming and background work](./06-streaming-and-background-work.md) for what happens to server-side work when that client connection closes.
 
 ## Crash Recovery Costs One Unit Of Work
 

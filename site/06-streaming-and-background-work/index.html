@@ -524,10 +524,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-actually-happens-on-disconnect" class="md-nav__link">
+  <a href="#what-happens-on-disconnect" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What actually happens on disconnect
+        What happens on disconnect
       
     </span>
   </a>
@@ -889,6 +889,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../11-when-the-score-passes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone 2 · When the score passes and the work fails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -903,10 +930,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21" >
         
           
-          <label class="md-nav__link" for="__nav_20" id="__nav_20_label" tabindex="">
+          <label class="md-nav__link" for="__nav_21" id="__nav_21_label" tabindex="">
             
   
   
@@ -924,8 +951,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_20_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_21_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -980,10 +1007,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21_2" >
         
           
-          <label class="md-nav__link" for="__nav_20_2" id="__nav_20_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_21_2" id="__nav_21_2_label" tabindex="0">
             
   
   
@@ -1001,8 +1028,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_21_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21_2">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1177,10 +1204,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-actually-happens-on-disconnect" class="md-nav__link">
+  <a href="#what-happens-on-disconnect" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What actually happens on disconnect
+        What happens on disconnect
       
     </span>
   </a>
@@ -1258,14 +1285,14 @@
 
 <h1 id="step-5-streaming-and-background-work">Step 5 · Streaming and Background Work<a class="headerlink" href="#step-5-streaming-and-background-work" title="Permanent link">&para;</a></h1>
 <p>The agent can now hold state, inject context, pause for approval, and name the pieces of a run. The next step is user experience: the browser should see progress while the system works.</p>
-<p>That does not mean the browser owns the work. The first rule of streaming production agents is this: <strong>required work must outlive the HTTP connection showing its progress.</strong> Here is what breaks when it cannot.</p>
+<p>The browser still does not own the work. <strong>Required work must outlive the HTTP connection showing its progress.</strong> Here is what breaks when it cannot.</p>
 <h2 id="the-problem-the-user-closes-the-tab-and-the-save-never-happens">The problem: the user closes the tab, and the save never happens<a class="headerlink" href="#the-problem-the-user-closes-the-tab-and-the-save-never-happens" title="Permanent link">&para;</a></h2>
-<p>An agent finishes a run. Your code streams a final <code>end</code> event to the browser, then saves the turn to the database. It works every time you test it — because you sit and watch the stream finish.</p>
+<p>An agent finishes a run. Your code streams a final <code>end</code> event to the browser, then saves the turn to the database. It works every time you test it, because you sit and watch the stream finish.</p>
 <p>In production, the browser is not so patient. The moment it receives the <code>end</code> event, it closes the connection. That disconnect cancels your server code <em>before the save runs</em>. The user got their answer, the request returned <code>200 OK</code>, and the turn was never written to history. Nothing threw. Nothing logged. This is a <a href="../00-glossary/#transport-success-vs-semantic-success">silent failure</a>.</p>
 <blockquote>
 <p><strong><a href="../00-glossary/#sse-server-sent-events">SSE (Server-Sent Events)</a></strong> — a long-lived HTTP response where the server sends small text frames over time, instead of one final body. It is how an agent streams progress to a browser.</p>
 </blockquote>
-<h2 id="what-actually-happens-on-disconnect">What actually happens on disconnect<a class="headerlink" href="#what-actually-happens-on-disconnect" title="Permanent link">&para;</a></h2>
+<h2 id="what-happens-on-disconnect">What happens on disconnect<a class="headerlink" href="#what-happens-on-disconnect" title="Permanent link">&para;</a></h2>
 <p><a href="../00-glossary/#sse-server-sent-events">SSE</a> is a generator on the server: it <code>yield</code>s frames, and between yields it <code>await</code>s. When the browser closes the connection, the server framework (Starlette, FastAPI) cancels that generator at its <strong>next <code>await</code></strong>.</p>
 <pre class="mermaid"><code>sequenceDiagram
     participant B as Browser
@@ -1276,7 +1303,7 @@
     B--xS: closes connection on 'end'
     Note over S,D: next await is now cancelled
     S-xD: await save_to_database()  ✗ never runs</code></pre>
-<p>So any <code>await</code> placed <em>after</em> the terminal frame is a race against the client hanging up — and the client usually wins.</p>
+<p>So any <code>await</code> placed <em>after</em> the terminal frame is a race against the client hanging up, and the client usually wins.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># BEFORE — the save is cancelled before it starts</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">yield</span> <span class="n">end_event</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="k">await</span> <span class="n">save_to_database</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>   <span class="c1"># the browser already left; this await never resolves</span>
@@ -1290,7 +1317,7 @@
 </code></pre></div>
 <p>The save is cancelled, the <code>except</code> never fires, and you have no log line telling you it happened.</p>
 <h2 id="the-fix-own-the-work-before-the-terminal-frame">The fix: own the work before the terminal frame<a class="headerlink" href="#the-fix-own-the-work-before-the-terminal-frame" title="Permanent link">&para;</a></h2>
-<p>The rule is simple: <strong>required work must be started before the terminal frame is yielded.</strong></p>
+<p><strong>Start required work before the terminal frame is yielded.</strong></p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>BROKEN                              FIXED
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>──────                              ─────
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
@@ -1316,7 +1343,7 @@
 </code></pre></div>
 <p>This does not make the save infallible. It changes the failure mode from <em>"a client disconnect cancels the save before it starts"</em> to <em>"a background task owns its own completion and its own logging."</em> The task now runs to completion regardless of whether the browser is still listening.</p>
 <h2 id="test-it-with-a-forced-disconnect">Test it with a forced disconnect<a class="headerlink" href="#test-it-with-a-forced-disconnect" title="Permanent link">&para;</a></h2>
-<p>The happy-path test never catches this bug — you have to hang up early.</p>
+<p>The happy-path test never catches this bug. You have to hang up early.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>1. Open the stream.
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>2. Read until the first terminal event.
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>3. Close the client connection immediately.
@@ -1327,7 +1354,7 @@
 <ul>
 <li>Treat a client disconnect as a first-class cancellation path, not an edge case</li>
 <li>Never place a required write after a terminal <code>yield</code>; start it before, as an owned task</li>
-<li>Remember <code>CancelledError</code> is a <code>BaseException</code> — a bare <code>except Exception</code> will not see it</li>
+<li>Remember <code>CancelledError</code> is a <code>BaseException</code>; a bare <code>except Exception</code> will not see it</li>
 <li>Propagate cancellation through every task boundary you spawn</li>
 <li>Test with forced early disconnects, not only happy-path streams</li>
 </ul>

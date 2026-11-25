@@ -1,7 +1,7 @@
 # Before Resume: The Proposal Turn, End to End
 
 > Reconstructed from source notes. Genericized: product → "the platform"; brand → `BRAND_A`;
-> the memory service → "the memory service (STM/LTM)"; tables → `app-{env}-*`. Framework names
+> the memory service → "the memory service (STM/LTM)"; tables → `{env}-*`. Framework names
 > (LangGraph, deepagents, DynamoDB) are real.
 
 This is the *before-approval* half of a deep agent: everything from the moment a research
@@ -27,14 +27,14 @@ persisted at end of run instead, from state.
 1. POST /chat/stream (mode=deep)
    Browser ──► API (ECS)
    │EventSource│   prepare_memory():  memory service STM+LTM
-   │           │                      entity-state get_item → DynamoDB: entity-state
+   │           │                      turn-entities get_item → DynamoDB: turn-entities
    │  SSE:     │   build_proposal_graph_input()
    │  plan     │◄─ graph.astream(...)  ── every super-step → saver.put()
    │  events + │        interrupt()
    │  interrupt│
    └───────────┘
                        2. the thread PARKS here (nothing is running)
-                          DynamoDB: deep-checkpoints
+                          DynamoDB: agent-checkpoints
                             full graph state + the pending interrupt
 
 3. POST /deep/{thread}/plan/refine   (loop 0..n times)
@@ -57,11 +57,11 @@ nothing lives in process memory.**
 
 | Store | Physical name | Role before resume | Access |
 |---|---|---|---|
-| **Checkpoint table** | `app-{env}-deep-checkpoints` | The whole ballgame: every super-step's state snapshot, the pending interrupt, and the resume-claim lease | Written by LangGraph's saver; read by resume |
-| **Entity-state table** | `app-{env}-entity-state` | The previous turn's resolved `{country, brand, period}` groups — quick or deep, same row | One `get_item` per proposal |
+| **Checkpoint table** | `{env}-agent-checkpoints` | The whole ballgame: every super-step's state snapshot, the pending interrupt, and the resume-claim lease | Written by LangGraph's saver; read by resume |
+| **Turn-entities table** | `{env}-turn-entities` | The previous turn's resolved `{country, brand, period}` groups — quick or deep, same row | One `get_item` per proposal |
 | **The memory service** | (STM/LTM) | STM turns + session summary + LTM insights/preferences | Read by `prepare_memory()`, fail-safe |
-| **Chat history** | `app-{env}-chat-history` | Fallback memory source when the memory service is off | Read-only here; **deliberately not written** |
-| **S3 offload bucket** | `$DEEP_CHECKPOINT_S3_BUCKET` | Checkpoints past ~350 KB offload transparently; the table keeps a pointer | Written by the saver when needed |
+| **Chat history** | `{env}-message-history` | Fallback memory source when the memory service is off | Read-only here; **deliberately not written** |
+| **S3 offload bucket** | `$CHECKPOINT_OFFLOAD_BUCKET` | Checkpoints past ~350 KB offload transparently; the table keeps a pointer | Written by the saver when needed |
 
 ### The IDs — where each one is born and what it's for
 
@@ -69,8 +69,8 @@ nothing lives in process memory.**
 |---|---|---|---|
 | `thread_id` | `chat_id` chosen at proposal time | Whole conversation | The LangGraph thread — the deep thread **is the chat**, not the session. Refine and approve arrive as separate requests and must land on the same thread. |
 | `deep_run_id` | `uuid4().hex` per proposal | One proposal→report cycle | Scopes the observability trace to ONE turn; resumes never rewrite it, the next proposal mints a new one |
-| `question_ts` | Server clock at question arrival | One turn | Orders entity-state writes at end of run by *arrival* time (completion order inverts under slow runs) |
-| `plan_id` | Derived (`plan-{thread_id}`) per question cycle | One question's cycle | Stable across refinements by design — which is why it alone cannot authorize an approve |
+| `question_ts` | Server clock at question arrival | One turn | Orders turn-entities writes at end of run by *arrival* time (completion order inverts under slow runs) |
+| `plan_id` | Derived (`plan-{thread_id}-{cycle}`) per question cycle | One question's cycle | Stable across refinements by design — which is why it alone cannot authorize an approve |
 | `interrupt_id` | LangGraph, per `interrupt()` pause | One pause | Binds an approval to the exact revision the user was looking at; a stale tab's approve is rejected |
 | Claim token | `uuid4().hex` per `acquire_resume_claim()` | One resume attempt | Token-guarded release: a stream that outlives its lease cannot delete the next holder's claim |
 | `owner_id` | Captured from the proposal request into the interrupt payload | The run | Execution always runs under the plan owner's identity, never the resume caller's |
@@ -117,7 +117,7 @@ machinery verbatim:
 prepare_memory(user_id, chat_id, query):
     # 1. STM: recent turns for (actor=user_id, session=chat_id) + session summary, prepended as
     #    a system message. Fallback when the memory service is off/down: raw DynamoDB chat history.
-    # 2. entity-state get_item(chat_id): ALWAYS consulted, even when the memory view above is
+    # 2. turn-entities get_item(chat_id): ALWAYS consulted, even when the memory view above is
     #    empty — the sole carryover source must survive a degraded memory backend.
     # 3. LTM search (actor=user_id, cross-session): semantic insights + parsed "User preferences:"
 ```
@@ -146,7 +146,7 @@ Two non-obvious rules, both `LastValue` footguns caught in review:
   turn's value — a follow-up with nothing to inject would silently plan against the last
   question's context block.
 - **`question_ts` is arrival time, not completion time.** A 45-minute run that completes after a
-  newer question in the same chat must *lose* the entity-state write to that newer question.
+  newer question in the same chat must *lose* the turn-entities write to that newer question.
   Completion order inverts under slow runs; arrival order never does.
 
 The rendered `[User context]` block itself:
@@ -190,12 +190,12 @@ The graph is compiled with `DynamoDBSaver` (from `langgraph-checkpoint-aws`):
 
 | Setting | Value | Why |
 |---|---|---|
-| Table | `app-{env}-deep-checkpoints` | Generic PK/SK saver schema; name discovered via env slug, published to SSM |
+| Table | `{env}-agent-checkpoints` | Generic PK/SK saver schema; name discovered via env slug, published to SSM |
 | `thread_id` | `chat_id` | Refine/approve are separate HTTP requests — they find the thread by the id the frontend already has |
-| TTL | 30 days (`DEEP_CHECKPOINT_TTL_SECONDS`) | A gate parked longer than this is abandoned by definition |
+| TTL | 30 days (`CHECKPOINT_TTL_SECONDS`) | A gate parked longer than this is abandoned by definition |
 | Compression | gzip | State carries the full transcript |
-| S3 offload | > ~350 KB → `s3://$DEEP_CHECKPOINT_S3_BUCKET/deep-checkpoints/…` | DynamoDB's 400 KB item cap; transparent to the app |
-| Fallback | `InMemorySaver` when `DEEP_CHECKPOINTER_BACKEND=memory` | Single-process only (local dev, unit tests); misconfiguration *raises* rather than degrades |
+| S3 offload | > ~350 KB → `s3://$CHECKPOINT_OFFLOAD_BUCKET/agent-checkpoints/…` | DynamoDB's 400 KB item cap; transparent to the app |
+| Fallback | `InMemorySaver` when `CHECKPOINTER_BACKEND=memory` | Single-process only (local dev, unit tests); misconfiguration *raises* rather than degrades |
 
 LangGraph calls `saver.put()` after every super-step — our code never writes a checkpoint. By the
 time the gate fires, the entire planning conversation is already durable. **The interrupt doesn't
@@ -211,7 +211,7 @@ owns that channel), then calls the gate tool `submit_plan`:
 2. Projects the raw todos into the typed `Plan`: stable step ids (`step-1…`), title, scope,
    `plan_id` derived from the thread, `modification_count`.
 3. Detects a new question cycle: a prior with `status == "locked"` means this submit starts a
-   fresh question on the same thread — `plan_id` increments (`plan-{thread}-2`),
+   fresh question on the same thread — `plan_id` increments (`plan-{thread_id}-2`),
    `modification_count` resets, and `entity_groups` reset (carrying the previous question's groups
    forward would persist wrong-country entities; **empty beats wrong**).
 4. Calls `interrupt()` with the payload the whole "before resume" phase hands to the "after":
@@ -241,7 +241,7 @@ While the user reads the plan — for seconds or for days — this is the comple
 the system:
 
 ```
-DynamoDB: deep-checkpoints, thread = chat_id
+DynamoDB: agent-checkpoints, thread = chat_id
   checkpoint chain (one per super-step, gzipped, TTL 30d)
   latest checkpoint:
     messages        full planning transcript (Human + AI + Tool)
@@ -257,7 +257,7 @@ DynamoDB: deep-checkpoints, thread = chat_id
 
 Everything else: NOTHING.
   no process holds the thread          any API replica can resume it
-  no chat-history rows for this turn    no entity-state write yet
+  no message-history rows for this turn    no turn-entities write yet
   no SQS message, no events             no lock, no run-state
 ```
 
@@ -354,7 +354,7 @@ What happens next is the fork between today and the async future:
 - **Synchronous (shipped early):** the same request keeps streaming and execution runs in the API
   process.
 - **Async (the other note):** the endpoint flips to checkpoint-then-enqueue — write `run#{thread}
-  queued`, `send({thread_id, run_id})` to `deep-run.fifo`, return `202`, and the worker picks it
+  queued`, `send({thread_id, run_id})` to `agent-runs.fifo`, return `202`, and the worker picks it
   up.
 
 Either way: `life-of-a-deep-run.md` takes it from here.
@@ -376,7 +376,7 @@ Either way: `life-of-a-deep-run.md` takes it from here.
   missing_identity`. Execution always runs under the owner's identity.
 
 - **B4. Follow-up question on a thread with a locked plan.** New-cycle detection: the next
-  `submit_plan` sees `prior.status == "locked"` → new `plan_id` (`plan-{thread}-2`),
+  `submit_plan` sees `prior.status == "locked"` → new `plan_id` (`plan-{thread_id}-2`),
   `modification_count` resets, `entity_groups` reset (the old plan's entities must not leak onto
   the new one). The proposal request itself overwrites `raw_question` / `user_context` /
   `question_ts` / `deep_run_id`.
@@ -387,7 +387,7 @@ Either way: `life-of-a-deep-run.md` takes it from here.
 
 - **B6. The memory service is down at proposal time.** Fail-safe reads all the way down. STM/LTM
   return nothing, the memory view degrades to raw DynamoDB history (or nothing) — but the
-  entity-state `get_item` is still consulted. In that case the context block is empty and
+  turn-entities `get_item` is still consulted. In that case the context block is empty and
   `user_context` is *written* as empty, not omitted (or the previous turn's block would leak in).
 
 - **B7. The planning transcript outgrows a DynamoDB item.** The saver's S3 offload (> ~350 KB).
@@ -436,5 +436,5 @@ source of truth.
 
 **Why does the deep proposal reuse quick mode's memory functions?** Because the product
 requirement is one conversation across modes. A deep follow-up to a quick turn must see the same
-carryover row and the same memory view. One `prepare_memory()`, one entity-state table, two
+carryover row and the same memory view. One `prepare_memory()`, one turn-entities table, two
 graphs.

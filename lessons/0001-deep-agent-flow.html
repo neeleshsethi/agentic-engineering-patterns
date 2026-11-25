@@ -239,7 +239,7 @@ pre  { background: #131720; border: 1px solid #1e2433; border-radius: 8px; paddi
 .idnote-item.stable { color: #4ade80; border-color: rgba(74,222,128,0.4); background: rgba(74,222,128,0.08); }
 .idnote-item.change { color: #60a5fa; border-color: rgba(96,165,250,0.4); background: rgba(96,165,250,0.08); }
 
-/* ── deep-events table (seq inserts) ────────────────────── */
+/* ── agent-events table (seq inserts) ────────────────────── */
 .evtbl-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 1.4rem; align-items: start; margin-top: 0.5rem; }
 .evtbl { border: 1px solid #1e2433; border-radius: 8px; overflow: hidden; font-family: 'SF Mono','Fira Code',monospace; }
 .etr { display: grid; grid-template-columns: 4.9rem 2.1rem 5.6rem 5.6rem 1fr; font-size: 0.7rem; }
@@ -362,7 +362,7 @@ pre  { background: #131720; border: 1px solid #1e2433; border-radius: 8px; paddi
       <button class="flow-btn" id="flow-next" onclick="flowStep(1)">Next ›</button>
     </div>
     <div id="flow-meta">
-      <span class="flow-meta-key">Tools</span><code>write_todos</code> · <code>submit_plan</code> · <code>query_cortex</code> · <code>query_iqvia_gmi</code> · <code>run_analysis</code> · <code>rebuild_artifacts</code> · <code>read_file</code>
+      <span class="flow-meta-key">Tools</span><code>write_todos</code> · <code>submit_plan</code> · <code>query_cortex</code> · <code>query_market_data</code> · <code>run_analysis</code> · <code>rebuild_artifacts</code> · <code>read_file</code>
       <span class="flow-meta-sep">|</span>
       <span class="flow-meta-key">Middleware</span><code>UserContext</code> → <code>DataManifest</code> → <code>AllowedTools</code> → <code>PlaybookGuard</code> → <code>SufficiencyGate</code> → <code>DeepExitPath</code>
     </div>
@@ -402,12 +402,12 @@ pre  { background: #131720; border: 1px solid #1e2433; border-radius: 8px; paddi
         <div class="tool"><code>write_todos</code><span class="tool-dest">→ checkpoint</span></div>
         <div class="tool"><code>submit_plan</code><span class="tool-dest">→ interrupt() → checkpoint</span></div>
         <div class="tool ext"><code>query_cortex</code><span class="tool-dest">→ Cortex API ⤴</span></div>
-        <div class="tool ext"><code>query_iqvia_gmi</code><span class="tool-dest">→ IQVIA GMI ⤴</span></div>
+        <div class="tool ext"><code>query_market_data</code><span class="tool-dest">→ Market data API ⤴</span></div>
         <div class="tool"><code>run_analysis</code><span class="tool-dest">→ internal compute</span></div>
         <div class="tool"><code>rebuild_artifacts</code><span class="tool-dest">→ presentation only</span></div>
         <div class="tool"><code>read_file</code><span class="tool-dest">→ playbooks (guarded)</span></div>
       </div>
-      <div class="box accent" style="margin-top:0.7rem;"><span class="box-label accent">⤴ = crosses the network</span>Only <code>query_cortex</code> and <code>query_iqvia_gmi</code> leave the Agent — so they're the only tools drawn as arrows in the flow diagram.</div>
+      <div class="box accent" style="margin-top:0.7rem;"><span class="box-label accent">⤴ = crosses the network</span>Only <code>query_cortex</code> and <code>query_market_data</code> leave the Agent — so they're the only tools drawn as arrows in the flow diagram.</div>
     </div>
   </div>
 </div>
@@ -453,7 +453,7 @@ pre  { background: #131720; border: 1px solid #1e2433; border-radius: 8px; paddi
       <div class="tool-list">
         <div class="tool-line"><code>write_todos</code> <span class="tnote">plan turns — write the routed todo list</span></div>
         <div class="tool-line"><code>submit_plan</code> <span class="tnote">plan turns — fires <code>interrupt()</code> → approval gate</span></div>
-        <div class="tool-line"><code class="ext">query_cortex</code> <span class="par">∥</span> <code class="ext">query_iqvia_gmi</code> <span class="par">∥</span> <code>run_analysis</code> <span class="tnote">one retrieval round — parallel is free</span></div>
+        <div class="tool-line"><code class="ext">query_cortex</code> <span class="par">∥</span> <code class="ext">query_market_data</code> <span class="par">∥</span> <code>run_analysis</code> <span class="tnote">one retrieval round — parallel is free</span></div>
         <div class="tool-line"><code>read_file</code> <span class="hook-type tguard">wrap_tool_call</span> <span class="tnote">PlaybookGuard gates the path to <code>/playbooks/</code> first</span></div>
         <div class="tool-line"><code>rebuild_artifacts</code> <span class="tnote">presentation-only turns — no retrieval</span></div>
       </div>
@@ -501,7 +501,7 @@ pre  { background: #131720; border: 1px solid #1e2433; border-radius: 8px; paddi
 <!-- ── SLIDE 3e: MID-RETRIEVAL ELICITATION ───────────── -->
 <div class="slide" id="s3e" style="padding-top:1.4rem;">
   <span class="badge">Branch behavior · one source asks a question</span>
-  <h2 style="margin-bottom:0.2rem;">Cortex returns a clarification — IQVIA returns complete data</h2>
+  <h2 style="margin-bottom:0.2rem;">Cortex returns a clarification — market data returns complete data</h2>
   <p style="max-width:940px; font-size:0.8rem; margin-bottom:0.3rem;">Detection is <strong>deterministic and shared</strong> — a flag or a fixed classifier ladder sets <code>is_elicitation</code>, never an LLM. The prompt tells the model to relay, but the <strong>exit middleware is the real guard</strong>: it runs <code>pending_elicitation()</code> and skips the report <em>in code</em> — even if the model tried to synthesize an answer over the open question.</p>
   <div id="sc2-wrap" class="scenario-wrap">
     <svg id="sc2-svg" class="scenario-svg" viewBox="0 0 880 300" preserveAspectRatio="xMidYMid meet">
@@ -565,7 +565,7 @@ return Response(status_code=202)           # returns immediately</code></pre>
     <div class="guard-head"><span class="guard-col srv">gate.* — server truth</span><span class="guard-vs">vs</span><span class="guard-col cli">req.* — client claim</span></div>
     <p><code>read_pending_interrupt</code> returns what's <em>actually pending now</em>, read from the checkpoint. <code>req.*</code> is what the tab POSTed — the ids baked into the plan card it rendered. Each line asks: <strong>does this tab still match reality?</strong></p>
     <div class="guard-rows">
-      <div class="guard-row"><code>plan_id</code><span class="verdict">wrong cycle → <b class="c409">409</b></span><span class="gwhy">a new question bumps <code>cycle</code> → new <code>plan-{thread}-{cycle}</code></span></div>
+      <div class="guard-row"><code>plan_id</code><span class="verdict">wrong cycle → <b class="c409">409</b></span><span class="gwhy">a new question bumps <code>cycle</code> → new <code>plan-{thread_id}-{cycle}</code></span></div>
       <div class="guard-row"><code>interrupt_id</code><span class="verdict">stale refine round → <b class="c409">409</b></span><span class="gwhy">minted fresh on <em>every</em> pause — catches what <code>plan_id</code> can't</span></div>
       <div class="guard-row"><code>owner_id</code><span class="verdict">not your gate → <b class="c403">403</b></span><span class="gwhy">authorization, not staleness</span></div>
     </div>
@@ -599,9 +599,9 @@ with sse_manager.open(run_id) as stream:
   <div class="box tip" style="margin-top:0.5rem;"><span class="box-label tip">Key</span><code>input=None</code> means resume. LangGraph reads the staged resume decision from DynamoDB automatically — the worker doesn't pass it.</div>
 </div>
 
-<!-- ── SLIDE 6b: DEEP-EVENTS TABLE ───────────────────── -->
+<!-- ── SLIDE 6b: AGENT-EVENTS TABLE ───────────────────── -->
 <div class="slide" id="s6b">
-  <span class="badge">Steps 11–12 deep-dive · the deep-events table</span>
+  <span class="badge">Steps 11–12 deep-dive · the agent-events table</span>
   <h2 style="margin-bottom:0.3rem;">How the browser reads without ever touching the worker</h2>
   <p style="max-width:900px; font-size:0.82rem; margin-bottom:0.2rem;">As the worker runs, each graph event becomes a numbered row. <code>seq</code> is a <strong>monotonic counter</strong> the worker seeds once (from the partition's current max) and climbs — it answers <em>"in what order?"</em>, so it is <strong>new on every write</strong>. Each row also carries an <code>idem_key = {task_id}#{n}</code> derived from the graph's execution position — it answers <em>"have I shown this?"</em>, so it <strong>survives a replay unchanged</strong>. The fence keys on <code>thread_id</code> (see the write), and the SSE reader dedups by <code>idem_key</code> — so a retried run never double-writes evidence. (See why a retry happens on the next slide.)</p>
 
@@ -687,8 +687,8 @@ for it in items:
       <div class="rcard-sem">Concatenate new items onto a list. Append-only — never replaces or removes. Order-independent, so a parallel fan-out merges losslessly.</div>
       <div class="rex">
         <span class="k">old</span><span class="v">[cortex:r1]</span>
-        <span class="k">+ Δ</span><span class="v upd">[iqvia:r2]</span>
-        <span class="k">= new</span><span class="v res">[cortex:r1, iqvia:r2]</span>
+        <span class="k">+ Δ</span><span class="v upd">[market:r2]</span>
+        <span class="k">= new</span><span class="v res">[cortex:r1, market:r2]</span>
       </div>
       <div class="rcard-chan">used by <code>source_results</code> — accumulates across turns</div>
     </div>
@@ -900,9 +900,9 @@ const COMP = [
   { id:'sqs',     x:486, y:18, w:108, h:46, label:['SQS FIFO','Queue'],           stroke:'#fbbf24', glow:'glow-yellow'  },
   { id:'worker',  x:642, y:18, w:100, h:46, label:['Worker','Process'],           stroke:'#60a5fa', glow:'glow-blue'   },
   { id:'cortex',  x:642, y:152,w:93,  h:36, label:['Cortex','API'],               stroke:'#c084fc', glow:'glow-purple'  },
-  { id:'iqvia',   x:642, y:198,w:93,  h:36, label:['IQVIA','GMI'],                stroke:'#c084fc', glow:'glow-purple'  },
+  { id:'mkt',   x:642, y:198,w:93,  h:36, label:['Market','data'],                stroke:'#c084fc', glow:'glow-purple'  },
   { id:'report',  x:746, y:152,w:95,  h:36, label:['Assembly','Subgraph'],        stroke:'#38bdf8', glow:'glow-cyan'   },
-  { id:'events',  x:430, y:210,w:160, h:40, label:['deep-events','DynamoDB · seq'], stroke:'#4ade80', glow:'glow-green' },
+  { id:'events',  x:430, y:210,w:160, h:40, label:['agent-events','DynamoDB · seq'], stroke:'#4ade80', glow:'glow-green' },
 ];
 
 const G = {}; // id → {x,y,w,h,cx,cy,r,l,t,b}
@@ -942,19 +942,19 @@ const STEPS = [
       { d:`M${G.worker.l},${G.worker.cy+10} C${G.worker.l-80},140 ${G.dlock.r+40},${G.dlock.cy} ${G.dlock.r},${G.dlock.cy}`, color:'#4ade80', marker:'ah-green', label:'CLAIM#{thread_id}', labelOffset:'45%' },
       { d:`M${G.worker.l},${G.worker.cy-10} C${G.worker.l-70},4 ${G.agent.r+70},4 ${G.agent.r},${G.agent.cy-10}`, color:'#60a5fa', marker:'ah-blue', label:'input=None', labelOffset:'50%' }
     ], hi:['sqs','worker','dlock','agent'] },
-  { caption:'⑨ Agent calls query_cortex and query_iqvia_gmi tools — parallel data source retrieval', phase:'PHASE 3: EXECUTE', phaseClass:'phase-execute',
+  { caption:'⑨ Agent calls query_cortex and query_market_data tools — parallel data source retrieval', phase:'PHASE 3: EXECUTE', phaseClass:'phase-execute',
     paths:[
       { d:`M${G.agent.r},${G.agent.cy+3} C${G.agent.r+65},80 ${G.cortex.l-25},125 ${G.cortex.l},${G.cortex.cy}`, color:'#c084fc', marker:'ah-purple', label:'query_cortex', labelOffset:'45%' },
-      { d:`M${G.agent.r},${G.agent.cy+9} C${G.agent.r+70},100 ${G.iqvia.l-20},168 ${G.iqvia.l},${G.iqvia.cy}`, color:'#c084fc', marker:'ah-purple', label:'query_iqvia_gmi', labelOffset:'45%' }
-    ], hi:['agent','cortex','iqvia'] },
+      { d:`M${G.agent.r},${G.agent.cy+9} C${G.agent.r+70},100 ${G.mkt.l-20},168 ${G.mkt.l},${G.mkt.cy}`, color:'#c084fc', marker:'ah-purple', label:'query_market_data', labelOffset:'45%' }
+    ], hi:['agent','cortex','mkt'] },
   { caption:'⑩ DeepExitPathMiddleware fires → Assembly Subgraph runs report + chart generation from evidence', phase:'PHASE 3: EXECUTE', phaseClass:'phase-execute',
     paths:[
       { d:`M${G.agent.r},${G.agent.cy-3} C${G.agent.r+80},8 ${G.report.l-40},95 ${G.report.l},${G.report.cy}`, color:'#38bdf8', marker:'ah-cyan', label:'evidence', labelOffset:'45%' }
     ], hi:['agent','report'] },
-  { caption:'⑪ The worker never replies to the browser. It writes render frames to the deep-events table — curator renders each event, event_log writes it with a monotonic per-thread seq.', phase:'PHASE 3: EXECUTE', phaseClass:'phase-execute',
+  { caption:'⑪ The worker never replies to the browser. It writes render frames to the agent-events table — curator renders each event, event_log writes it with a monotonic per-thread seq.', phase:'PHASE 3: EXECUTE', phaseClass:'phase-execute',
     paths:[{ d:`M${G.worker.cx},${G.worker.b} C${G.worker.cx},150 ${G.events.r+40},${G.events.cy-60} ${G.events.r},${G.events.cy}`, color:'#4ade80', marker:'ah-green', label:'write frames · seq++', labelOffset:'55%' }],
     hi:['worker','events'] },
-  { caption:'⑫ The browser\'s SSE stream is held by the API, which tails deep-events with seq > cursor. A dropped connection reconnects and resumes from the last seq — losslessly. ✓', phase:'PHASE 3: EXECUTE', phaseClass:'phase-execute',
+  { caption:'⑫ The browser\'s SSE stream is held by the API, which tails agent-events with seq > cursor. A dropped connection reconnects and resumes from the last seq — losslessly. ✓', phase:'PHASE 3: EXECUTE', phaseClass:'phase-execute',
     paths:[
       { d:`M${G.events.l},${G.events.cy} C${G.events.l-60},${G.events.cy} ${G.api.cx+30},${G.api.b+70} ${G.api.cx},${G.api.b}`, color:'#4ade80', marker:'ah-green', label:'tail · seq > cursor', labelOffset:'50%' },
       { d:`M${G.api.l},${G.api.cy+6} L${G.browser.r},${G.browser.cy+6}`, color:'#4ade80', marker:'ah-green', label:'SSE frames', labelOffset:'50%' }
@@ -1199,7 +1199,7 @@ const SC1 = makeScenario({
   nodes: [
     { id:'agent',  x:40,  y:118, w:150, h:60, label:['LangGraph','Agent'],           stroke:'#a78bfa', glow:'g-glow-purple' },
     { id:'sgate',  x:290, y:30,  w:160, h:56, label:['SufficiencyGate','after_agent'], stroke:'#38bdf8', glow:'g-glow-cyan' },
-    { id:'src',    x:290, y:210, w:160, h:56, label:['Cortex / IQVIA','gap-fill query'], stroke:'#c084fc', glow:'g-glow-purple' },
+    { id:'src',    x:290, y:210, w:160, h:56, label:['Cortex / market data','gap-fill query'], stroke:'#c084fc', glow:'g-glow-purple' },
     { id:'exit',   x:540, y:30,  w:150, h:56, label:['DeepExitPath','build report'],  stroke:'#38bdf8', glow:'g-glow-cyan' },
     { id:'report', x:540, y:210, w:150, h:56, label:['Report ✓','Assembly Subgraph'], stroke:'#4ade80', glow:'g-glow-green' },
   ],
@@ -1224,28 +1224,28 @@ const SC1 = makeScenario({
   ],
 });
 
-// Scenario 2 — Cortex clarification, IQVIA complete (mid-retrieval elicitation)
+// Scenario 2 — Cortex clarification, market data complete (mid-retrieval elicitation)
 const SC2 = makeScenario({
   svg: 'sc2-svg', cap: 'sc2-cap', phase: 'sc2-phase', count: 'sc2-count', prev: 'sc2-prev', next: 'sc2-next',
   nodes: [
     { id:'agent',  x:30,  y:120, w:140, h:60, label:['LangGraph','Agent'],           stroke:'#a78bfa', glow:'g-glow-purple' },
     { id:'cortex', x:250, y:22,  w:150, h:54, label:['Cortex','is_elicitation=true'], stroke:'#c084fc', glow:'g-glow-purple' },
-    { id:'iqvia',  x:250, y:224, w:150, h:54, label:['IQVIA / GMI','complete'],       stroke:'#c084fc', glow:'g-glow-purple' },
+    { id:'mkt',  x:250, y:224, w:150, h:54, label:['Market data','complete'],       stroke:'#c084fc', glow:'g-glow-purple' },
     { id:'exit',   x:470, y:118, w:200, h:64, label:['DeepExitPathMiddleware','pending_elicitation()'], stroke:'#38bdf8', glow:'g-glow-cyan' },
     { id:'report', x:730, y:22,  w:120, h:54, label:['Report','skipped'],             stroke:'#64748b', glow:'g-glow-red' },
     { id:'user',   x:730, y:224, w:120, h:54, label:['User','browser'],               stroke:'#60a5fa', glow:'g-glow-blue' },
   ],
   steps: [
-    { caption:'① The retrieval round fans out in parallel: query_cortex ∥ query_iqvia_gmi — one round, same locked plan_id.',
-      phase:'RETRIEVAL', phaseColor:'#c084fc', on:['agent','cortex','iqvia'],
+    { caption:'① The retrieval round fans out in parallel: query_cortex ∥ query_market_data — one round, same locked plan_id.',
+      phase:'RETRIEVAL', phaseColor:'#c084fc', on:['agent','cortex','mkt'],
       edges:[
         { from:'agent', to:'cortex', color:'#c084fc', marker:'g-ah-purple', label:'query_cortex' },
-        { from:'agent', to:'iqvia',  color:'#c084fc', marker:'g-ah-purple', label:'query_iqvia_gmi' },
+        { from:'agent', to:'mkt',  color:'#c084fc', marker:'g-ah-purple', label:'query_market_data' },
       ] },
-    { caption:'② IQVIA returns complete data — held as evidence. Its step is marked done.',
-      phase:'RETRIEVAL', phaseColor:'#4ade80', on:['iqvia','agent'],
-      edges:[{ from:'iqvia', to:'agent', color:'#4ade80', marker:'g-ah-green', label:'complete ✓', off:12 }] },
-    { caption:'③ Cortex answers with a question, not data. Detection is deterministic and shared — a flag (Cortex) or the classify_outcome() ladder (IQVIA) sets is_elicitation. No LLM judges this.',
+    { caption:'② Market data returns complete data — held as evidence. Its step is marked done.',
+      phase:'RETRIEVAL', phaseColor:'#4ade80', on:['mkt','agent'],
+      edges:[{ from:'mkt', to:'agent', color:'#4ade80', marker:'g-ah-green', label:'complete ✓', off:12 }] },
+    { caption:'③ Cortex answers with a question, not data. Detection is deterministic and shared — a flag (Cortex) or the classify_outcome() ladder (market data) sets is_elicitation. No LLM judges this.',
       phase:'DETECT', phaseColor:'#fbbf24', on:['cortex','agent'],
       edges:[{ from:'cortex', to:'agent', color:'#fbbf24', marker:'g-ah-yellow', label:'is_elicitation = true', off:12 }] },
     { caption:'④ The agent\'s loop ends. after_agent fires → DeepExitPathMiddleware. The query tool already refused to mark Cortex\'s step done, so the step stays OPEN.',
@@ -1257,7 +1257,7 @@ const SC2 = makeScenario({
     { caption:'⑥ Instead, the prompt relays Cortex\'s actual question up to the user verbatim (elicitation_relay) — never a guessed answer.',
       phase:'RELAY', phaseColor:'#fbbf24', on:['exit','user'],
       edges:[{ from:'exit', to:'user', color:'#fbbf24', marker:'g-ah-yellow', label:'relay question' }] },
-    { caption:'⑦ User replies "Parent brand." The agent re-queries ONLY the still-open step under the locked plan_id. IQVIA\'s evidence is reused untouched — no second IQVIA call.',
+    { caption:'⑦ User replies "Parent brand." The agent re-queries ONLY the still-open step under the locked plan_id. The market-data evidence is reused untouched — no second market-data call.',
       phase:'RESUME', phaseColor:'#60a5fa', on:['user','agent','cortex'],
       edges:[
         { from:'user',  to:'agent',  color:'#60a5fa', marker:'g-ah-blue',   label:'reply', off:12 },
@@ -1279,16 +1279,16 @@ const SC3 = makeScenario({
     { id:'sqs',     x:30,  y:120, w:150, h:60, label:['SQS FIFO','at-least-once'], stroke:'#fbbf24', glow:'g-glow-yellow' },
     { id:'wa',      x:255, y:24,  w:160, h:56, label:['Worker A','run_id = R1'],    stroke:'#60a5fa', glow:'g-glow-blue' },
     { id:'wb',      x:255, y:222, w:160, h:56, label:['Worker B','run_id = R2'],    stroke:'#60a5fa', glow:'g-glow-blue' },
-    { id:'events',  x:560, y:118, w:270, h:66, label:['deep-events','seq climbs · idem_key = id'], stroke:'#4ade80', glow:'g-glow-green' },
+    { id:'events',  x:560, y:118, w:270, h:66, label:['agent-events','seq climbs · idem_key = id'], stroke:'#4ade80', glow:'g-glow-green' },
   ],
   steps: [
     { caption:'① SQS delivers the run message to Worker A (run_id = R1). The worker takes the lease and resumes the graph.',
       phase:'DELIVER', phaseColor:'#fbbf24', on:['sqs','wa'],
       edges:[{ from:'sqs', to:'wa', color:'#fbbf24', marker:'g-ah-yellow', label:'deliver · R1' }] },
-    { caption:'② Worker A streams events into deep-events — seq 1, 2, 3, each tagged with an idem_key (ek1, ek2, ek3) derived from its checkpointed execution position.',
+    { caption:'② Worker A streams events into agent-events — seq 1, 2, 3, each tagged with an idem_key (ek1, ek2, ek3) derived from its checkpointed execution position.',
       phase:'WRITE', phaseColor:'#4ade80', on:['wa','events'],
       edges:[{ from:'wa', to:'events', color:'#4ade80', marker:'g-ah-green', label:'put seq 1,2,3 (ek1–ek3)' }] },
-    { caption:'③ Worker A stalls past the SQS visibility timeout (a slow IQVIA call, a GC pause — or it crashes). It never deletes the message.',
+    { caption:'③ Worker A stalls past the SQS visibility timeout (a slow market-data call, a GC pause — or it crashes). It never deletes the message.',
       phase:'STALL', phaseColor:'#f87171', on:['sqs'], blocked:['wa'], edges:[] },
     { caption:'④ SQS assumes the message was lost and redelivers it — same message, new attempt (run_id = R2) — to Worker B.',
       phase:'REDELIVER', phaseColor:'#fbbf24', on:['sqs','wb'],

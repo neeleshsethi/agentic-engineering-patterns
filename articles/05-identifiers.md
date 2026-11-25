@@ -77,7 +77,7 @@ Read the table top to bottom as one run's life; the sections after it are the de
 |---|---|---|---|---|
 | User opens a chat | `thread_id` | external, given | stable forever | Names the conversation; also the FIFO group key for one-worker-per-thread. |
 | A new question arrives | `cycle` | bumped (+1) by the gate | stable once set | The question number within the thread. It is the ingredient that makes `plan_id` deterministic. |
-| Model proposes a plan | `plan_id = plan-{thread}-{cycle}` · `deep_run_id` | both minted | `plan_id` stable · `deep_run_id` new per turn | `plan_id` is the approvable contract; `deep_run_id` stamps *this turn* so a stale plan is not re-persisted. |
+| Model proposes a plan | `plan_id = plan-{thread_id}-{cycle}` · `deep_run_id` | both minted | `plan_id` stable · `deep_run_id` new per turn | `plan_id` is the approvable contract; `deep_run_id` stamps *this turn* so a stale plan is not re-persisted. |
 | Plan is written | step `ordinal` (`step-1` … `step-N`) | assigned, fixed at lock | stable | "The result of step 2" means the same thing on every replay and in every citation. |
 | Graph pauses at the gate | `interrupt_id` | minted | new per pause | Identifies the exact plan revision on screen — the stale-tab guard. |
 | User clicks Approve | `owner_id` · `interrupt_id` · `plan_id` | all checked | — | Authorization, staleness, and plan-binding, in that order. |
@@ -101,7 +101,7 @@ The relationship is one-to-many: one `thread_id`, many `run_id`s over its life. 
 
 These three describe *what the human approved* and *which version of it*:
 
-- **[`plan_id`](00-glossary.md#plan-plan_id-interrupt_id)** identifies the logical plan. It is **derived deterministically from the thread**, so re-running `submit_plan` on every resume rebuilds the *identical* id. A random id or a timestamp here would fork a new plan on every replay and break resume. (This is why the plan is a [projection](00-glossary.md#projection), covered in [HITL Approval](04-planning-and-human-approval.md).)
+- **[`plan_id`](00-glossary.md#plan-plan_id-interrupt_id)** identifies the logical plan. It is **derived deterministically from the thread**, so re-running `submit_plan` on every resume rebuilds the *identical* id. A random id or a timestamp here would fork a new plan on every replay and break resume. (This is why the plan is a [projection](00-glossary.md#projection), covered in [Planning and Human Approval](04-planning-and-human-approval.md).)
 - **[`interrupt_id`](00-glossary.md#plan-plan_id-interrupt_id)** is minted fresh on every pause, so it identifies *the exact revision the user was looking at*. When two browser tabs both try to approve, the one holding a stale `interrupt_id` is rejected. This is the stale-tab check `plan_id` cannot provide by itself when the logical plan id stays stable across refinements.
 - **[Ordinal id](00-glossary.md#ordinal-id)** is the stable position of a step *within* a locked plan — step 1, step 2, step 3. Once the plan is locked the ordinal is fixed, so "the result of step 2" means the same thing on every replay, in every report.
 
@@ -125,7 +125,7 @@ A run is replayed after a crash. For each logical event:
 - The **[idempotency key](00-glossary.md#idempotency-key)** answers "is this the same *logical* event I already saw?" Because it is built from *where in the execution* the event occurred, a replayed event carries the same key, and the reader drops the duplicate.
 - The **[sequence number](00-glossary.md#sequence-number-seq)** (`seq`) answers "what order do these go in, and where is my cursor?" It takes new values on replay, which is fine for ordering and fatal if you use it for identity.
 
-> **Derive identity from execution *position*, never from the ordering counter.** Build the idempotency key from `seq` and you have written the duplicate-report bug. This is treated in depth in [Durable Async Runs](08-queue-and-worker-execution.md#sequence-number-versus-idempotency-key).
+> **Derive identity from execution *position*, never from the ordering counter.** Build the idempotency key from `seq` and you have written the duplicate-report bug. This is treated in depth in [Queue and worker execution](08-queue-and-worker-execution.md#sequence-number-versus-idempotency-key).
 
 ## Identity for ownership and locking: `owner_id` and `claim_token`
 

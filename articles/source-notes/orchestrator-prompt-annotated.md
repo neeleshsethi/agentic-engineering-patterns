@@ -2,8 +2,8 @@
 
 > Reconstructed from source notes. Genericized: product → "the platform"; brand → `BRAND_A`;
 > data sources → `SOURCE_A`/`SOURCE_B`/`SOURCE_C`/`SOURCE_D`; the retrieval tool → `query_source`.
-> Framework names (LangGraph, deepagents, DynamoDB) are real. The domain (pharmaceutical
-> commercial analytics) is kept because the regulatory-routing rationale needs it.
+> Framework names (LangGraph, deepagents, DynamoDB) are real. The domain is illustrated as retail
+> commercial analytics, because the per-market data-licensing rationale needs a concrete domain.
 
 This note has three parts: the **annotated system prompt** (what each line is load-bearing for),
 the **gate internals** (`submit_plan`, `project_plan`), and a **build-it-yourself** walkthrough
@@ -21,7 +21,7 @@ The one idea underneath all of it:
 
 ### Section 1: Identity
 
-> *You are the platform's deep-thinking orchestrator for pharmaceutical commercial analytics.*
+> *You are the platform's deep-thinking orchestrator for retail commercial analytics.*
 
 One sentence, three constraints packed in:
 
@@ -29,8 +29,8 @@ One sentence, three constraints packed in:
   answering from its own knowledge. This word biases toward tool use over freeform generation.
 - **"deep-thinking"** — signals that multi-step plans are expected. Without it, models sometimes
   collapse simple-looking questions into a direct answer, skipping the plan/approval flow.
-- **"pharmaceutical commercial analytics"** — the domain anchor. Grounds entity interpretation
-  ("brand" means a drug brand, "market" means a country market) without needing a glossary.
+- **"retail commercial analytics"** — the domain anchor. Grounds entity interpretation
+  ("brand" means a product brand, "market" means a country market) without needing a glossary.
 
 ### Section 2: Data source routing
 
@@ -40,10 +40,10 @@ One sentence, three constraints packed in:
 - **"every research step" / "its single best source"** — *single* is doing real work. Early
   iterations produced tags like `[source: SOURCE_A + SOURCE_B]` or `[source: BOTH]`, which the
   regex parser can't handle (it extracts one `\w+` token).
-- **"exactly as written"** — the routing rules include country exclusions that are *regulatory,
-  not stylistic*. An LLM's instinct is to treat guidance as advisory and route to the "most
+- **"exactly as written"** — the routing rules include country exclusions that are *contractual
+  (data licensing), not stylistic*. An LLM's instinct is to treat guidance as advisory and route to the "most
   helpful" source. This phrase converts the routing section from advice into law — it matters most
-  for cases like `Italy → SOURCE_C`, where the model would otherwise pick a source that must not
+  for cases like `Mexico → SOURCE_C`, where the model would otherwise pick a source that must not
   serve that country.
 - **`{routing_section}`** — the placeholder receives the same rendered per-source
   capability/scope/country rules the quick path's router prompts with. Sharing one rendering
@@ -233,7 +233,7 @@ bogus source tag or dropped its group tag).
 This is a deliberate counterweight to the deepagents base prompt appended after it, which tells
 the agent to *keep iterating until the task is done*. Combined with a failed retrieval, "keep
 iterating" reads to a model like "find another way to produce the number" — and the model's other
-way is its own training data. In a pharma analytics product, a model-remembered market share
+way is its own training data. In a retail analytics product, a model-remembered market share
 presented next to real retrieved figures is indistinguishable from data: **a compliance problem,
 not a quality problem.**
 
@@ -717,9 +717,9 @@ After refine: step-1 (query sales), step-3 (synthesize, moved to pos 2), step-4 
   Pass 1: step-3 matches by title → keeps step-3.   Pass 3: new step gets step-4, not step-2.
 ```
 
-**4. Derive `plan_id` deterministically from `thread_id`.** First plan on a thread →
-`plan-{thread_id}`. A new question on the same thread (after the prior locks) → `plan-{thread_id}-2`,
-then `-3`. Deterministic because `submit_plan` re-runs on every resume — a random `plan_id` would
+**4. Derive `plan_id` deterministically from `thread_id`.** The format is
+`plan-{thread_id}-{cycle}`: the first plan on a thread is `plan-{thread_id}-1`; a new question on the
+same thread (after the prior locks) → `plan-{thread_id}-2`, then `-3`. Deterministic because `submit_plan` re-runs on every resume — a random `plan_id` would
 change per re-run and the stale-tab validation would spuriously reject valid resumes.
 
 **5. Carry gate-owned fields from `prior`.** `status` and `modification_count` are not in the
@@ -789,7 +789,7 @@ class _AllowedToolsMiddleware(AgentMiddleware):
 ```
 
 The public notes often collapse retrieval behind `query_source`, but the production orchestrator
-allow-list contains seven tools: `write_todos`, `submit_plan`, `query_cortex`, `query_iqvia_gmi`,
+allow-list contains seven tools: `write_todos`, `submit_plan`, `query_cortex`, `query_market_data`,
 `run_analysis`, `rebuild_artifacts`, and guarded `read_file`. The framework can inject any number
 of others — the middleware makes them invisible. **The contract is structural; the prompt doesn't
 mention it at all.** This pattern generalizes: whenever the LLM should never call a tool in a given
@@ -830,7 +830,7 @@ that isn't approved yet.
   hits.
 
 **We chose Option B.** The human needs to see the routing to meaningfully approve. "Query sales
-data" is vague; "query subnational account-level sales (SOURCE_B)" is reviewable. If routing
+data" is vague; "query regional store-level sales (SOURCE_B)" is reviewable. If routing
 happens after approval, the human approved a plan they couldn't actually evaluate. To make routing
 machine-readable without a separate schema field, we encoded it as content tags the LLM appends to
 every todo — the two regexes in `project_plan` (Part 4) pull them into typed fields. The LLM writes
@@ -847,7 +847,7 @@ human-readable and a fully-specified execution DAG.
 
 This is domain-specific but the principle is universal for any agent querying authoritative data:
 **LLMs will fill gaps with plausible-sounding numbers.** In a general-purpose research tool that
-might be acceptable; in pharmaceutical commercial analytics, a model-fabricated sales figure that
+might be acceptable; in retail commercial analytics, a model-fabricated sales figure that
 looks like a real data point is a compliance problem.
 
 The grounding rule lives in the *prompt*, not code, because detecting whether a number came from a
