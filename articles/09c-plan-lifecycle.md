@@ -61,7 +61,7 @@ Some turns should not call `write_todos` or `submit_plan` at all.
 | Evidence reply | The answer is already in held evidence. | Answer from `source_results`. |
 | Presentation change | Retrieval is not needed. | Run `rebuild_artifacts` once. |
 
-The critical case is source elicitation. If the user answers "retail" after a source asked "retail or non-retail?", the system must not replan. It should invoke the graph normally on the same `thread_id`, keep the locked `plan_id`, and re-query only the open step.
+The critical case is source elicitation. If the user answers "retail" after a source asked "in-store or online?", the system must not replan. It should invoke the graph normally on the same `thread_id`, keep the locked `plan_id`, and re-query only the open step.
 
 ## Turn Routing Table
 

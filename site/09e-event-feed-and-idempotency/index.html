@@ -795,10 +795,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-actually-rides-the-wire" class="md-nav__link">
+  <a href="#what-rides-the-wire" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What Actually Rides The Wire
+        What Rides The Wire
       
     </span>
   </a>
@@ -922,6 +922,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../11-when-the-score-passes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone 2 · When the score passes and the work fails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -936,10 +963,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21" >
         
           
-          <label class="md-nav__link" for="__nav_20" id="__nav_20_label" tabindex="">
+          <label class="md-nav__link" for="__nav_21" id="__nav_21_label" tabindex="">
             
   
   
@@ -957,8 +984,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_20_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_21_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1013,10 +1040,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21_2" >
         
           
-          <label class="md-nav__link" for="__nav_20_2" id="__nav_20_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_21_2" id="__nav_21_2_label" tabindex="0">
             
   
   
@@ -1034,8 +1061,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_21_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21_2">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1265,10 +1292,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-actually-rides-the-wire" class="md-nav__link">
+  <a href="#what-rides-the-wire" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What Actually Rides The Wire
+        What Rides The Wire
       
     </span>
   </a>
@@ -1329,14 +1356,14 @@
 <p>The feed is written at-least-once and read exactly-once. Ordering is a write-time counter; identity is a replay-stable key. Correctness only ever leans on the identity.</p>
 </blockquote>
 <h2 id="two-sources-of-duplicates">Two Sources Of Duplicates<a class="headerlink" href="#two-sources-of-duplicates" title="Permanent link">&para;</a></h2>
-<p>Nothing here is hypothetical — the feed must survive both of these, and they compound:</p>
+<p>The feed must survive both of these, and they compound:</p>
 <ul>
-<li><strong>At-least-once delivery.</strong> The run message rides an SQS FIFO queue. If a worker stalls past the visibility timeout or dies before deleting the message, SQS redelivers it to another worker. The whole run — and its feed writes — happen again.</li>
+<li><strong>At-least-once delivery.</strong> The run message rides an SQS FIFO queue. If a worker stalls past the visibility timeout or dies before deleting the message, SQS redelivers it to another worker. The whole run happens again, feed writes included.</li>
 <li><strong>Crash-replay inside a run.</strong> When a worker resumes from the last checkpoint, any node that had started but not yet committed <strong>re-executes</strong>, re-emitting the feed lines it already emitted before the crash.</li>
 </ul>
-<p>A naive feed — "append a row per event" — double-counts under both. The design answer is to give every row two values with deliberately opposite behavior under replay.</p>
+<p>A naive feed that appends a row per event double-counts under both. The fix gives every row two values with deliberately opposite behavior under replay.</p>
 <h2 id="two-values-opposite-jobs">Two Values, Opposite Jobs<a class="headerlink" href="#two-values-opposite-jobs" title="Permanent link">&para;</a></h2>
-<p>The <code>deep-events</code> table is the one place a sequence number is a real, writer-allocated counter (DynamoDB has no auto-increment). Every row carries both a <code>seq</code> and an <code>idem_key</code>:</p>
+<p>The <code>agent-events</code> table is the one place a sequence number is a real, writer-allocated counter (DynamoDB has no auto-increment). Every row carries both a <code>seq</code> and an <code>idem_key</code>:</p>
 <table>
 <thead>
 <tr>
@@ -1357,23 +1384,23 @@
 <td><code>idem_key</code></td>
 <td><em>Have I shown this already?</em></td>
 <td><strong>Identical</strong></td>
-<td><code>"{task_id}#{n}"</code> — from execution position, never from <code>seq</code>, never random</td>
+<td><code>"{task_id}#{n}"</code>, from execution position, never from <code>seq</code>, never random</td>
 </tr>
 </tbody>
 </table>
-<p><code>seq</code> is also the reader's cursor and the browser's <code>Last-Event-ID</code>. Gaps are fine; monotonicity is not. <code>idem_key</code> is the dedup identity. The entire scheme rests on the fact that exactly one of the two changes on replay and exactly one does not.</p>
+<p><code>seq</code> is also the reader's cursor and the browser's <code>Last-Event-ID</code>. Gaps are fine; monotonicity is not. <code>idem_key</code> is the dedup identity. The scheme works because exactly one of the two changes on replay and the other does not.</p>
 <h2 id="how-idem_key-is-replay-stable">How <code>idem_key</code> Is Replay-Stable<a class="headerlink" href="#how-idem_key-is-replay-stable" title="Permanent link">&para;</a></h2>
 <p><code>idem_key = "{task_id}#{n}"</code>:</p>
 <ul>
-<li><strong><code>task_id</code></strong> identifies one node executing in one superstep. A parallel fan-out — three retrievals in a single superstep — has three tasks and three <code>task_id</code>s. The curator does not hash anything: it parses <code>task_id</code> out of each streamed event's checkpoint namespace, which LangGraph shapes as <code>"{node}:{task_id}"</code>. Reading it per-event means there is no "which task is currently open" bookkeeping, so parallel tasks can never misattribute an emission.</li>
-<li><strong><code>n</code></strong> is a per-<code>task_id</code> counter of the events that task has emitted — <code>#0</code>, <code>#1</code>, <code>#2</code> — reset fresh each time the keyer is constructed.</li>
+<li><strong><code>task_id</code></strong> identifies one node executing in one superstep. A parallel fan-out of three retrievals in a single superstep has three tasks and three <code>task_id</code>s. The curator does not hash anything: it parses <code>task_id</code> out of each streamed event's checkpoint namespace, which LangGraph shapes as <code>"{node}:{task_id}"</code>. Reading it per-event means there is no "which task is currently open" bookkeeping, so parallel tasks can never misattribute an emission.</li>
+<li><strong><code>n</code></strong> is a per-<code>task_id</code> counter of the events that task has emitted (<code>#0</code>, <code>#1</code>, <code>#2</code>), reset fresh each time the keyer is constructed.</li>
 </ul>
-<p>The subtlety that makes it work is <em>which</em> checkpoint the id keys on. <code>task_id</code> is derived from the checkpoint the node <strong>started from</strong> (its input), not the one it writes:</p>
+<p>It works because of <em>which</em> checkpoint the id keys on. <code>task_id</code> is derived from the checkpoint the node <strong>started from</strong> (its input), not the one it writes:</p>
 <ul>
-<li><strong>Crash-replay</strong> — the same run resumes and re-runs the uncommitted node <strong>from the same input checkpoint it started from before the crash</strong> → <strong>same <code>task_id</code></strong> → same <code>idem_key</code>. This is what makes replay idempotent.</li>
-<li><strong>Legitimate re-iteration</strong> — the loop genuinely runs the same node again, but now from a <strong>newer input checkpoint</strong> → <strong>different <code>task_id</code></strong> → correctly counted as new events.</li>
+<li><strong>Crash-replay</strong>: the same run resumes and re-runs the uncommitted node <strong>from the same input checkpoint it started from before the crash</strong> → <strong>same <code>task_id</code></strong> → same <code>idem_key</code>. This is what makes replay idempotent.</li>
+<li><strong>Legitimate re-iteration</strong>: the loop runs the same node again, but now from a <strong>newer input checkpoint</strong> → <strong>different <code>task_id</code></strong> → correctly counted as new events.</li>
 </ul>
-<p>So the answer to "doesn't the checkpoint change when the node re-runs?" is: on a replay the <em>input</em> checkpoint is the same (that is the whole point); only a real loop iteration advances it. <code>task_id</code> is precisely the signal that separates the two.</p>
+<p>A replay does not change the <em>input</em> checkpoint; only a real loop iteration advances it. <code>task_id</code> is the signal that separates the two.</p>
 <h2 id="the-writer-a-conditional-put-fence">The Writer: A Conditional-Put Fence<a class="headerlink" href="#the-writer-a-conditional-put-fence" title="Permanent link">&para;</a></h2>
 <p>Every append is a fenced write at the exact <code>(thread_id, seq)</code> slot:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="n">event_table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span>
@@ -1382,7 +1409,7 @@
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">ReturnValuesOnConditionCheckFailure</span><span class="o">=</span><span class="s2">"ALL_OLD"</span><span class="p">,</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="p">)</span>
 </code></pre></div>
-<p>The condition tests one key attribute but means "is this slot empty?" — DynamoDB first addresses the exact item by its full primary key, then evaluates the condition against whatever single item sits there. An empty slot passes trivially; an occupied slot necessarily carries its own <code>thread_id</code>, so the condition fails. <code>seq</code> is seeded once per pickup and incremented <strong>in memory</strong> — safe as a local only because of the single-writer-per-thread invariant (one FIFO message group per thread, plus the <a href="../07-distributed-locks/">worker lock</a>). When the fence does fail, a three-way branch decides what the collision means:</p>
+<p>The condition tests one key attribute but means "is this slot empty?" DynamoDB first addresses the exact item by its full primary key, then evaluates the condition against whatever single item sits there. An empty slot passes trivially; an occupied slot necessarily carries its own <code>thread_id</code>, so the condition fails. <code>seq</code> is seeded once per pickup and incremented <strong>in memory</strong>, which is safe only because of the single-writer-per-thread invariant (one FIFO message group per thread, plus the <a href="../07-distributed-locks/">worker lock</a>). When the fence does fail, a three-way branch decides what the collision means:</p>
 <table>
 <thead>
 <tr>
@@ -1400,7 +1427,7 @@
 <tr>
 <td>foreign occupant, my lock lost/expired</td>
 <td>I am a zombie; a new worker owns the thread</td>
-<td>raise <code>ZombieWriterError</code>, stop emitting — never weave stale events above the reader's cursor</td>
+<td>raise <code>ZombieWriterError</code>, stop emitting; never weave stale events above the reader's cursor</td>
 </tr>
 <tr>
 <td>foreign occupant, my lock still held</td>
@@ -1409,7 +1436,7 @@
 </tr>
 </tbody>
 </table>
-<p>Critically, on a clean redelivery the new worker re-seeds <code>seq</code> <strong>above</strong> the current max, so its replayed events get <em>fresh</em> seqs — they do not collide with the old rows at all. The fence catches only the genuine same-slot races above. Dedup of the ordinary replay case is the reader's job.</p>
+<p>On a clean redelivery the new worker re-seeds <code>seq</code> <strong>above</strong> the current max, so its replayed events get <em>fresh</em> seqs and do not collide with the old rows at all. The fence catches only the genuine same-slot races above. Dedup of the ordinary replay case is the reader's job.</p>
 <h2 id="the-reader-dumb-on-purpose">The Reader: Dumb On Purpose<a class="headerlink" href="#the-reader-dumb-on-purpose" title="Permanent link">&para;</a></h2>
 <p>The reader is the API-side SSE generator for <code>GET /deep/{thread_id}/stream</code>. It knows nothing about queues, locks, or workers; it polls one table and forwards frames.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">cursor</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"Last-Event-ID"</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
@@ -1429,12 +1456,12 @@
 <a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>        <span class="k">return</span>
 <a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.25</span><span class="p">)</span>
 </code></pre></div>
-<p>Two cooperating mechanisms remove duplicates, and it is worth being precise about which does what:</p>
+<p>Two mechanisms remove duplicates, and they do different jobs:</p>
 <ul>
-<li><strong>The cursor</strong> (persisted in the browser as <code>Last-Event-ID</code>) skips already-seen rows <strong>across reconnects</strong>. A fresh <code>EventSource</code> resumes from the last <code>seq</code> the browser saw, so replay and live tail are one query — there is no separate history endpoint.</li>
+<li><strong>The cursor</strong> (persisted in the browser as <code>Last-Event-ID</code>) skips already-seen rows <strong>across reconnects</strong>. A fresh <code>EventSource</code> resumes from the last <code>seq</code> the browser saw, so replay and live tail are one query; there is no separate history endpoint.</li>
 <li><strong>The <code>seen</code> set</strong> (idempotency keys held per connection, in the API process's RAM) skips crash-replay duplicates that land <strong>ahead of the cursor within one live connection</strong>. Those re-emitted lines get <em>new</em> <code>seq</code> numbers, so the cursor alone cannot catch them; only the repeated <code>idem_key</code> can. Because the cursor advances even on a skipped row, a mid-stream reconnect pages <em>past</em> the duplicates rather than re-examining them.</li>
 </ul>
-<p>The durable table deliberately keeps the duplicate rows. Dedup is a presentation concern done live at read time and thrown away when the connection closes — the database never has to remember "what have I already shown this user."</p>
+<p>The durable table deliberately keeps the duplicate rows. Dedup is a presentation concern done live at read time and thrown away when the connection closes. The database never has to remember "what have I already shown this user."</p>
 <p>Step through a crash-and-replay to see the writer climb while the reader collapses:</p>
 <div class="scrubber" data-scrubber markdown="0">
   <div class="scrubber-stage">
@@ -1448,7 +1475,7 @@ seq 4  taskB#1  ONLINE 88 rows          <span class="warn">← crash before comm
     </div>
     <div class="scrubber-step">
       <span class="scrubber-time">Attempt 2 · replays</span>
-      <div class="scrubber-caption">A new worker resumes and re-runs node B from the same input checkpoint. seq is re-seeded above the max, so the replayed lines get NEW seqs — but the same idem_keys.</div>
+      <div class="scrubber-caption">A new worker resumes and re-runs node B from the same input checkpoint. seq is re-seeded above the max, so the replayed lines get NEW seqs but the same idem_keys.</div>
       <pre class="scrubber-item">seq 5  taskB#0  Querying ONLINE...       <span class="warn">← duplicate content, new seq</span>
 seq 6  taskB#1  ONLINE 88 rows          <span class="warn">← duplicate content, new seq</span>
 seq 7  taskC#0  Report ready</pre>
@@ -1464,11 +1491,11 @@ seq 7 taskC#0 → <span class="ok">show ✓ exactly-once</span></pre>
 </div>
 
 <h2 id="one-stream-must-not-poison-anothers-keys">One Stream Must Not Poison Another's Keys<a class="headerlink" href="#one-stream-must-not-poison-anothers-keys" title="Permanent link">&para;</a></h2>
-<p>There is a sharp edge in <code>n</code>, the per-task counter, that is easy to get wrong. If a single node emits <strong>two interleaved kinds of frame with different reproducibility guarantees</strong>, they must count under <strong>separate</strong> namespaces.</p>
+<p>The per-task counter <code>n</code> has a sharp edge. If a single node emits <strong>two interleaved kinds of frame with different reproducibility guarantees</strong>, they must count under <strong>separate</strong> namespaces.</p>
 <p>In this system one node calls a downstream reasoning model (Cortex) and streams two kinds of frame at once:</p>
 <ul>
-<li><strong>Live "thinking" deltas</strong> — the panel filling token by token. Their <em>count</em> is non-reproducible: a replay re-calls the model and gets a different number of tokens, plus wall-clock coalescing variance.</li>
-<li><strong>Deterministic frames</strong> — a terminal thinking summary, a step status, a plan-tick checkmark. These <em>must</em> reproduce, because the reader dedups them by <code>idem_key</code>.</li>
+<li><strong>Live "thinking" deltas</strong>: the panel filling token by token. Their <em>count</em> is non-reproducible: a replay re-calls the model and gets a different number of tokens, plus wall-clock coalescing variance.</li>
+<li><strong>Deterministic frames</strong>: a terminal thinking summary, a step status, a plan-tick checkmark. These <em>must</em> reproduce, because the reader dedups them by <code>idem_key</code>.</li>
 </ul>
 <p>Put both on one counter and the noisy stream shifts the quiet one's indices:</p>
 <table>
@@ -1507,7 +1534,7 @@ seq 7 taskC#0 → <span class="ok">show ✓ exactly-once</span></pre>
 </tr>
 </tbody>
 </table>
-<p>The status frame is <code>taskB#5</code> on attempt 1 but <code>taskB#3</code> on the replay → a different <code>idem_key</code> → the reader cannot tell it is a repeat → the checkmark renders twice. The noisy stream poisoned the quiet stream's keys.</p>
+<p>The status frame is <code>taskB#5</code> on attempt 1 but <code>taskB#3</code> on the replay → a different <code>idem_key</code> → the reader cannot tell it is a repeat → the checkmark renders twice.</p>
 <p>The fix is to quarantine the non-reproducible frames under their own suffix (<code>"{task_id}~cs"</code>), so the deterministic frames keep counting from <code>#0</code> regardless of how many live deltas flew by:</p>
 <table>
 <thead>
@@ -1535,19 +1562,19 @@ seq 7 taskC#0 → <span class="ok">show ✓ exactly-once</span></pre>
 </tr>
 </tbody>
 </table>
-<p>Now <code>status = taskB#0</code> on both runs, regardless of delta count → the key reproduces → dedup works. The live deltas themselves may re-show after a replay, but they carry replace-semantics (each frame holds the full accumulated text so far), so the panel simply re-fills — harmless.</p>
+<p>Now <code>status = taskB#0</code> on both runs, regardless of delta count → the key reproduces → dedup works. The live deltas themselves may re-show after a replay, but they carry replace-semantics (each frame holds the full accumulated text so far), so the panel re-fills harmlessly.</p>
 <p>The rule generalizes past this one source: <strong>a counter-derived idempotency key may only count events whose count is itself replay-stable.</strong> Anything non-reproducible gets its own bucket.</p>
-<h2 id="what-actually-rides-the-wire">What Actually Rides The Wire<a class="headerlink" href="#what-actually-rides-the-wire" title="Permanent link">&para;</a></h2>
-<p>The reader emits <code>StreamEnvelope</code> frames. Each SSE message is an <code>id:</code> line (the DynamoDB <code>seq</code>, which the browser echoes back as <code>Last-Event-ID</code>) plus a <code>data:</code> line (the JSON envelope), blank-line terminated. Two things are worth internalizing:</p>
+<h2 id="what-rides-the-wire">What Rides The Wire<a class="headerlink" href="#what-rides-the-wire" title="Permanent link">&para;</a></h2>
+<p>The reader emits <code>StreamEnvelope</code> frames. Each SSE message is an <code>id:</code> line (the DynamoDB <code>seq</code>, which the browser echoes back as <code>Last-Event-ID</code>) plus a <code>data:</code> line (the JSON envelope), blank-line terminated. Two details matter:</p>
 <ul>
 <li><strong><code>idem_key</code> does not ride the wire.</strong> It is the event log's internal dedup name; the reader strips it after deduping. It is never something the browser has to understand.</li>
-<li><strong>Live thinking deltas are <code>artifact</code> frames with <code>operation: "replace"</code></strong>, each carrying the full accumulated text so far. That is exactly why re-showing one after a replay is harmless.</li>
+<li><strong>Live thinking deltas are <code>artifact</code> frames with <code>operation: "replace"</code></strong>, each carrying the full accumulated text so far. That is why re-showing one after a replay is harmless.</li>
 </ul>
-<p>There are eight wire types — <code>status</code>, <code>content</code>, <code>artifact</code>, <code>warning</code>, <code>error</code>, <code>end</code>, plus the deep-mode-additive <code>plan</code> and <code>interrupt</code>. A worked pair of attempts:</p>
+<p>There are eight wire types: <code>status</code>, <code>content</code>, <code>artifact</code>, <code>warning</code>, <code>error</code>, <code>end</code>, plus the deep-mode-additive <code>plan</code> and <code>interrupt</code>. A worked pair of attempts:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a># Attempt 1 — one Cortex call (taskB) streams 3 live deltas, then 2 deterministic frames
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>id: 43
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>data: {"type":"artifact","data":{"artifact":"cortex_thinking","operation":"replace",
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>       "value":["...final: retail, non-retail, and ONLINE channels."]}}   ← taskB~cs#2 (live, terminal)
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>       "value":["...final: in-store, online, and wholesale channels."]}}   ← taskB~cs#2 (live, terminal)
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>id: 44
 <a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>data: {"type":"status","data":{"message":"REGIONAL returned 412 rows","state":"completed"}}  ← taskB#0
 <a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>id: 45
@@ -1559,7 +1586,7 @@ seq 7 taskC#0 → <span class="ok">show ✓ exactly-once</span></pre>
 <a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>id: 60 {"type":"status",...}  ← taskB#0  (SAME idem_key as seq 44)
 <a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>id: 61 {"type":"plan",...}    ← taskB#1  (SAME idem_key as seq 45)
 </code></pre></div>
-<p>The reader's <code>seen</code> already holds <code>taskB#0</code> and <code>taskB#1</code> from attempt 1, so seq 60 and 61 are skipped — the status is not re-shown and the checkmark is not re-rendered — even though the live stream's length changed from 3 deltas to 2. That is the entire <code>~cs</code> payoff in one trace.</p>
+<p>The reader's <code>seen</code> already holds <code>taskB#0</code> and <code>taskB#1</code> from attempt 1, so seq 60 and 61 are skipped: the status is not re-shown and the checkmark is not re-rendered, even though the live stream's length changed from 3 deltas to 2.</p>
 <h2 id="three-idempotency-layers-three-keys">Three Idempotency Layers, Three Keys<a class="headerlink" href="#three-idempotency-layers-three-keys" title="Permanent link">&para;</a></h2>
 <p>Event-feed idempotency is one of three layers, each guarding a different artifact against replay. Do not conflate them:</p>
 <table>
@@ -1588,12 +1615,12 @@ seq 7 taskC#0 → <span class="ok">show ✓ exactly-once</span></pre>
 </tr>
 </tbody>
 </table>
-<p>All three rest on the same principle, which is the one worth carrying out of this series: <strong>identity is deterministic</strong> (<code>idem_key</code>, <code>cycle_stamp</code>, <code>plan_id</code>, <code>provenance_id</code> are pure functions of their inputs), <strong>physical placement is not</strong> (<code>seq</code>, retry timing), and correctness only ever relies on the deterministic half. See <a href="../05-identifiers/">Identifiers</a> for how the same rule shapes every id in the run.</p>
+<p>All three rest on the same principle: <strong>identity is deterministic</strong> (<code>idem_key</code>, <code>cycle_stamp</code>, <code>plan_id</code>, <code>provenance_id</code> are pure functions of their inputs), <strong>physical placement is not</strong> (<code>seq</code>, retry timing), and correctness only ever relies on the deterministic half. See <a href="../05-identifiers/">Identifiers</a> for how the same rule shapes every id in the run.</p>
 <h2 id="guardrails">Guardrails<a class="headerlink" href="#guardrails" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Never dedup on the ordering value.</strong> <code>seq</code> is new on every write by design. If you find code treating it as an identity, that is the bug.</li>
-<li><strong>Derive the identity from execution position, never from wall-clock or random.</strong> The whole scheme fails the moment <code>idem_key</code> stops reproducing on replay.</li>
-<li><strong>Keep the durable log duplicate-tolerant.</strong> Dedup lives at read time, per connection. The table's job is to be an append-only, fenced, ordered log — nothing more.</li>
+<li><strong>Derive the identity from execution position, never from wall-clock or random.</strong> The scheme fails the moment <code>idem_key</code> stops reproducing on replay.</li>
+<li><strong>Keep the durable log duplicate-tolerant.</strong> Dedup lives at read time, per connection. The table's job is to be an append-only, fenced, ordered log.</li>
 <li><strong>Isolate any stream whose event count is non-reproducible.</strong> Give it its own counter namespace so it cannot shift a deterministic stream's keys.</li>
 <li><strong>Terminate on run status, not on a sentinel event.</strong> A crashed worker never writes "done"; a detector flips run-state to <code>failed</code> so the reader can end the stream.</li>
 </ul>

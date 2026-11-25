@@ -774,6 +774,33 @@
       
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../../11-when-the-score-passes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone 2 · When the score passes and the work fails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -792,10 +819,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21" checked>
         
           
-          <label class="md-nav__link" for="__nav_20" id="__nav_20_label" tabindex="">
+          <label class="md-nav__link" for="__nav_21" id="__nav_21_label" tabindex="">
             
   
   
@@ -813,8 +840,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_20_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_20">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_21_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_21">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -871,10 +898,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21_2" checked>
         
           
-          <label class="md-nav__link" for="__nav_20_2" id="__nav_20_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_21_2" id="__nav_21_2_label" tabindex="0">
             
   
   
@@ -892,8 +919,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_2_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_20_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_21_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_21_2">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1557,7 +1584,7 @@ persisted at end of run instead, from state.</p>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>   │  interrupt│
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>   └───────────┘
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>                       2. the thread PARKS here (nothing is running)
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>                          DynamoDB: deep-checkpoints
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>                          DynamoDB: agent-checkpoints
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>                            full graph state + the pending interrupt
 <a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
 <a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>3. POST /deep/{thread}/plan/refine   (loop 0..n times)
@@ -1646,7 +1673,7 @@ nothing lives in process memory.</strong></p>
 </tr>
 <tr>
 <td><code>plan_id</code></td>
-<td>Derived (<code>plan-{thread_id}</code>) per question cycle</td>
+<td>Derived (<code>plan-{thread_id}-{cycle}</code>) per question cycle</td>
 <td>One question's cycle</td>
 <td>Stable across refinements by design — which is why it alone cannot authorize an approve</td>
 </tr>
@@ -1833,7 +1860,7 @@ Three consequences:</p>
 </tr>
 <tr>
 <td>S3 offload</td>
-<td>&gt; ~350 KB → <code>s3://$CHECKPOINT_OFFLOAD_BUCKET/deep-checkpoints/…</code></td>
+<td>&gt; ~350 KB → <code>s3://$CHECKPOINT_OFFLOAD_BUCKET/agent-checkpoints/…</code></td>
 <td>DynamoDB's 400 KB item cap; transparent to the app</td>
 </tr>
 <tr>
@@ -1855,7 +1882,7 @@ owns that channel), then calls the gate tool <code>submit_plan</code>:</p>
 <li>Projects the raw todos into the typed <code>Plan</code>: stable step ids (<code>step-1…</code>), title, scope,
    <code>plan_id</code> derived from the thread, <code>modification_count</code>.</li>
 <li>Detects a new question cycle: a prior with <code>status == "locked"</code> means this submit starts a
-   fresh question on the same thread — <code>plan_id</code> increments (<code>plan-{thread}-2</code>),
+   fresh question on the same thread — <code>plan_id</code> increments (<code>plan-{thread_id}-2</code>),
    <code>modification_count</code> resets, and <code>entity_groups</code> reset (carrying the previous question's groups
    forward would persist wrong-country entities; <strong>empty beats wrong</strong>).</li>
 <li>Calls <code>interrupt()</code> with the payload the whole "before resume" phase hands to the "after":</li>
@@ -1877,7 +1904,7 @@ plan's stated defaults.</p>
 <h2 id="part-3-anatomy-of-a-parked-thread">Part 3 — Anatomy of a parked thread<a class="headerlink" href="#part-3-anatomy-of-a-parked-thread" title="Permanent link">&para;</a></h2>
 <p>While the user reads the plan — for seconds or for days — this is the complete physical state of
 the system:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>DynamoDB: deep-checkpoints, thread = chat_id
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>DynamoDB: agent-checkpoints, thread = chat_id
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>  checkpoint chain (one per super-step, gzipped, TTL 30d)
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  latest checkpoint:
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    messages        full planning transcript (Human + AI + Tool)
@@ -1993,7 +2020,7 @@ reconstructed).</p>
 <li><strong>Synchronous (shipped early):</strong> the same request keeps streaming and execution runs in the API
   process.</li>
 <li><strong>Async (the other note):</strong> the endpoint flips to checkpoint-then-enqueue — write <code>run#{thread}
-  queued</code>, <code>send({thread_id, run_id})</code> to <code>deep-run.fifo</code>, return <code>202</code>, and the worker picks it
+  queued</code>, <code>send({thread_id, run_id})</code> to <code>agent-runs.fifo</code>, return <code>202</code>, and the worker picks it
   up.</li>
 </ul>
 <p>Either way: <code>life-of-a-deep-run.md</code> takes it from here.</p>
@@ -2017,7 +2044,7 @@ reconstructed).</p>
 </li>
 <li>
 <p><strong>B4. Follow-up question on a thread with a locked plan.</strong> New-cycle detection: the next
-  <code>submit_plan</code> sees <code>prior.status == "locked"</code> → new <code>plan_id</code> (<code>plan-{thread}-2</code>),
+  <code>submit_plan</code> sees <code>prior.status == "locked"</code> → new <code>plan_id</code> (<code>plan-{thread_id}-2</code>),
   <code>modification_count</code> resets, <code>entity_groups</code> reset (the old plan's entities must not leak onto
   the new one). The proposal request itself overwrites <code>raw_question</code> / <code>user_context</code> /
   <code>question_ts</code> / <code>deep_run_id</code>.</p>

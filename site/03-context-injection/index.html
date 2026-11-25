@@ -454,10 +454,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#two-subtle-ways-it-goes-wrong" class="md-nav__link">
+  <a href="#two-ways-it-goes-wrong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Two subtle ways it goes wrong
+        Two ways it goes wrong
       
     </span>
   </a>
@@ -878,6 +878,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../11-when-the-score-passes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone 2 · When the score passes and the work fails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -892,10 +919,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21" >
         
           
-          <label class="md-nav__link" for="__nav_20" id="__nav_20_label" tabindex="">
+          <label class="md-nav__link" for="__nav_21" id="__nav_21_label" tabindex="">
             
   
   
@@ -913,8 +940,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_20_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_21_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -969,10 +996,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21_2" >
         
           
-          <label class="md-nav__link" for="__nav_20_2" id="__nav_20_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_21_2" id="__nav_21_2_label" tabindex="0">
             
   
   
@@ -990,8 +1017,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_21_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21_2">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1177,10 +1204,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#two-subtle-ways-it-goes-wrong" class="md-nav__link">
+  <a href="#two-ways-it-goes-wrong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Two subtle ways it goes wrong
+        Two ways it goes wrong
       
     </span>
   </a>
@@ -1235,14 +1262,14 @@
 
 
 <h1 id="step-2-context-injection">Step 2 · Context Injection<a class="headerlink" href="#step-2-context-injection" title="Permanent link">&para;</a></h1>
-<p>A user types: "Actually, give me sales for <strong>France</strong>." The agent replies about Australia — because somewhere before the model call, your code helpfully attached "user's default country is Australia," and that injected line sat closer to the model's attention than the correction the user just typed.</p>
-<p>The prompt looked complete. Every field was populated. The request returned <code>200 OK</code>. And the answer was wrong, because the <em>right</em> context was attached at the <em>wrong</em> boundary. That is context injection, and it is one of the easiest ways to build a system that looks stable and answers incorrectly.</p>
+<p>A user types: "Actually, give me sales for <strong>France</strong>." The agent replies about Australia, because somewhere before the model call your code helpfully attached "user's default country is Australia," and that injected line sat closer to the model's attention than the correction the user just typed.</p>
+<p>The prompt looked complete. Every field was populated. The request returned <code>200 OK</code>. And the answer was wrong, because the <em>right</em> context was attached at the <em>wrong</em> boundary. Context injection is one of the easiest ways to build a system that looks stable and answers incorrectly.</p>
 <blockquote>
-<p>New to the vocabulary here — <a href="../00-glossary/#middleware">middleware</a>, <a href="../00-glossary/#checkpoint">checkpoint</a>, <a href="../00-glossary/#state">state</a>? Each term is defined once in the <a href="../00-glossary/">glossary</a>.</p>
+<p>New to <a href="../00-glossary/#middleware">middleware</a>, <a href="../00-glossary/#checkpoint">checkpoint</a>, or <a href="../00-glossary/#state">state</a>? Each term is defined once in the <a href="../00-glossary/">glossary</a>.</p>
 </blockquote>
 <h2 id="what-context-injection-is">What context injection is<a class="headerlink" href="#what-context-injection-is" title="Permanent link">&para;</a></h2>
 <p>Context injection is adding text or data to the model input that the user did <strong>not</strong> type in that exact request: user defaults, account permissions, previously mentioned entities, retrieved documents, tool results, an approved plan.</p>
-<p>The critical fact is what the model actually receives. Your code <em>knows</em> which parts came from memory, tools, or the user. The model does not — it sees <strong>one flat, composed prompt</strong>. Unless you label the boundaries, "trusted memory" and "the user's words" are indistinguishable to it:</p>
+<p>Your code <em>knows</em> which parts came from memory, tools, or the user. The model does not. It sees <strong>one flat, composed prompt</strong>. Unless you label the boundaries, "trusted memory" and "the user's words" are indistinguishable to it:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Database memory
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  → "User default country is Australia"
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
@@ -1256,9 +1283,9 @@
 <a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>     Give me my sales
 </code></pre></div>
-<p>This is <em>useful</em>: "my sales" is meaningless without the account context. It is <em>dangerous</em> because stale or over-salient context can quietly override a later user correction — exactly the France/Australia bug above. Note the continuity with <a href="../02-state-and-checkpoints/">LangGraph State</a>: a stale <code>user_context</code> value doesn't just sit in state, it gets <strong>composed into the prompt</strong> and steers the answer.</p>
+<p>This is <em>useful</em>: "my sales" is meaningless without the account context. It is <em>dangerous</em> because stale or over-salient context can quietly override a later user correction, as in the France/Australia bug above. This connects back to <a href="../02-state-and-checkpoints/">LangGraph State</a>: a stale <code>user_context</code> value gets <strong>composed into the prompt</strong> and steers the answer.</p>
 <h2 id="what-we-assemble-into-each-model-call">What we assemble into each model call<a class="headerlink" href="#what-we-assemble-into-each-model-call" title="Permanent link">&para;</a></h2>
-<p>The deep orchestrator does not send the raw message list to the model. Every model call is <em>assembled</em> by a chain of <code>wrap_model_call</code> middlewares, each of which rebuilds its slice from state and frames it onto the latest genuine human message — transiently, so nothing accumulates in the checkpoint. Seven kinds of context go in — one of them, the <strong>source catalog</strong>, rides <em>inside</em> the system prompt rather than through its own middleware — and a single composed prompt comes out.</p>
+<p>The deep orchestrator does not send the raw message list to the model. Every model call is <em>assembled</em> by a chain of <code>wrap_model_call</code> middlewares, each of which rebuilds its slice from state and frames it onto the latest genuine human message. The framing is transient, so nothing accumulates in the checkpoint. Seven kinds of context go in and a single composed prompt comes out. One of the seven, the <strong>source catalog</strong>, rides <em>inside</em> the system prompt instead of going through its own middleware.</p>
 <pre class="mermaid"><code>flowchart TB
     SC["Source cards / catalog&lt;br/&gt;what each source answers:&lt;br/&gt;questions · KPIs · domains · out-of-scope · relationships"]
     SP["System / orchestrator prompt&lt;br/&gt;plan · submit · refine · execute rules"]
@@ -1279,7 +1306,7 @@
     ASM["Context assembly&lt;br/&gt;wrap_model_call chain · delimiters escaped"]
     ASM --&gt; M["Model call"]
     M --&gt; OUT["plan · tool calls · report"]</code></pre>
-<p>Each component has a different source, lifetime, and failure mode — and that is the whole point of assembling rather than concatenating:</p>
+<p>Each component has a different source, lifetime, and failure mode, which is why the prompt is assembled instead of concatenated:</p>
 <table>
 <thead>
 <tr>
@@ -1306,7 +1333,7 @@
 <td><code>[User context]</code></td>
 <td><code>UserContextMiddleware</code></td>
 <td>transient, rebuilt per call</td>
-<td>A stale value overrides a live correction — the France/Australia bug below.</td>
+<td>A stale value overrides a live correction (the France/Australia bug).</td>
 </tr>
 <tr>
 <td><code>[Held data]</code> manifest</td>
@@ -1318,7 +1345,7 @@
 <td>Conversation messages</td>
 <td>graph state (<code>messages</code>)</td>
 <td>durable, delta-checkpointed</td>
-<td>Attach context to a synthetic summary message instead of the user's — see below.</td>
+<td>Attach context to a synthetic summary message instead of the user's; see below.</td>
 </tr>
 <tr>
 <td>Tool set</td>
@@ -1330,13 +1357,13 @@
 <td>User question</td>
 <td>framed onto the latest <code>HumanMessage</code></td>
 <td>this turn</td>
-<td>Framed onto the wrong (synthetic) message, or the injected text forges the closing delimiter — both covered next.</td>
+<td>Framed onto the wrong (synthetic) message, or the injected text forges the closing delimiter; both are covered next.</td>
 </tr>
 </tbody>
 </table>
-<p>The two transient blocks (<code>[User context]</code> and <code>[Held data]</code>) are the ones that carry the sharpest edges, because they are user-influenced and re-composed every turn. Both are wrapped in delimited blocks, and both must escape their own closing tag so held text cannot forge the boundary — the discipline the rest of this chapter is about.</p>
-<h2 id="two-subtle-ways-it-goes-wrong">Two subtle ways it goes wrong<a class="headerlink" href="#two-subtle-ways-it-goes-wrong" title="Permanent link">&para;</a></h2>
-<p>Most context-injection bugs are not "we forgot the context." They are "we attached it to the wrong thing." Two that bite hard:</p>
+<p>The two transient blocks (<code>[User context]</code> and <code>[Held data]</code>) are the riskiest, because they are user-influenced and re-composed every turn. Both are wrapped in delimited blocks, and both must escape their own closing tag so held text cannot forge the boundary. The rest of this chapter covers that discipline.</p>
+<h2 id="two-ways-it-goes-wrong">Two ways it goes wrong<a class="headerlink" href="#two-ways-it-goes-wrong" title="Permanent link">&para;</a></h2>
+<p>Most context-injection bugs come from attaching the context to the wrong thing, not from forgetting it. Two common ones:</p>
 <p><strong>1. Attaching context to a synthetic message, not the user's.</strong> Some frameworks insert synthetic messages during history summarization. They may still be <code>HumanMessage</code> objects, but they are not user-authored. If you blindly compose context onto "the last human message," you may be labeling a machine-written summary as the user's latest words. Walk back to the <em>real</em> one:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="n">msg</span> <span class="o">=</span> <span class="n">messages</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
@@ -1353,8 +1380,8 @@
 <a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="p">)</span>
 <a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>    <span class="k">break</span>
 </code></pre></div>
-<p><strong>2. Not escaping your own delimiter.</strong> Your format uses <code>[/User context]</code> to close the trusted block. The text <em>inside</em> that block comes partly from the user's prior conversation history — which you do not fully control. If any of that history contains the literal string <code>[/User context]</code>, it will close the block early, and the text after it will look to the model like it is <em>outside</em> the trusted section.</p>
-<p>Here is what the model actually sees when that happens:</p>
+<p><strong>2. Not escaping your own delimiter.</strong> Your format uses <code>[/User context]</code> to close the trusted block. The text <em>inside</em> that block comes partly from the user's prior conversation history, which you do not fully control. If any of that history contains the literal string <code>[/User context]</code>, it will close the block early, and the text after it will look to the model like it is <em>outside</em> the trusted section.</p>
+<p>Here is what the model sees when that happens:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>WITHOUT ESCAPING — what the model sees:
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  [User context]                         ← trusted block opens
@@ -1384,7 +1411,7 @@
 <a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    <span class="k">return</span> <span class="sa">f</span><span class="s2">"[User context]</span><span class="se">\n</span><span class="si">{</span><span class="n">safe_context</span><span class="si">}</span><span class="se">\n</span><span class="s2">[/User context]</span><span class="se">\n\n</span><span class="si">{</span><span class="n">content</span><span class="si">}</span><span class="s2">"</span>
 </code></pre></div>
 <p>Lowercasing the injected copy makes it visually different from the real closing tag, so the model does not treat it as a boundary. The real <code>[/User context]</code> is now only ever written by your code, not by user-influenced text.</p>
-<p>This does not make prompt injection impossible — it closes one obvious escape hatch. Any time a delimiter separates trusted from untrusted text, the untrusted side must not be able to reproduce the delimiter exactly.</p>
+<p>This does not make prompt injection impossible. It closes one obvious escape hatch. Any time a delimiter separates trusted from untrusted text, the untrusted side must not be able to reproduce the delimiter exactly.</p>
 <h2 id="the-boundary-question-where-do-you-inject">The boundary question: <em>where</em> do you inject?<a class="headerlink" href="#the-boundary-question-where-do-you-inject" title="Permanent link">&para;</a></h2>
 <p>Context injection has a location, and the location is a design decision with a tradeoff:</p>
 <pre class="mermaid"><code>flowchart TD
@@ -1395,17 +1422,16 @@
     D --&gt; E[model call]
     E --&gt; F[model response → written back to state]
     style D fill:#f0faf0,stroke:#388e3c</code></pre>
-<p>The safest place for <strong>request-only</strong> context is usually just before the model call, via <a href="../00-glossary/#middleware">middleware</a>. That keeps the <a href="../00-glossary/#checkpoint">checkpoint</a> clean — you are not persisting per-request text into durable state where it can go stale and leak into a later turn. The tradeoff: the injected text is <em>invisible</em> when you inspect saved graph state, so you must be able to reconstruct it for debugging.</p>
-<p>Because prompt assembly can differ across code paths, these bugs usually surface as <strong>inconsistent</strong> answers rather than hard failures — the same request works in one route and fails in another because the two routes compose the prompt differently.</p>
+<p>The safest place for <strong>request-only</strong> context is usually just before the model call, via <a href="../00-glossary/#middleware">middleware</a>. That keeps the <a href="../00-glossary/#checkpoint">checkpoint</a> clean, because you are not persisting per-request text into durable state where it can go stale and leak into a later turn. The tradeoff is that the injected text is <em>invisible</em> when you inspect saved graph state, so you must be able to reconstruct it for debugging.</p>
+<p>Because prompt assembly can differ across code paths, these bugs usually surface as <strong>inconsistent</strong> answers rather than hard failures. The same request works in one route and fails in another because the two routes compose the prompt differently.</p>
 <h2 id="guardrails">Guardrails<a class="headerlink" href="#guardrails" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Centralize prompt construction.</strong> One place assembles the final input, so there is one place to review — the same lesson as the input factory in <a href="../02-state-and-checkpoints/">LangGraph State</a>.</li>
+<li><strong>Centralize prompt construction.</strong> One place assembles the final input, so there is one place to review. This is the same lesson as the input factory in <a href="../02-state-and-checkpoints/">LangGraph State</a>.</li>
 <li>Make context <strong>sources</strong> explicit in typed state, so a reviewer can see what came from where.</li>
-<li>In debug environments, <strong>snapshot the final prompt</strong> actually sent to the model.</li>
-<li><strong>Test prompt assembly independently</strong> from model calls — it is pure string composition and deserves its own tests.</li>
+<li>In debug environments, <strong>snapshot the final prompt</strong> sent to the model.</li>
+<li><strong>Test prompt assembly independently</strong> from model calls. It is pure string composition and deserves its own tests.</li>
 <li>Test the awkward inputs: summarized histories, multimodal messages, and <strong>empty context</strong> (does a correction survive, or does stale context win?).</li>
 </ul>
-<hr />
 <hr />
 <div class="admonition check">
 <p class="admonition-title">You should now understand</p>

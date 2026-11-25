@@ -911,6 +911,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../11-when-the-score-passes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone 2 · When the score passes and the work fails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -925,10 +952,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21" >
         
           
-          <label class="md-nav__link" for="__nav_20" id="__nav_20_label" tabindex="">
+          <label class="md-nav__link" for="__nav_21" id="__nav_21_label" tabindex="">
             
   
   
@@ -946,8 +973,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_20_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_21_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1002,10 +1029,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21_2" >
         
           
-          <label class="md-nav__link" for="__nav_20_2" id="__nav_20_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_21_2" id="__nav_21_2_label" tabindex="0">
             
   
   
@@ -1023,8 +1050,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_21_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21_2">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1302,7 +1329,7 @@
 
 <h1 id="chapter-2-end-to-end-architecture-and-orchestrator-flow">Chapter 2 · End-to-End Architecture and Orchestrator Flow<a class="headerlink" href="#chapter-2-end-to-end-architecture-and-orchestrator-flow" title="Permanent link">&para;</a></h1>
 <p>Before building state, prompts, queues, or locks one at a time, hold the whole run in your head.</p>
-<p>A production deep agent is not one request that calls a model. It is a handoff chain:</p>
+<p>A production deep agent is a handoff chain across several requests and processes:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>API plans -&gt; checkpoint pauses -&gt; human approves -&gt; API queues -&gt; worker resumes -&gt; SSE tails events
 </code></pre></div>
 <p>Each arrow crosses a seam where a silent failure can enter. This chapter gives you the map so the implementation chapters have somewhere to attach.</p>
@@ -1342,7 +1369,7 @@
 <p>The checkpoint is the graph's source of truth. The event log is narration. The queue is only a pointer. Run-state is the lifecycle marker that lets the UI stop waiting when work completed or failed.</p>
 <p>If you blur these together, the system becomes hard to repair after a crash. A lost event should not lose the run. A lost queue message should be re-enqueueable. A completed worker should not need a live browser to make completion true.</p>
 <h2 id="the-deep-agent-package-map">The deep-agent package map<a class="headerlink" href="#the-deep-agent-package-map" title="Permanent link">&para;</a></h2>
-<p>The codebase mirrors those records and phases. In the production implementation, <code>agent/deep/</code> was not one giant "agent" file; it was a set of small modules grouped by job:</p>
+<p>The codebase mirrors those records and phases. In the production implementation, <code>agent/deep/</code> was a set of small modules grouped by job:</p>
 <table>
 <thead>
 <tr>
@@ -1400,16 +1427,16 @@
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>  -&gt; interrupt() persists the pause
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>  -&gt; API streams a plan event and closes at interrupt
 </code></pre></div>
-<p>The plan phase is allowed to be synchronous because it ends quickly at the gate. The browser watches it over SSE, but the important artifact is the checkpoint: it now contains state plus a pending interrupt payload.</p>
+<p>The plan phase is allowed to be synchronous because it ends quickly at the gate. The browser watches it over SSE, but the artifact that matters is the checkpoint, which now contains state plus a pending interrupt payload.</p>
 <p>The <code>submit_plan</code> tool is deliberately split by concern:</p>
 <ul>
 <li>The plan's step structure is derived from the agent's <code>write_todos</code> state.</li>
 <li>The resolved entities arrive as an explicit <code>entities</code> tool argument.</li>
 <li>The gate sanitizes those entities and persists them to <code>state["entity_groups"]</code>.</li>
 </ul>
-<p>That split matters. The model authors the raw planning intent. Code projects and sanitizes the approved shape.</p>
+<p>The model authors the raw planning intent. Code projects and sanitizes the approved shape.</p>
 <h2 id="phase-2-approval-stages-intent-then-queues-work">Phase 2: approval stages intent, then queues work<a class="headerlink" href="#phase-2-approval-stages-intent-then-queues-work" title="Permanent link">&para;</a></h2>
-<p>Approval is not where research execution happens in the production path.</p>
+<p>In the production path, the approval request does not run research.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>POST /deep/{thread_id}/approve/async
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>  -&gt; read pending interrupt from checkpoint
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>  -&gt; validate owner, plan, and interrupt
@@ -1418,12 +1445,12 @@
 <a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>  -&gt; enqueue SQS FIFO message, MessageGroupId = thread_id
 <a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>  -&gt; return 202 queued
 </code></pre></div>
-<p>The resume decision is not a normal state field. It is not <code>LastValue</code>, and it is not a reducer. It is a LangGraph pending write placed in the checkpoint's resume slot so the paused <code>interrupt()</code> can consume it later.</p>
+<p>The resume decision is a LangGraph pending write placed in the checkpoint's resume slot so the paused <code>interrupt()</code> can consume it later. It is not a normal state field, so neither <code>LastValue</code> nor a reducer applies.</p>
 <p>The write order is the contract:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>checkpoint resume decision -&gt; run-state queued -&gt; queue message
 </code></pre></div>
 <p>A queue message can be re-sent. A human approval decision cannot be reconstructed safely after the fact, so it is written first.</p>
-<p>An earlier design had the approve request itself stream execution synchronously in the HTTP response — useful for local testing, but not the production target. The production path returns <code>202 queued</code> and lets a separate background worker own the long run.</p>
+<p>An earlier design had the approve request itself stream execution synchronously in the HTTP response. That helped with local testing but was never the production target. The production path returns <code>202 queued</code> and lets a separate background worker own the long run.</p>
 <h2 id="phase-3-the-worker-resumes-with-no-input">Phase 3: the worker resumes with no input<a class="headerlink" href="#phase-3-the-worker-resumes-with-no-input" title="Permanent link">&para;</a></h2>
 <p>When the worker receives the FIFO message, it already has everything it needs.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>SQS receive
@@ -1436,7 +1463,7 @@
 <a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>  -&gt; release lock
 <a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>  -&gt; delete SQS message last
 </code></pre></div>
-<p>The <code>None</code> is not a placeholder. It is the design. Approval was already staged in the checkpoint as a pending resume write, so LangGraph reloads the checkpoint, re-enters the paused <code>interrupt()</code>, drains the pending resume value, and continues.</p>
+<p>The <code>None</code> is deliberate. Approval was already staged in the checkpoint as a pending resume write, so LangGraph reloads the checkpoint, re-enters the paused <code>interrupt()</code>, drains the pending resume value, and continues.</p>
 <p>Deleting the SQS message is last because loss is worse than duplication. If the worker crashes before terminal status, the message redelivers and another worker resumes from the checkpoint.</p>
 <h2 id="phase-4-the-browser-tails-a-projection">Phase 4: the browser tails a projection<a class="headerlink" href="#phase-4-the-browser-tails-a-projection" title="Permanent link">&para;</a></h2>
 <p>The frontend should never consume raw LangGraph or DeepAgents events. Those are framework internals. The UI gets a curated <code>StreamEnvelope</code>.</p>
@@ -1461,7 +1488,7 @@
 <a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>      ▼
 <a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>  Browser
 </code></pre></div>
-<p>During research, <strong>the API and the worker never talk to each other directly.</strong> The worker writes to the event log. The API reads from it. The browser's <code>Last-Event-ID</code> header is the cursor — if the browser reconnects after a network blip, it sends the last <code>seq</code> it saw, and the API picks up from there. No events are lost.</p>
+<p>During research, <strong>the API and the worker never talk to each other directly.</strong> The worker writes to the event log. The API reads from it. The browser's <code>Last-Event-ID</code> header is the cursor. If the browser reconnects after a network blip, it sends the last <code>seq</code> it saw, and the API picks up from there. No events are lost.</p>
 <p>Termination is status-based, not sentinel-based:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>Browser asks: "are we done?"
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>API checks: run-state record in database
@@ -1476,7 +1503,7 @@
 </code></pre></div>
 <p>Do not rely only on a final <code>done</code> event. A crash can skip a sentinel. A run-state record can still be flipped to <code>failed</code> by a worker, redelivery path, or detector, letting the browser stop with a visible reason.</p>
 <h2 id="the-orchestrators-real-tool-surface">The orchestrator's real tool surface<a class="headerlink" href="#the-orchestrators-real-tool-surface" title="Permanent link">&para;</a></h2>
-<p>The public lessons sometimes use <code>query_source</code> as a teaching simplification. The production shape is richer: the orchestrator had seven allowed tools.</p>
+<p>The public lessons sometimes use <code>query_source</code> as a teaching simplification. In production, the orchestrator had seven allowed tools:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>write_todos
 <a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>submit_plan
 <a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>query_cortex
@@ -1485,7 +1512,7 @@
 <a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>rebuild_artifacts
 <a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>read_file
 </code></pre></div>
-<p>The important boundary is not the exact names. It is the allow-list: only plan-safe planning tools are reachable before approval, and only plan-gated retrieval or synthesis tools are reachable after approval. Sub-agent tools are not directly reachable by the orchestrator.</p>
+<p>The allow-list enforces the boundary. Only plan-safe planning tools are reachable before approval, and only plan-gated retrieval or synthesis tools are reachable after approval. Sub-agent tools are not directly reachable by the orchestrator.</p>
 <h2 id="the-whole-run">The whole run<a class="headerlink" href="#the-whole-run" title="Permanent link">&para;</a></h2>
 <pre class="mermaid"><code>sequenceDiagram
     participant B as Browser

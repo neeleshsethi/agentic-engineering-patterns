@@ -449,10 +449,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-actually-goes-wrong" class="md-nav__link">
+  <a href="#what-goes-wrong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What actually goes wrong
+        What goes wrong
       
     </span>
   </a>
@@ -889,6 +889,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../11-when-the-score-passes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone 2 · When the score passes and the work fails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -903,10 +930,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21" >
         
           
-          <label class="md-nav__link" for="__nav_20" id="__nav_20_label" tabindex="">
+          <label class="md-nav__link" for="__nav_21" id="__nav_21_label" tabindex="">
             
   
   
@@ -924,8 +951,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_20_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_21_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -980,10 +1007,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21_2" >
         
           
-          <label class="md-nav__link" for="__nav_20_2" id="__nav_20_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_21_2" id="__nav_21_2_label" tabindex="0">
             
   
   
@@ -1001,8 +1028,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_21_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21_2">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1210,10 +1237,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-actually-goes-wrong" class="md-nav__link">
+  <a href="#what-goes-wrong" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What actually goes wrong
+        What goes wrong
       
     </span>
   </a>
@@ -1258,17 +1285,17 @@
 
 <h1 id="step-1-state-and-checkpoints">Step 1 · State and Checkpoints<a class="headerlink" href="#step-1-state-and-checkpoints" title="Permanent link">&para;</a></h1>
 <p>A user asks, "What were sales in France?" The agent answers with a confident, well-formatted report — about <strong>Germany</strong>. The request returned <code>200 OK</code>. No error, no retry, no log line out of place. The previous question in that conversation had been about Germany, and somehow it leaked into this turn.</p>
-<p>This is the most common silent failure in a LangGraph agent, and it is never a bug in your node logic. It is a bug in how <a href="../00-glossary/#state">state</a> carries over between turns. To see why, you have to know the one rule that governs every value your graph stores.</p>
+<p>This is the most common silent failure in a LangGraph agent. The node logic is fine; the bug is in how <a href="../00-glossary/#state">state</a> carries over between turns. To see why, you have to know the one rule that governs every value your graph stores.</p>
 <blockquote>
-<p>Key terms — <a href="../00-glossary/#state">state</a>, <a href="../00-glossary/#channel">channel</a>, <a href="../00-glossary/#lastvalue-the-footgun">LastValue</a>, <a href="../00-glossary/#checkpoint">checkpoint</a> — are defined once in the <a href="../00-glossary/">glossary</a>.</p>
+<p>Key terms (<a href="../00-glossary/#state">state</a>, <a href="../00-glossary/#channel">channel</a>, <a href="../00-glossary/#lastvalue-the-footgun">LastValue</a>, <a href="../00-glossary/#checkpoint">checkpoint</a>) are defined once in the <a href="../00-glossary/">glossary</a>.</p>
 </blockquote>
 <h2 id="the-mental-model-state-is-a-dictionary-with-a-rule-per-key">The mental model: state is a dictionary with a rule per key<a class="headerlink" href="#the-mental-model-state-is-a-dictionary-with-a-rule-per-key" title="Permanent link">&para;</a></h2>
-<p>LangGraph state is a dictionary. What makes it different from a plain dict is that <strong>each key has a rule attached</strong> — a <a href="../00-glossary/#channel">channel</a> — that decides what happens when a node writes to it.</p>
+<p>LangGraph state is a dictionary. What makes it different from a plain dict is that <strong>each key has a rule attached</strong>, called a <a href="../00-glossary/#channel">channel</a>, that decides what happens when a node writes to it.</p>
 <p>The default rule is <a href="../00-glossary/#lastvalue-the-footgun"><code>LastValue</code></a>: the latest write replaces the previous value. That sounds harmless until you notice its other half:</p>
 <blockquote>
 <p>If a new run does <strong>not</strong> write a key, <code>LastValue</code> keeps whatever the <a href="../00-glossary/#checkpoint">checkpoint</a> already had.</p>
 </blockquote>
-<p>That is the trap, and it is worth saying slowly: <strong>"I did not write this key" does not mean "clear this key." It means "keep the old value."</strong> In an ordinary request handler, a variable you don't set is empty. In a checkpointed graph, a key you don't write is <em>stale</em>.</p>
+<p><strong>"I did not write this key" does not mean "clear this key." It means "keep the old value."</strong> In an ordinary request handler, a variable you don't set is empty. In a checkpointed graph, a key you don't write is <em>stale</em>.</p>
 <p>Here is the France/Germany bug as a state trace:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Checkpoint before the new turn
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  raw_question = "sales in Germany"
@@ -1282,7 +1309,7 @@
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>  raw_question  = "sales in Germany"            &lt;- STALE, never rewritten
 <a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>  user_context  = "default country: Australia"  &lt;- STALE, never rewritten
 </code></pre></div>
-<p>The caller wrote <code>messages</code> and nothing else. <code>add_messages</code> appended the new message correctly — but <code>raw_question</code> and <code>user_context</code> still hold last turn's values, because nobody overwrote them. A downstream node reads <code>raw_question</code>, sees "Germany," and does exactly what it was told.</p>
+<p>The caller wrote <code>messages</code> and nothing else. <code>add_messages</code> appended the new message correctly, but <code>raw_question</code> and <code>user_context</code> still hold last turn's values, because nobody overwrote them. A downstream node reads <code>raw_question</code>, sees "Germany," and does exactly what it was told.</p>
 <pre class="mermaid"><code>flowchart LR
     subgraph t1 ["Turn 1 — 'Germany'"]
         a1["writes:&lt;br/&gt;messages = [Turn 1]&lt;br/&gt;raw_question = Germany&lt;br/&gt;user_context = Australia"]
@@ -1298,12 +1325,12 @@
     end
     t1 --&gt; c1 --&gt; t2 --&gt; c2
     style b2 fill:#fff0f0,stroke:#cc3333</code></pre>
-<p><strong>The fix is one sentence:</strong> if a key must describe <em>this</em> turn, the caller must write it <em>every</em> turn. Everything below is how to make that discipline hard to get wrong.</p>
+<p>The fix fits in one sentence. If a key must describe <em>this</em> turn, the caller must write it <em>every</em> turn. Everything below is how to make that discipline hard to get wrong.</p>
 <h2 id="state-versus-checkpoint">State versus checkpoint<a class="headerlink" href="#state-versus-checkpoint" title="Permanent link">&para;</a></h2>
 <p>Two words that sound the same and are not:</p>
 <ul>
 <li><strong>State</strong> is the logical data your graph reads and writes during a run.</li>
-<li><strong><a href="../00-glossary/#checkpoint">Checkpoint</a></strong> is the durable stored copy that lets LangGraph resume the run later — possibly in a different process, after a deploy.</li>
+<li><strong><a href="../00-glossary/#checkpoint">Checkpoint</a></strong> is the durable stored copy that lets LangGraph resume the run later, possibly in a different process after a deploy.</li>
 </ul>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>node returns {"plan": plan_dict}
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  → LangGraph applies the channel rule for each key
@@ -1311,8 +1338,8 @@
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>      → a later HTTP request resumes with the same thread_id
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>        → LangGraph reloads state from the checkpoint
 </code></pre></div>
-<p>A checkpoint holds more than the final visible state. During an <a href="../00-glossary/#interrupt"><code>interrupt()</code></a> it also records pending writes and the interrupt payload needed to resume — which is why the stale-value problem survives across pauses, not just across turns.</p>
-<p>There is one subtle exception to the channel model: a human resume decision is staged as checkpoint plumbing, not as normal state. In the production approval path, the API writes <code>(RESUME, {"type": "approve"})</code> into LangGraph's pending-writes area with <code>saver.put_writes()</code>. That value is neither <code>LastValue</code> nor a reducer; it is a one-shot resume value drained when the worker re-enters the paused <code>interrupt()</code>.</p>
+<p>A checkpoint holds more than the final visible state. During an <a href="../00-glossary/#interrupt"><code>interrupt()</code></a> it also records pending writes and the interrupt payload needed to resume. That is why the stale-value problem survives across pauses, not just across turns.</p>
+<p>There is one exception to the channel model: a human resume decision is staged as checkpoint plumbing, not as normal state. In the production approval path, the API writes <code>(RESUME, {"type": "approve"})</code> into LangGraph's pending-writes area with <code>saver.put_writes()</code>. That value is neither <code>LastValue</code> nor a reducer; it is a one-shot resume value drained when the worker re-enters the paused <code>interrupt()</code>.</p>
 <h2 id="channel-types-replace-versus-combine">Channel types: replace versus combine<a class="headerlink" href="#channel-types-replace-versus-combine" title="Permanent link">&para;</a></h2>
 <p>You choose the rule per key. There are two you will use constantly:</p>
 <ul>
@@ -1328,8 +1355,8 @@
 <a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="n">source_results</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">SourceResult</span><span class="p">],</span> <span class="n">operator</span><span class="o">.</span><span class="n">add</span><span class="p">]</span>  <span class="c1"># reducer: append</span>
 <a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">step_status</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">operator</span><span class="o">.</span><span class="n">or_</span><span class="p">]</span>  <span class="c1"># reducer: merge</span>
 </code></pre></div>
-<p>Rule of thumb: reach for <code>LastValue</code> <strong>only</strong> when stale carry-over is genuinely acceptable, or when every new turn is guaranteed to write an explicit replacement. If you cannot guarantee that, you have a France/Germany bug waiting to happen.</p>
-<p>In the production deep agent, the important channels fell into four groups:</p>
+<p>Rule of thumb: reach for <code>LastValue</code> <strong>only</strong> when stale carry-over is acceptable, or when every new turn is guaranteed to write an explicit replacement. If you cannot guarantee that, you have a France/Germany bug waiting to happen.</p>
+<p>In the production deep agent, the main channels behaved like this:</p>
 <table>
 <thead>
 <tr>
@@ -1381,9 +1408,9 @@
 </tr>
 </tbody>
 </table>
-<p>The approval decision is intentionally missing from this table. It is not a state channel. It is checkpoint pending-write plumbing: the API stages the resume value beside the state, then the worker drains it when the paused <code>interrupt()</code> resumes.</p>
+<p>The approval decision is missing from this table on purpose. As described above, it lives in checkpoint pending writes, and the worker drains it when the paused <code>interrupt()</code> resumes.</p>
 <h2 id="turn-the-convention-into-an-api">Turn the convention into an API<a class="headerlink" href="#turn-the-convention-into-an-api" title="Permanent link">&para;</a></h2>
-<p>The discipline "write these keys every turn" is a convention, and conventions rot — every new endpoint is a chance to forget one. So don't let endpoints hand-build graph input. Put the required keys behind one factory:</p>
+<p>The discipline "write these keys every turn" is a convention, and conventions rot, because every new endpoint is a chance to forget one. So don't let endpoints hand-build graph input. Put the required keys behind one factory:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">build_proposal_graph_input</span><span class="p">(</span><span class="n">question</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">user_context</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="k">return</span> <span class="p">{</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>        <span class="s2">"messages"</span><span class="p">:</span> <span class="p">[{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">question</span><span class="p">}],</span>
@@ -1410,7 +1437,7 @@
 <a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="p">}</span>
 </code></pre></div>
 <p>Now the convention is an API. A reviewer checks one function instead of searching every route that starts the graph, and a forgotten key becomes impossible rather than merely unlikely.</p>
-<h2 id="what-actually-goes-wrong">What actually goes wrong<a class="headerlink" href="#what-actually-goes-wrong" title="Permanent link">&para;</a></h2>
+<h2 id="what-goes-wrong">What goes wrong<a class="headerlink" href="#what-goes-wrong" title="Permanent link">&para;</a></h2>
 <p>The problem is rarely that state is <em>absent</em>. Far more often, state exists but has the wrong <strong>shape, lifetime, or merge semantics</strong>. Watch for:</p>
 <ul>
 <li>Treating an omitted key as if it clears prior state (the France/Germany bug).</li>
@@ -1425,20 +1452,20 @@
 <ul>
 <li>Use a clearly typed state model, and keep durable state separate from ephemeral execution metadata.</li>
 <li>Review channel <strong>merge behavior</strong> as part of code review, not just the node logic.</li>
-<li>Add tests that assert how state evolves across <em>multiple</em> node transitions — not a single call.</li>
+<li>Add tests that assert how state evolves across <em>multiple</em> node transitions, not a single call.</li>
 <li>Add the test that catches this whole class: a <strong>second turn that intentionally passes empty context</strong>, asserting no value from the first turn survives.</li>
 </ul>
 <hr />
-<p>State is where the agent's mind lives. The next step, <a href="../03-context-injection/">Context Injection</a>, is about a specific, high-stakes case of getting values into that state: attaching the <em>right</em> context to the model at the <em>right</em> boundary — and how the wrong context, like a stale <code>user_context</code> above, produces an answer that looks fine and is wrong.</p>
+<p>The next step, <a href="../03-context-injection/">Context Injection</a>, is about a specific, high-stakes case of getting values into that state: attaching the <em>right</em> context to the model at the <em>right</em> boundary, and how the wrong context, like a stale <code>user_context</code> above, produces an answer that looks fine and is wrong.</p>
 <hr />
 <div class="admonition check">
 <p class="admonition-title">You should now understand</p>
 <ul>
-<li>Why <code>LastValue</code> channels keep stale data when a key is not written in a new turn — "omitted ≠ cleared"</li>
+<li>Why <code>LastValue</code> channels keep stale data when a key is not written in a new turn ("omitted ≠ cleared")</li>
 <li>The difference between <em>state</em> (the data your graph reads and writes) and <em>checkpoints</em> (the durable snapshot that survives crashes and deploys)</li>
 <li>How to prevent stale carry-over: every turn-scoped key must be written explicitly on every turn</li>
 <li>Why a resume decision is checkpoint pending-write plumbing, not a state channel</li>
-<li>Why "write required keys through one factory function" is an API, not a convention — and why the distinction matters in review</li>
+<li>Why "write required keys through one factory function" turns a convention into an API that a reviewer can check in one place</li>
 </ul>
 </div>
 <details class="question">
@@ -1446,7 +1473,7 @@
 <p><strong>A node reads <code>raw_question</code> from state, uses it to query an external data source, and writes the result back to state. On turn 2, a new engineer updates the endpoint so <code>raw_question</code> is only included in the graph input when the user explicitly sends it. On turns where the user doesn't send it, the field is omitted. What is the failure mode, and how do you catch it in a code review?</strong></p>
 <details class="success">
 <summary>Answer</summary>
-<p><code>raw_question</code> is a <code>LastValue</code> channel. Omitting it on turn 2 does not clear it — it retains the turn-1 value. The node then queries an external source with a stale question and writes a stale result to state. The response is <code>200 OK</code>, the logs look clean, and the user gets an answer to a question they didn't ask. In review, ask: "Is there any path through this endpoint that omits a state key that a downstream node reads?" The answer here is yes. The fix is to make the input factory require <code>raw_question</code> on every call — a <code>TypeError</code> at startup beats a silent wrong answer in production.</p>
+<p><code>raw_question</code> is a <code>LastValue</code> channel. Omitting it on turn 2 does not clear it; it keeps the turn-1 value. The node then queries an external source with a stale question and writes a stale result to state. The response is <code>200 OK</code>, the logs look clean, and the user gets an answer to a question they didn't ask. In review, ask: "Is there any path through this endpoint that omits a state key that a downstream node reads?" The answer here is yes. The fix is to make the input factory require <code>raw_question</code> on every call. A <code>TypeError</code> at startup beats a silent wrong answer in production.</p>
 </details>
 </details>
 

@@ -34,7 +34,7 @@ persisted at end of run instead, from state.
    │  interrupt│
    └───────────┘
                        2. the thread PARKS here (nothing is running)
-                          DynamoDB: deep-checkpoints
+                          DynamoDB: agent-checkpoints
                             full graph state + the pending interrupt
 
 3. POST /deep/{thread}/plan/refine   (loop 0..n times)
@@ -70,7 +70,7 @@ nothing lives in process memory.**
 | `thread_id` | `chat_id` chosen at proposal time | Whole conversation | The LangGraph thread — the deep thread **is the chat**, not the session. Refine and approve arrive as separate requests and must land on the same thread. |
 | `deep_run_id` | `uuid4().hex` per proposal | One proposal→report cycle | Scopes the observability trace to ONE turn; resumes never rewrite it, the next proposal mints a new one |
 | `question_ts` | Server clock at question arrival | One turn | Orders turn-entities writes at end of run by *arrival* time (completion order inverts under slow runs) |
-| `plan_id` | Derived (`plan-{thread_id}`) per question cycle | One question's cycle | Stable across refinements by design — which is why it alone cannot authorize an approve |
+| `plan_id` | Derived (`plan-{thread_id}-{cycle}`) per question cycle | One question's cycle | Stable across refinements by design — which is why it alone cannot authorize an approve |
 | `interrupt_id` | LangGraph, per `interrupt()` pause | One pause | Binds an approval to the exact revision the user was looking at; a stale tab's approve is rejected |
 | Claim token | `uuid4().hex` per `acquire_resume_claim()` | One resume attempt | Token-guarded release: a stream that outlives its lease cannot delete the next holder's claim |
 | `owner_id` | Captured from the proposal request into the interrupt payload | The run | Execution always runs under the plan owner's identity, never the resume caller's |
@@ -194,7 +194,7 @@ The graph is compiled with `DynamoDBSaver` (from `langgraph-checkpoint-aws`):
 | `thread_id` | `chat_id` | Refine/approve are separate HTTP requests — they find the thread by the id the frontend already has |
 | TTL | 30 days (`CHECKPOINT_TTL_SECONDS`) | A gate parked longer than this is abandoned by definition |
 | Compression | gzip | State carries the full transcript |
-| S3 offload | > ~350 KB → `s3://$CHECKPOINT_OFFLOAD_BUCKET/deep-checkpoints/…` | DynamoDB's 400 KB item cap; transparent to the app |
+| S3 offload | > ~350 KB → `s3://$CHECKPOINT_OFFLOAD_BUCKET/agent-checkpoints/…` | DynamoDB's 400 KB item cap; transparent to the app |
 | Fallback | `InMemorySaver` when `CHECKPOINTER_BACKEND=memory` | Single-process only (local dev, unit tests); misconfiguration *raises* rather than degrades |
 
 LangGraph calls `saver.put()` after every super-step — our code never writes a checkpoint. By the
@@ -211,7 +211,7 @@ owns that channel), then calls the gate tool `submit_plan`:
 2. Projects the raw todos into the typed `Plan`: stable step ids (`step-1…`), title, scope,
    `plan_id` derived from the thread, `modification_count`.
 3. Detects a new question cycle: a prior with `status == "locked"` means this submit starts a
-   fresh question on the same thread — `plan_id` increments (`plan-{thread}-2`),
+   fresh question on the same thread — `plan_id` increments (`plan-{thread_id}-2`),
    `modification_count` resets, and `entity_groups` reset (carrying the previous question's groups
    forward would persist wrong-country entities; **empty beats wrong**).
 4. Calls `interrupt()` with the payload the whole "before resume" phase hands to the "after":
@@ -241,7 +241,7 @@ While the user reads the plan — for seconds or for days — this is the comple
 the system:
 
 ```
-DynamoDB: deep-checkpoints, thread = chat_id
+DynamoDB: agent-checkpoints, thread = chat_id
   checkpoint chain (one per super-step, gzipped, TTL 30d)
   latest checkpoint:
     messages        full planning transcript (Human + AI + Tool)
@@ -354,7 +354,7 @@ What happens next is the fork between today and the async future:
 - **Synchronous (shipped early):** the same request keeps streaming and execution runs in the API
   process.
 - **Async (the other note):** the endpoint flips to checkpoint-then-enqueue — write `run#{thread}
-  queued`, `send({thread_id, run_id})` to `deep-run.fifo`, return `202`, and the worker picks it
+  queued`, `send({thread_id, run_id})` to `agent-runs.fifo`, return `202`, and the worker picks it
   up.
 
 Either way: `life-of-a-deep-run.md` takes it from here.
@@ -376,7 +376,7 @@ Either way: `life-of-a-deep-run.md` takes it from here.
   missing_identity`. Execution always runs under the owner's identity.
 
 - **B4. Follow-up question on a thread with a locked plan.** New-cycle detection: the next
-  `submit_plan` sees `prior.status == "locked"` → new `plan_id` (`plan-{thread}-2`),
+  `submit_plan` sees `prior.status == "locked"` → new `plan_id` (`plan-{thread_id}-2`),
   `modification_count` resets, `entity_groups` reset (the old plan's entities must not leak onto
   the new one). The proposal request itself overwrites `raw_question` / `user_context` /
   `question_ts` / `deep_run_id`.

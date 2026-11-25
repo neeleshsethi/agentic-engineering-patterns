@@ -386,7 +386,7 @@ Each step is runnable and testable before the next:
 
 The hardest step is 5: idempotency and stale-state bugs both surface there. Run the approve endpoint twice on the same payload and confirm the second call is a 409 or a safe no-op.
 
-Once a plan is locked, the run itself has to survive worker crashes and reconnects. [Durable Async Agent Runs](./08-queue-and-worker-execution.md) covers that.
+Once a plan is locked, the run itself has to survive worker crashes and reconnects. [Queue and worker execution](./08-queue-and-worker-execution.md) covers that.
 
 ## Guardrails
 

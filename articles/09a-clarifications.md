@@ -45,10 +45,10 @@ Use this when:
 Terminal clarification happens before any plan exists. The system has no safe default for a required entity or metric, so it asks one question and stops.
 
 ```text
-User: "Show me performance for the launch brand."
+User: "Show me performance for the new product line."
 
 Agent:
-  "Which launch brand should I use?"
+  "Which product line should I use?"
 ```
 
 Terminal clarification must happen before `write_todos`. A submitted plan should be fully determined. If the agent writes vague todos and hopes to clarify during execution, the plan approval loses meaning: the human approved a shape that still contains unknowns.
@@ -65,7 +65,7 @@ Source elicitation is the hard case. It happens after retrieval begins, when a d
 
 ```text
 Step 1: query promotion lift      -> returns data
-Step 2: query regional    -> asks "retail or non-retail?"
+Step 2: query regional    -> asks "in-store or online?"
 ```
 
 The source's ask-back must be detected before the report writer runs. Do not rely on a second model to guess whether a source result is a clarification if the source protocol can say so.
@@ -109,7 +109,7 @@ The user-facing question should mention both facts:
 
 ```text
 "I have the promotion lift figures. For regional sales, the source asks:
-retail or non-retail?"
+in-store or online?"
 ```
 
 When the user answers, the system re-queries only the asking step. The already completed result is reused from state.

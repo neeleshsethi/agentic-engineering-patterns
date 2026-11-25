@@ -772,6 +772,33 @@
       
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../../11-when-the-score-passes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone 2 · When the score passes and the work fails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -790,10 +817,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21" checked>
         
           
-          <label class="md-nav__link" for="__nav_20" id="__nav_20_label" tabindex="">
+          <label class="md-nav__link" for="__nav_21" id="__nav_21_label" tabindex="">
             
   
   
@@ -811,8 +838,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_20_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_20">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_21_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_21">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -869,10 +896,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21_2" checked>
         
           
-          <label class="md-nav__link" for="__nav_20_2" id="__nav_20_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_21_2" id="__nav_21_2_label" tabindex="0">
             
   
   
@@ -890,8 +917,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_2_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_20_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_21_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_21_2">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1086,15 +1113,15 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#the-full-layout-of-deep-events" class="md-nav__link">
+  <a href="#the-full-layout-of-agent-events" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The full layout of deep-events
+        The full layout of agent-events
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="The full layout of deep-events">
+    <nav class="md-nav" aria-label="The full layout of agent-events">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1463,15 +1490,15 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#the-full-layout-of-deep-events" class="md-nav__link">
+  <a href="#the-full-layout-of-agent-events" class="md-nav__link">
     <span class="md-ellipsis">
       
-        The full layout of deep-events
+        The full layout of agent-events
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="The full layout of deep-events">
+    <nav class="md-nav" aria-label="The full layout of agent-events">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1796,7 +1823,7 @@ approve click.</p>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  Browser  ───────────────────────────────►  API (ECS)
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  │EventSource│                                 │  approve:
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  │           │                                 │   1. checkpoint approval (durable)
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  │  SSE      │                                 │   2. put_run_state(queued)   → deep-events
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  │  SSE      │                                 │   2. put_run_state(queued)   → agent-events
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>  │  frames   │◄──── id: seq  data: event       │   3. send_message           → SQS
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>  │  tail     │                                 │
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>  └───────────┘                                 ▼
@@ -1806,21 +1833,21 @@ approve click.</p>
 <a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>        │  every ~250 ms                         ▼
 <a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>        │                          Worker (ECS, S3)
 <a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>        └──────── reads only ──────  pickup ritual: stamp · lock · seed · wrap
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>                  deep-events                     │
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>                  agent-events                     │
 <a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>                                                  │  LangGraph astream()
 <a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>                                    ┌─────────────┴──────────────┐
 <a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>                                    ▼                            ▼
 <a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>                    emitter: PutItem seq++ (fenced)   LeaseExtendingSaver:
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>                    → deep-events                     saver.put() → snapshot + heartbeat
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>                    (events + run# + lock#)           → deep-checkpoints
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>                    → agent-events                     saver.put() → snapshot + heartbeat
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>                    (events + run# + lock#)           → agent-checkpoints
 <a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>                                                      (LangGraph state = source of truth)
 <a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>
 <a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>  3 strikes → SQS moves msg → {env}-agent-runs-dlq.fifo → CloudWatch depth alarm → SNS → ops
 </code></pre></div>
 <p><strong>Read it left to right:</strong> the <code>approve</code> call persists intent (checkpoint + run-state) <em>before</em>
 enqueuing; the queue serializes per thread; the worker produces two independent write streams
-(snapshots to <code>deep-checkpoints</code>, feed events to <code>deep-events</code>); the API reads only
-<code>deep-events</code>; the DLQ is the only path that pages a human.</p>
+(snapshots to <code>agent-checkpoints</code>, feed events to <code>agent-events</code>); the API reads only
+<code>agent-events</code>; the DLQ is the only path that pages a human.</p>
 <hr />
 <h2 id="part-1-the-cast-of-characters">Part 1 — The cast of characters<a class="headerlink" href="#part-1-the-cast-of-characters" title="Permanent link">&para;</a></h2>
 <h3 id="the-four-stores">The four stores<a class="headerlink" href="#the-four-stores" title="Permanent link">&para;</a></h3>
@@ -1849,12 +1876,12 @@ enqueuing; the queue serializes per thread; the worker produces two independent 
 <tr>
 <td><strong>Event table</strong></td>
 <td><code>{env}-agent-events</code> (DynamoDB)</td>
-<td>The user-facing activity feed. <code>PK=thread_id</code>, <code>SK=seq</code>, TTL ~24h</td>
+<td>The user-facing activity feed. <code>PK=thread_id</code>, <code>SK=seq</code>, TTL 24h</td>
 <td>The worker's event emitter (our app code)</td>
 </tr>
 <tr>
 <td><strong>Run-state + lock</strong></td>
-<td>Same <code>deep-events</code> table, different PK prefix (<code>run#</code>, <code>lock#</code>) — <strong>not</strong> a separate table</td>
+<td>Same <code>agent-events</code> table, different PK prefix (<code>run#</code>, <code>lock#</code>) — <strong>not</strong> a separate table</td>
 <td><code>{status, reason, receive_count}</code> and <code>{owner, expires_at}</code></td>
 <td>Worker (+ failure detectors)</td>
 </tr>
@@ -1872,7 +1899,7 @@ instead of hardcoding it.</p>
    (<code>run#abc</code>, <code>lock#abc</code>) so the reader's <code>Query(thread_id = tid AND seq &gt; cursor)</code> never needs
    a skip rule.</li>
 </ol>
-<h3 id="the-full-layout-of-deep-events">The full layout of <code>deep-events</code><a class="headerlink" href="#the-full-layout-of-deep-events" title="Permanent link">&para;</a></h3>
+<h3 id="the-full-layout-of-agent-events">The full layout of <code>agent-events</code><a class="headerlink" href="#the-full-layout-of-agent-events" title="Permanent link">&para;</a></h3>
 <p>One table, <strong>three item kinds</strong> (DynamoDB is schemaless beyond the key, so they coexist for free):</p>
 <table>
 <thead>
@@ -2349,23 +2376,26 @@ closes.</p>
 <h2 id="part-3-the-lock-in-complete-detail">Part 3 — The lock, in complete detail<a class="headerlink" href="#part-3-the-lock-in-complete-detail" title="Permanent link">&para;</a></h2>
 <h3 id="plain-words-version-one-continuous-story">Plain-words version — one continuous story<a class="headerlink" href="#plain-words-version-one-continuous-story" title="Permanent link">&para;</a></h3>
 <p>The lock answers one question: <em>"which process is allowed to write for thread <code>abc</code> right now?"</em>
-It's a parking permit for a single spot — one item, at <code>PK="lock#abc"</code>, <code>SK=0</code>. The subtlety: it
+It's a parking permit for a single spot — one item, at <code>PK="lock#abc"</code>, <code>SK=0</code>. (This is the
+worker's run lock. The API's resume claim, <code>CLAIM#{thread_id}</code> / <code>RESUME</code> in the checkpoint table,
+is a separate item built the same way; see <code>before-resume.md</code>.) The subtlety: it
 identifies a specific <strong>tenure</strong>, not a specific worker. Every acquisition mints a brand-new
 random string (<code>uuid4()</code>). Think of a hotel key card: check in, the desk programs a new card for
 room 12; your name isn't on it. When the next guest checks in, the door is reprogrammed for
 their card and your old card simply stops opening the door. Nobody has to find you and take it
 away.</p>
+<p>All times below are in seconds; the lease is 600 s (10 minutes).</p>
 <p><strong>t=0 — Worker A acquires.</strong> A mints token <code>"aaa-111"</code> and does a conditional put whose
 condition reads: <em>"write this only if no lock item exists at this slot, OR the one that exists
 has already expired."</em> DynamoDB checks and writes in one atomic step, so exactly one winner:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>PK="lock#abc"  SK=0  {owner: "aaa-111", expires_at: t+600}   ← A's tenure
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>PK="lock#abc"  SK=0  {owner: "aaa-111", expires_at: 600}   ← A's tenure
 </code></pre></div>
 <p><strong>Why the lock must expire at all — the entire reason Renew exists.</strong> Imagine no expiry: A
-crashes at t=50 holding the lock forever. Every future worker finds a "live" lock and backs off
+crashes holding the lock and holds it forever. Every future worker finds a "live" lock and backs off
 — the thread is wedged permanently until a human deletes a DynamoDB item. So the lease is
 deliberately short (minutes) — but our runs take 45+ minutes, so a healthy holder must keep
 pushing the expiry forward. That's Renew.</p>
-<p><strong>t=0…40 — A renews on every checkpoint</strong> (piggybacked on the <code>LeaseExtendingSaver.put()</code>
+<p><strong>t=0…1200 — A renews on every checkpoint</strong> (piggybacked on the <code>LeaseExtendingSaver.put()</code>
 heartbeat, because a checkpoint proves both life and progress):</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">update_item</span><span class="p">(</span>
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>    <span class="n">Key</span><span class="o">=</span><span class="p">{</span><span class="s2">"thread_id"</span><span class="p">:</span> <span class="s2">"lock#abc"</span><span class="p">,</span> <span class="s2">"seq"</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
@@ -2377,17 +2407,17 @@ heartbeat, because a checkpoint proves both life and progress):</p>
 <p><strong>"Token-guarded"</strong> means exactly that one condition line: every write to the lock says "only if
 the lock still contains MY token." Not <em>"extend the lock for abc"</em> but <em>"extend it if it's still
 my card in the door."</em></p>
-<p><strong>t=45 — A freezes</strong> (GC pause, network partition — doesn't matter). No checkpoints → no renews.
-<code>expires_at</code> quietly passes at t=55. <strong>Nothing happens in the table at expiry</strong> — no deletion,
+<p><strong>t=1200 — A freezes</strong> right after a renew set <code>expires_at</code> to 1800 (GC pause, network partition —
+doesn't matter). No checkpoints → no renews. <code>expires_at</code> quietly passes at t=1800. <strong>Nothing happens in the table at expiry</strong> — no deletion,
 no notification. Expiry only means the next acquirer's <code>expires_at &lt; now</code> will now evaluate true.</p>
-<p><strong>t=60 — Worker B takes over.</strong> SQS redelivered (the visibility lease lapsed from the same
+<p><strong>t=1850 — Worker B takes over.</strong> SQS redelivered (the visibility lease lapsed from the same
 silence). B mints <code>"bbb-222"</code> and runs the same acquire put — the "already expired" half of the
 condition is now true, so the put succeeds and overwrites the whole item:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>PK="lock#abc"  SK=0  {owner: "bbb-222", expires_at: t+600}   ← B's tenure
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>PK="lock#abc"  SK=0  {owner: "bbb-222", expires_at: 2450}   ← B's tenure
 </code></pre></div>
 <p>That overwrite <strong>is</strong> the takeover. There is no separate "break A's lock" step, and A was not
 consulted. Token <code>"aaa-111"</code> was never revoked anywhere — it just no longer matches the door.</p>
-<p><strong>t=75 — the zombie wakes.</strong> A unfreezes mid-run believing it still holds everything. The token
+<p><strong>t=1900 — the zombie wakes.</strong> A unfreezes mid-run believing it still holds everything. The token
 guard catches it at every possible move:</p>
 <ol>
 <li>Its next checkpoint fires the renew → condition <code>owner = "aaa-111"</code> vs item <code>"bbb-222"</code> →
@@ -2462,9 +2492,9 @@ stalled A is still executing. The lock is the arbiter for that window, and the w
 <a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
 <a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>    <span class="c1"># Branch 1 — the occupant IS the event I'm writing right now.</span>
 <a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>    <span class="k">if</span> <span class="n">existing</span><span class="p">[</span><span class="s2">"idem_key"</span><span class="p">]</span> <span class="o">==</span> <span class="n">this_write</span><span class="o">.</span><span class="n">idem_key</span><span class="p">:</span>
-<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>        <span class="k">return</span> <span class="n">seq</span>
-<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>        <span class="c1"># my own earlier attempt landed (ACK lost, SDK retried) or an identical replay already</span>
-<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>        <span class="c1"># wrote it. Either way the LOGICAL event exists; the write is satisfied. Continue.</span>
+<a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>        <span class="c1"># my own earlier attempt landed (ACK lost, SDK retried) or an identical replay already</span>
+<a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>        <span class="c1"># wrote it. Either way the LOGICAL event exists; the write is satisfied. Return success.</span>
+<a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>        <span class="k">return</span> <span class="n">seq</span>
 <a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>
 <a id="__codelineno-17-10" name="__codelineno-17-10" href="#__codelineno-17-10"></a>    <span class="c1"># Foreign occupant → am I still allowed to write at all? Check the lock NOW (lazily — this</span>
 <a id="__codelineno-17-11" name="__codelineno-17-11" href="#__codelineno-17-11"></a>    <span class="c1"># read is paid only on the rare collision path):</span>
@@ -2497,7 +2527,7 @@ increment-and-retry allocator that tolerates them.</p>
 <a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>t=40.100  B seeds: ConsistentRead max — truthful AT THIS INSTANT.
 <a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>t=40.150  Z's straggler ARRIVES at DynamoDB. Slot (abc, 9) empty → lands.
 <a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>t=40.200  B writes seq 9 → collision. Foreign idem_key. Lock check: mine.
-<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>t=40.250  B re-seeds → 9. Writes at 10. Z is dead; twitches are finite. Done.
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a>t=40.250  B re-seeds → 9. Writes at 10. Done: Z is dead, so it has no more writes in flight.
 </code></pre></div>
 <p>Z's orphaned event at seq 9 stays in the log — harmless: when B's resumed run re-executes that
 node, its events carry the same <code>idem_key</code>, and the reader dedups.</p>
@@ -2576,8 +2606,8 @@ node, its events carry the same <code>idem_key</code>, and the reader dedups.</p
 </li>
 <li>
 <p><strong>E11. TTL vs a late reconnect.</strong> Risk: an in-progress run's early events expire before a
-  disconnected user reconnects and replays. Handled by sizing TTL ≫ max run + max reconnect gap
-  (~24h), and treating TTL as janitorial only (DynamoDB TTL deletion lags up to ~48h and is
+  disconnected user reconnects and replays. Handled by setting the TTL to 24h, well above max run +
+  max reconnect gap, and treating TTL as janitorial only (DynamoDB TTL deletion lags up to ~48h and is
   best-effort, so no correctness logic may depend on it). Same rule for the lock's <code>ttl</code>: the
   enforced expiry is <code>expires_at</code>; <code>ttl</code> merely garbage-collects abandoned rows.</p>
 </li>
@@ -2690,10 +2720,10 @@ missing thread in app code.</p>
 <p><strong>Checkpoints.</strong> <code>DynamoDBSaver</code> from <code>langgraph-checkpoint-aws</code>. Table
 <code>{env}-agent-checkpoints</code>; <code>CHECKPOINTER_BACKEND=dynamodb</code>; thread id = <code>chat_id</code>;
 default TTL 30 days (<code>CHECKPOINT_TTL_SECONDS</code>); large payloads offload to
-<code>CHECKPOINT_OFFLOAD_BUCKET</code> under prefix <code>deep-checkpoints</code>. Misconfiguration <em>raises</em> for an
+<code>CHECKPOINT_OFFLOAD_BUCKET</code> under prefix <code>agent-checkpoints</code>. Misconfiguration <em>raises</em> for an
 unknown backend; warns if the offload bucket is missing.</p>
-<p><strong>Deep events and run state.</strong> The <code>deep-events</code> table has two row families: event-feed rows
-(<code>PK=chat_id</code>, <code>SK=seq number</code>, replayable curated SSE frames, TTL ~24h) and the run-state
+<p><strong>Deep events and run state.</strong> The <code>agent-events</code> table has two row families: event-feed rows
+(<code>PK=chat_id</code>, <code>SK=seq number</code>, replayable curated SSE frames, TTL 24h) and the run-state
 singleton (<code>PK=run#{chat_id}</code>, <code>SK=seq</code>, latest async status <code>queued|running|retrying|failed|
 completed</code>, no TTL). The event feed is a projection, not the execution source of truth — if an
 append fails, the worker tries to write a warning frame and continues; the checkpoint owns graph

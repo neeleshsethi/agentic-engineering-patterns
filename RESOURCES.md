@@ -10,10 +10,6 @@
   Primary source for conditional writes used by locks, claims, and ownership fencing.
 - [MDN Server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events)
   Browser-facing reference for EventSource and `Last-Event-ID` reconnection behavior.
-- `data/extracted/1392026-notes/key-findings.md`
-  Local OCR distillation from local notes. Use for production-specific architecture facts.
-- `data/extracted/1392026-notes/combined.md`
-  Full local OCR extraction. Use when a lesson needs exact details beyond the distillation.
 
 ## Wisdom (Communities)
 

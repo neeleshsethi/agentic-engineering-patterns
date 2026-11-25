@@ -149,7 +149,7 @@ except ClientError:
 Three ideas make this hold:
 
 - **The corruption attempt is the detection.** The zombie is never told it lost. The very write that would have corrupted the log is the atomic operation that reveals it lost. The storage layer is the final arbiter of who is alive.
-- **"Mine" is decided by content, not identity.** Branch 1 compares an [idempotency key](00-glossary.md#idempotency-key) (a value derived from *execution position*, identical on replay), not a worker id. Equal key means the logical write already exists; who physically wrote it is irrelevant. (This is why the key must not be built from the sequence number, which changes on replay; see [Durable Async Runs](08-queue-and-worker-execution.md#sequence-number-versus-idempotency-key).)
+- **"Mine" is decided by content, not identity.** Branch 1 compares an [idempotency key](00-glossary.md#idempotency-key) (a value derived from *execution position*, identical on replay), not a worker id. Equal key means the logical write already exists; who physically wrote it is irrelevant. (This is why the key must not be built from the sequence number, which changes on replay; see [Queue and worker execution](08-queue-and-worker-execution.md#sequence-number-versus-idempotency-key).)
 - **The lock read is lazy.** Healthy workers never poll the claim. It is read only on the rare collision path, so the common case pays nothing.
 
 ## Release must prove ownership
@@ -222,9 +222,20 @@ If either side becomes "read, then decide, then write," the lock has a race wind
 
 A lock this cheap is easy to under-think. Here is what it costs to store and run.
 
+### Two claims, one pattern
+
+The system uses this pattern twice, under two different keys:
+
+| Claim | Key | Lives in | Guards |
+|-------|-----|----------|--------|
+| **Resume claim** (the code above) | `CLAIM#{thread_id}` / `RESUME` | the checkpoint table | one approve or refine at a time, across API replicas |
+| **Run lock** (the zombie fence) | `lock#{thread_id}` / `0` | the event table | one worker writing a thread's events at a time |
+
+Both are acquired, renewed and released the same way: conditional put, token-guarded update, token-guarded delete. The API takes the resume claim when the user clicks Approve; the worker takes the run lock when it picks the job off the queue. The sizing below is for the run lock; the resume claim costs about the same.
+
 ### One table, three kinds of item
 
-The lock is one item in the table that already holds the run's events and run-state, kept apart by a [`PK`](00-glossary.md#pk-sk) prefix:
+The run lock is one item in the table that already holds the run's events and run-state, kept apart by a [`PK`](00-glossary.md#pk-sk) prefix:
 
 | Item kind | PK | SK | Fields |
 |-----------|----|----|--------|

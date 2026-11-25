@@ -6,9 +6,9 @@ Once an agent's control flow lives in code (a gate, a state machine, a set of en
 
 The prompt decides what the model should *think about*: how to break a question into steps, how to interpret feedback, what counts as evidence. The code decides what the model is *allowed to do*: which tools exist, when execution may start, who may approve. Every time you find yourself writing a prompt sentence that tries to guarantee a boundary, you have found something that belongs in code instead.
 
-The running example is a retail commercial-analytics orchestrator. Identifiers are generic (`BRAND_A`, `SOURCE_A..D`, `query_source`), but the domain matters here: in regulated analytics, some of these rules are law, not style, and that changes where they have to live.
+The running example is a retail commercial-analytics orchestrator. Identifiers are generic (`BRAND_A`, `SOURCE_A..D`, `query_source`), but the domain matters here: when data is licensed per market and the numbers feed real decisions, some of these rules are contractual, not style, and that changes where they have to live.
 
-> Terms used below ([gate](00-glossary.md#gate), [middleware](00-glossary.md#middleware), [ToolMessage](00-glossary.md#toolmessage), [grounding](00-glossary.md#grounding), [entity resolution](00-glossary.md#entity-resolution)) are in the [glossary](00-glossary.md). This article builds on [Human-in-the-Loop Approval](04-planning-and-human-approval.md).
+> Terms used below ([gate](00-glossary.md#gate), [middleware](00-glossary.md#middleware), [ToolMessage](00-glossary.md#toolmessage), [grounding](00-glossary.md#grounding), [entity resolution](00-glossary.md#entity-resolution)) are in the [glossary](00-glossary.md). This article builds on [Planning and Human Approval](04-planning-and-human-approval.md).
 
 ## The Test: Prompt Or Structure?
 
@@ -285,7 +285,7 @@ A clarification is any turn where the system asks the user something instead of 
 | Source elicitation | Mid-retrieval | A source result is marked `is_elicitation` | The source's question relayed to the user |
 | Zero-retrieval guard | At exit | No current-cycle results, or the evidence set was already reported | No report over nothing |
 
-The confusing case is source elicitation. Suppose one source returns promotion lift data while another asks, "retail or non-retail?" Deep does not ship a partial report. `pending_elicitation` is a whole-cycle gate: if any open step is waiting on the user, the report writer skips report generation. The completed source result stays in `source_results`, and the next user reply re-queries only the asking step.
+The confusing case is source elicitation. Suppose one source returns promotion lift data while another asks, "in-store or online?" Deep does not ship a partial report. `pending_elicitation` is a whole-cycle gate: if any open step is waiting on the user, the report writer skips report generation. The completed source result stays in `source_results`, and the next user reply re-queries only the asking step.
 
 That reply is **not** `Command(resume=...)`. Only the plan approval gate leaves a pending `interrupt()`. A source elicitation turn completes normally after relaying the question. The user's answer enters as a fresh graph invocation on the same `thread_id`, under the same locked `plan_id`; the carried result is reused, the clarified step gets a new `provenance_id`, and the changed evidence set can now report.
 
@@ -322,7 +322,7 @@ The clearest case of a prompt-only rule is grounding: making sure every number i
   Model's other way: its training data
 
   Report includes:
-  "BRAND_C market share in Q3 2024: approximately 34%"
+  "BRAND_C market share last quarter: approximately 30%"
                                       ↑
                               fabricated from training data
                               looks identical to real data
