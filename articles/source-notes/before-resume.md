@@ -1,4 +1,7 @@
-# Before Resume: The Proposal Turn, End to End
+# Source note 1 · Before resume: the proposal turn
+
+!!! note "Optional"
+    This is full-depth reference for after the main path, not part of it. The same ground is taught in [Step 1](../step-1-state-and-checkpoints.md), [Step 2](../step-2-context-injection.md) and [Step 3](../step-3-planning-and-human-approval.md). Codes used here: **B1** to **B9** number the edge cases in Part 6, the catalog of what can go wrong before resume. "Step 0" to "Step 5" inside Part 2 are the stages of one proposal request, not course steps.
 
 > Reconstructed from source notes. Genericized: product → "the platform"; brand → `BRAND_A`;
 > the memory service → "the memory service (STM/LTM)"; tables → `{env}-*`. Framework names

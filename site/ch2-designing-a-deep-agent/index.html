@@ -1,0 +1,2268 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A learning series on building production agent systems that fail loudly, not silently — state, streaming, locking, durable runs, and prompt design.">
+      
+      
+        <meta name="author" content="Neelesh Sethi">
+      
+      
+      
+        <link rel="prev" href="../ch1-problem-and-plan/">
+      
+      
+        <link rel="next" href="../ch3-architecture-and-flow/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Chapter 2 · Designing a deep agent - Agentic Engineering Patterns</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/scrubber.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#chapter-2-designing-a-deep-agent" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Agentic Engineering Patterns" class="md-header__button md-logo" aria-label="Agentic Engineering Patterns" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Agentic Engineering Patterns
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Chapter 2 · Designing a deep agent
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/neeleshsethi/agentic-engineering-patterns" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    neeleshsethi/agentic-engineering-patterns
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Agentic Engineering Patterns" class="md-nav__button md-logo" aria-label="Agentic Engineering Patterns" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Agentic Engineering Patterns
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/neeleshsethi/agentic-engineering-patterns" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    neeleshsethi/agentic-engineering-patterns
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Start here
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Start here
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch1-problem-and-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chapter 1 · Problem, design, and implementation plan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chapter 2 · Designing a deep agent
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chapter 2 · Designing a deep agent
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-done-means" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What does "done" mean, and how will I know?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#do-you-need-a-deep-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Do I need a deep agent at all, and what is the smallest thing that works?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nouns-and-states" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What are the nouns, and what states can they be in?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where are the boundaries, and who may write what?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-human-comes-in" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where does the human come in, and does anything wait on them?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#crash-halfway" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What happens when it crashes halfway?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-at-once" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What happens when two things happen at once?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-much-the-model-sees" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How much should the model see?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#finding-your-way" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How will the next engineer find their way around the code?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In what order do I build it so each piece proves itself?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fixing-it-for-real" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When it breaks, how do I fix it for real?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-requirements-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When the requirements change, what do I do with the design I already have?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-design-on-one-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The design on one page
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#from-answers-to-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        From answers to architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ch3-architecture-and-flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Chapter 3 · End-to-end architecture and orchestrator flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Build it step by step
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Build it step by step
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../step-1-state-and-checkpoints/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 1 · State and checkpoints
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../step-2-context-injection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 2 · Context injection
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../step-3-planning-and-human-approval/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 3 · Planning and human approval
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../step-4-identifiers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 4 · Identifiers that hold a run together
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../step-5-streaming-and-background-work/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 5 · Streaming and background work
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bridge-dynamodb-and-sqs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bridge · DynamoDB conditional writes and SQS
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../step-6-distributed-locks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 6 · Distributed locks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../step-7-queue-and-worker-execution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 7 · Queue and worker execution
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../step-7a-event-feed-and-idempotency/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 7a · The event feed and idempotency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../step-8-orchestrator-prompt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 8 · Orchestrator prompt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../step-8a-reactive-mode-prompt/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 8a · Reactive mode and its prompt
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../step-8b-clarifications/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 8b · Clarifications
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../step-8c-plan-lifecycle/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 8c · Plan lifecycle
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../step-8d-carryover-and-data-manifest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 8d · Carryover and the data manifest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../step-8e-code-components-and-organization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Step 8e · Code components and organization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstones
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Capstones
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../capstone-1-nine-silent-failures/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone 1 · Nine silent failures in one agent
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bridge-evaluation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Bridge · Evaluating an agent
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../capstone-2-when-the-score-passes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone 2 · When the score passes and the work fails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Appendix (optional)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Appendix (optional)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Glossary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lessons/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interactive lessons
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Appendix · Source notes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/before-resume/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source note 1 · Before resume: the proposal turn
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/orchestrator-prompt-annotated/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source note 2 · The orchestrator: prompt, gate, and how to build one
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../source-notes/life-of-a-deep-run/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Source note 3 · Life of a deep run
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#what-done-means" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What does "done" mean, and how will I know?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#do-you-need-a-deep-agent" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Do I need a deep agent at all, and what is the smallest thing that works?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#nouns-and-states" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What are the nouns, and what states can they be in?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where are the boundaries, and who may write what?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-human-comes-in" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where does the human come in, and does anything wait on them?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#crash-halfway" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What happens when it crashes halfway?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-at-once" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What happens when two things happen at once?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-much-the-model-sees" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How much should the model see?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#finding-your-way" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How will the next engineer find their way around the code?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#build-order" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        In what order do I build it so each piece proves itself?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fixing-it-for-real" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When it breaks, how do I fix it for real?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-requirements-change" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When the requirements change, what do I do with the design I already have?
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-design-on-one-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The design on one page
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#from-answers-to-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        From answers to architecture
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/neeleshsethi/agentic-engineering-patterns/edit/main/articles/ch2-designing-a-deep-agent.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="chapter-2-designing-a-deep-agent">Chapter 2 · Designing a deep agent<a class="headerlink" href="#chapter-2-designing-a-deep-agent" title="Permanent link">&para;</a></h1>
+<p>You have been asked to build an agent for a retail business. Commercial leaders will ask it multi-step sales questions, such as "compare BRAND_A sales in Germany and France, and tell me which channel drove the gap." It answers from four data sources, SOURCE_A through SOURCE_D, licensed per market. One requirement is fixed from the start. A human approves the research plan before anything expensive runs, because the plan spends real money on queries.</p>
+<p><a href="../ch1-problem-and-plan/">Chapter 1</a> set out the problem. Runs take forty minutes, browsers disconnect, workers crash, and the worst failures return <code>200 OK</code> with the wrong answer. This chapter is the thinking you do before you draw a single box.</p>
+<p>The method is to ask questions in the order a careful engineer would ask them. Each question has a tempting first answer. For each one you will see what that answer broke in this agent, the decision that replaced it, and the engineering principle behind the decision, with a small example from the real code. Each section ends with the Step where you build the answer. By the end, the twelve answers add up to the architecture in <a href="../ch3-architecture-and-flow/">Chapter 3</a>.</p>
+<p>Twenty-four principles come up along the way. You do not need to memorize them. They are what you reach for when a question has no obvious answer, and each one gets a one-sentence definition where it first appears.</p>
+<h2 id="what-done-means">What does "done" mean, and how will I know?<a class="headerlink" href="#what-done-means" title="Permanent link">&para;</a></h2>
+<p>Start here, because every later answer gets checked against this one.</p>
+<p><strong>The tempting answer.</strong> Done means the run finished. The endpoint returned <code>200</code>, the stream closed, and a report arrived. You write tests that call the endpoint and assert a non-empty report.</p>
+<p><strong>What goes wrong.</strong> In this agent, a run with a clean <code>200</code> produced a confident report about Australia when the user asked about France. The evaluation side had the same problem one layer up. Between two evaluation snapshots, the non-pass rate fell by more than half, and it looked like a clean win. When the team paired the cases that appeared in both runs and split the verdicts apart, clarifying questions had dropped from about 20% to about 3%, and wrong-but-confident answers had risen from about 10% to about 15%. The agent had not become more certain. It had stopped saying when it was unsure.</p>
+<p><strong>The decision.</strong> Write down three layers of "done" before writing any code:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Transport success:  the request finished, nothing threw
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Semantic success:   the right context, state, plan, lock and persistence rules held
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>Task success:       the user got what they asked for, built from retrieved rows
+</code></pre></div>
+<p>Then build the checks that can tell the layers apart. That means tests that read back state across turns, and an evaluation with stable case ids and per-case verdicts that you compare as pairs.</p>
+<p><strong>Explain the Number.</strong> Before you trust or act on a number you measured, name what limits it and rule out everything else it could be measuring. The "non-pass rate halved" number was measuring two things at once. The case sets differed between snapshots, and the <code>clarify</code> verdict was counted as a failure. The fix keeps every verdict and compares only shared cases:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">transitions</span><span class="p">(</span><span class="n">before</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">after</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Counter</span><span class="p">:</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="n">shared</span> <span class="o">=</span> <span class="n">before</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">&amp;</span> <span class="n">after</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="k">return</span> <span class="n">Counter</span><span class="p">((</span><span class="n">before</span><span class="p">[</span><span class="n">c</span><span class="p">],</span> <span class="n">after</span><span class="p">[</span><span class="n">c</span><span class="p">])</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">shared</span><span class="p">)</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># The cell to watch: ('clarify', 'incorrect'), questions that became confident errors.</span>
+</code></pre></div>
+<p>The same habit applies to performance numbers. When reasoning-token streaming started failing mid-run, the limiter had a name, DynamoDB's per-partition write ceiling of about 1,000 WCU per second. Persisting every replace-semantics delta wrote O(N²) bytes into one partition. Once you could name the limiter, the fix followed from it. The curator now coalesces live frames to at most one write per two seconds per step.</p>
+<p><strong>Test Behavior, Not Implementation.</strong> A test claims what the code's users can observe, so it should fail when that behavior breaks and keep passing when only the internals change. Step 1 asks for one test that catches a whole class of bug. A second turn passes empty context and asserts that nothing from the first turn survives. In sketch form:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">run_turn</span><span class="p">(</span><span class="n">thread</span><span class="p">,</span> <span class="s2">"sales in Germany"</span><span class="p">,</span> <span class="n">user_context</span><span class="o">=</span><span class="s2">"default country: Australia"</span><span class="p">)</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="n">state</span> <span class="o">=</span> <span class="n">run_turn</span><span class="p">(</span><span class="n">thread</span><span class="p">,</span> <span class="s2">"sales in France"</span><span class="p">,</span> <span class="n">user_context</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="k">assert</span> <span class="n">state</span><span class="p">[</span><span class="s2">"raw_question"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"sales in France"</span>   <span class="c1"># state a caller can read back</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="k">assert</span> <span class="n">state</span><span class="p">[</span><span class="s2">"user_context"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">""</span>
+</code></pre></div>
+<p>It reads checkpointed state, which any later request will see. It does not assert which helper built the input dict.</p>
+<p><strong>Prove It Works.</strong> Check the real artifact, not a proxy or a self-report. One production failure looked like a weak model ignoring an output-language instruction. Language detection worked. The instruction never reached the model. The habit that found it was opening the generation span in the trace and reading the exact prompt the model received, rather than the request span or the code that was supposed to build it. The regression test now asserts that the instruction is present at the model boundary. The same discipline applies to telemetry. Most deep-run traces reported zero cost, and that field became evidence only after someone checked it was populated.</p>
+<p><strong>Where you build it.</strong> The <a href="../bridge-evaluation/">evaluation bridge</a> teaches the minimum evaluation loop. <a href="../capstone-2-when-the-score-passes/">Capstone 2</a> applies it to this agent.</p>
+<h2 id="do-you-need-a-deep-agent">Do I need a deep agent at all, and what is the smallest thing that works?<a class="headerlink" href="#do-you-need-a-deep-agent" title="Permanent link">&para;</a></h2>
+<p>Now that you know what done means, ask how little machinery gets you there.</p>
+<p><strong>The tempting answer.</strong> The approval gate is the safe path, so every message goes through it. Every turn writes todos, submits a plan, pauses, and waits for approval.</p>
+<p><strong>What goes wrong.</strong> Many turns are not new questions. A user answers a source's ask-back ("in-store or online?"), adds a market ("also pull New Zealand"), or asks to re-sort a table. If those turns reopen the gate, the system mints a new <code>plan_id</code>. Evidence in this agent is filtered by <code>plan_id</code>, so the results already fetched drop out of the current cycle, and the human is asked to approve the same question twice. The opposite mistake costs as much. A one-pass agent that calls a tool and answers cannot survive a forty-minute job or a human pause.</p>
+<p><strong>The decision.</strong> Build two modes. Reactive mode is a one-pass router:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>decide -&gt; call at most the needed data tool once -&gt; answer
+</code></pre></div>
+<p>Deep mode is for runs where planning, approval, attribution and durable execution matter more than speed. Inside deep mode, the gate opens only for the first question on a thread or a genuinely new topic. One routing table decides this for every turn:</p>
+<table>
+<thead>
+<tr>
+<th>Turn type</th>
+<th style="text-align: right;">Plan workflow?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>First question on a thread</td>
+<td style="text-align: right;">Yes</td>
+</tr>
+<tr>
+<td>New-topic follow-up</td>
+<td style="text-align: right;">Yes</td>
+</tr>
+<tr>
+<td>Entity or metric gap with no safe default</td>
+<td style="text-align: right;">No, ask one terminal clarification</td>
+</tr>
+<tr>
+<td>Source elicitation reply</td>
+<td style="text-align: right;">No, re-query only the asking step</td>
+</tr>
+<tr>
+<td>Extension of the current ask</td>
+<td style="text-align: right;">No, retrieve under the locked plan</td>
+</tr>
+<tr>
+<td>Evidence reply or presentation change</td>
+<td style="text-align: right;">No, answer from held evidence or rebuild once</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Laziness Protocol.</strong> Make the smallest change that solves the problem, and put each repeated choice behind one source of truth. "Does this turn need a plan?" is a choice every code path could make on its own. The routing table makes it once. Reactive mode is the same principle applied to the whole system. Most questions need no plan, so they get none.</p>
+<p><strong>Subtract Before You Add.</strong> Remove complexity first, then build on the simpler base, with no speculative guards beyond what the requirement needs. Deep mode has four kinds of clarification, and the obvious move is a <code>DeepClarificationMiddleware</code> to own them all. The agent has none. Each kind rides a seam that already exists:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>plan-gate clarification   -&gt; submit_plan(clarification=...)
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>terminal clarification    -&gt; the turn classifier, before any todos exist
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>source elicitation        -&gt; the source client stamps is_elicitation
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>"may a report be written?" -&gt; pending_elicitation() in the exit path
+</code></pre></div>
+<p>Each kind has a different lifetime, so one generic middleware would have had to tell them apart anyway.</p>
+<p><strong>Where you build it.</strong> <a href="../step-8a-reactive-mode-prompt/">Step 8a</a> builds reactive mode. <a href="../step-8c-plan-lifecycle/">Step 8c</a> builds the turn routing.</p>
+<h2 id="nouns-and-states">What are the nouns, and what states can they be in?<a class="headerlink" href="#nouns-and-states" title="Permanent link">&para;</a></h2>
+<p>You have decided a deep run exists. Before writing logic, name the things it is made of.</p>
+<p><strong>The tempting answer.</strong> One <code>run</code> record with one UUID, a few booleans (<code>approved</code>, <code>is_running</code>), and a state dict that each node reads and writes as it likes.</p>
+<p><strong>What goes wrong.</strong> Two bugs in this agent were shape bugs. First, LangGraph state keys default to <code>LastValue</code>, which keeps the old value when a turn does not write the key. A route that wrote only <code>messages</code> left last turn's <code>raw_question</code> in place, and a question about France got an answer about Germany. Second, a crashed worker's replacement re-emitted progress events. The reader deduplicated on the sequence number <code>seq</code>, which takes new values on replay, so every section appeared twice.</p>
+<p><strong>The decision.</strong> List the nouns, and give each one its own identity and lifecycle:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>thread    thread_id                  the conversation, stable forever
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>turn      cycle                      the question number inside a thread
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>plan      plan_id = plan-{thread}-{cycle}   stable across replay and refinement
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>pause     interrupt_id               new for every interrupt
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>attempt   run_id                     new for every execution attempt
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>event     idem_key = {task_id}#{n}   stable; seq only orders
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>tenure    claim_token                new for every lock acquisition
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>fact      provenance_id              {source}:{plan_id}:{step_id}:{hash}
+</code></pre></div>
+<p>Give every state key an explicit merge rule. Give the plan a state machine, and let code own its transitions.</p>
+<p><strong>Foundational Thinking.</strong> Get the data shapes right before writing logic, trace every access pattern, and ask what concurrent actors share. The state schema is where this happens:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">DeepState</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">):</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>    <span class="n">raw_question</span><span class="p">:</span> <span class="n">NotRequired</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>                               <span class="c1"># LastValue: replace</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="n">messages</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">AnyMessage</span><span class="p">],</span> <span class="n">add_messages</span><span class="p">]</span>          <span class="c1"># reducer: append</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="n">source_results</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="n">SourceResult</span><span class="p">],</span> <span class="n">operator</span><span class="o">.</span><span class="n">add</span><span class="p">]</span>  <span class="c1"># reducer: append</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="n">step_status</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">operator</span><span class="o">.</span><span class="n">or_</span><span class="p">]</span>         <span class="c1"># reducer: merge</span>
+</code></pre></div>
+<p><code>step_status</code> is a merge because parallel branches update different plan steps in the same superstep. A <code>LastValue</code> there would let one branch erase another's status. That is the concurrency question asked at the schema, before any branch exists.</p>
+<p><strong>Model the Domain.</strong> Encode the domain in a structure, such as a state machine, a typed model, or a lookup table, instead of scattered conditionals. The plan lifecycle is a state machine in code:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>DRAFT --refine--&gt; DRAFT (modification_count + 1)
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>DRAFT --approve--&gt; LOCKED --&gt; EXECUTING --&gt; COMPLETE
+</code></pre></div>
+<p>The model writes plan content only in DRAFT. The <code>locked</code> transition happens in code, on approve, through <code>model_copy</code>. No prompt sentence says "only proceed if the plan is approved", because no branch anywhere needs to check.</p>
+<p><strong>Type System Discipline.</strong> Make illegal states unrepresentable, and parse external data into typed models at the boundary. Model output is external data. The agent writes plain todos, and <code>project_plan</code> parses them into a typed <code>Plan</code> every time one is needed. A malformed routing tag fails soft. The raw text stays visible in the step title and the routing field is left unset. The model can write inconsistent todos, but it cannot produce an invalid <code>Plan</code>. The cost of skipping this showed up in Capstone 1's Bug 9. An explicit reset <code>[]</code> passed through <code>values.get("entity_groups") or None</code>, became <code>None</code>, was skipped on write, and the next read rehydrated an older turn's entities. Empty and absent were different states, and the coercion merged them.</p>
+<p>Not in this agent yet: branded identifiers. Every id above is a plain <code>str</code>, so nothing stops a caller from passing a <code>run_id</code> where a <code>thread_id</code> belongs. A sketch of the fix:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">ThreadId</span> <span class="o">=</span> <span class="n">NewType</span><span class="p">(</span><span class="s2">"ThreadId"</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">RunId</span> <span class="o">=</span> <span class="n">NewType</span><span class="p">(</span><span class="s2">"RunId"</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="k">def</span><span class="w"> </span><span class="nf">enqueue_deep_run</span><span class="p">(</span><span class="n">thread_id</span><span class="p">:</span> <span class="n">ThreadId</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="n">RunId</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+</code></pre></div>
+<p>With these types, the type checker rejects a swapped call before it runs.</p>
+<p><strong>Where you build it.</strong> <a href="../step-1-state-and-checkpoints/">Step 1</a> builds the state channels. <a href="../step-4-identifiers/">Step 4</a> builds the identifiers. <a href="../step-3-planning-and-human-approval/">Step 3</a> builds the plan state machine.</p>
+<h2 id="boundaries">Where are the boundaries, and who may write what?<a class="headerlink" href="#boundaries" title="Permanent link">&para;</a></h2>
+<p>You have the nouns. Now decide where outside data enters, and which rules the model may break.</p>
+<p><strong>The tempting answer.</strong> Put the user's defaults in the system prompt. Write the rules there too: "Do not use the spawn_subagent tool." "Only retrieve after the plan is approved."</p>
+<p><strong>What goes wrong.</strong> Three things broke. The middleware injected "default country: Australia" above a message that said "Actually, give me sales for France", and the injected default won. Some text inside the trusted context block came from conversation summaries, and if it ever contained the literal <code>[/User context]</code>, it would close the block early, so whatever followed would read as the user's own instruction. And the framework's built-in sub-agent tool stayed visible to the model, which sometimes called it anyway. A sub-agent runs its retrievals outside the approval gate.</p>
+<p><strong>The decision.</strong> Inject request-only context in middleware just before each model call. Label it, escape its delimiter, and keep it out of the checkpoint. Split every rule with one test. If code can enforce the rule deterministically, code enforces it and the prompt spends no tokens on it. Tools, the gate, plan status, owner checks and concurrency go to code. The prompt shapes judgment: reasoning order, the priority of explicit entities over defaults, and grounding.</p>
+<p><strong>Boundary Discipline.</strong> Validate and handle errors at system boundaries, trust typed data inside, and keep business logic in pure functions. Prompt assembly is a pure function, structured state in and a string out, with the guard at the exact point where untrusted text crosses in:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">compose_with_context</span><span class="p">(</span><span class="n">content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>    <span class="n">safe_context</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"[/User context]"</span><span class="p">,</span> <span class="s2">"[/user context]"</span><span class="p">)</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    <span class="k">return</span> <span class="sa">f</span><span class="s2">"[User context]</span><span class="se">\n</span><span class="si">{</span><span class="n">safe_context</span><span class="si">}</span><span class="se">\n</span><span class="s2">[/User context]</span><span class="se">\n\n</span><span class="si">{</span><span class="n">content</span><span class="si">}</span><span class="s2">"</span>
+</code></pre></div>
+<p>Because it is pure, you can test it without a model. The approve endpoint follows the same rule. It checks <code>owner_id</code>, <code>plan_id</code> and <code>interrupt_id</code> once, at the HTTP boundary, and the code after that trusts the result.</p>
+<p><strong>Encode Lessons in Structure.</strong> When you find yourself writing the same instruction a second time, encode it as a check or as code. If the fix is structural, use only the structural fix. The tool rule became a middleware that removes tools from the request:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">AllowedToolsMiddleware</span><span class="p">(</span><span class="n">AgentMiddleware</span><span class="p">):</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>        <span class="n">tools</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">tools</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_allowed</span><span class="p">]</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>        <span class="k">return</span> <span class="n">request</span><span class="o">.</span><span class="n">override</span><span class="p">(</span><span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">)</span>   <span class="c1"># the model never sees the rest</span>
+</code></pre></div>
+<p>The prompt does not also say "don't call spawn_subagent." That sentence would be the symptom of a fix that is already in place. The same principle shows up outside the prompt. After a per-job <code>asyncio.run()</code> broke a cached HTTP client, a startup guard now turns any reintroduced per-job <code>asyncio.run()</code> into a named error.</p>
+<p>Some lessons cannot be encoded. For those, the principle says to make the instruction more prominent and show the failure mode. Grounding is the clearest case. No code can tell whether a sentence came from a tool result or from training data. So the prompt line names every verb the model used to negotiate around it, "Never state, estimate, OR approximate", and it tells the model to mark a failed retrieval as completed, because a "failed" status the status map did not recognize had sent the executor into an endless retry.</p>
+<p><strong>Where you build it.</strong> <a href="../step-2-context-injection/">Step 2</a> builds the injection boundary. <a href="../step-8-orchestrator-prompt/">Step 8</a> applies the prompt-or-structure test to the whole orchestrator.</p>
+<h2 id="where-the-human-comes-in">Where does the human come in, and does anything wait on them?<a class="headerlink" href="#where-the-human-comes-in" title="Permanent link">&para;</a></h2>
+<p>The requirement says a human approves the plan. Work out exactly where, and what happens while they think.</p>
+<p><strong>The tempting answer.</strong> Hold the request open while the human reads the plan, then resume when the approval callback arrives. For refinement, loop inside <code>submit_plan</code> and call an LLM to apply the feedback. When the agent is unsure about anything, ask the user.</p>
+<p><strong>What goes wrong.</strong> Approval can take minutes or days, and no load balancer holds a connection that long. The refine loop needs a second, out-of-band model that does not share the agent's prompt, tools or conversation, so two models end up writing one plan. The browser causes trouble even when nobody is approving anything. It closes the stream the moment it sees the <code>end</code> frame, which cancels any <code>await</code> after that frame, so a turn's save never ran and nothing logged it. And asking too often has its own cost, which you saw in the evaluation tradeoff above.</p>
+<p><strong>The decision.</strong> <code>interrupt()</code> writes the pause into the checkpoint, and the request ends. Between the plan request and the approve request, nothing is running. Approval is a second request that validates the pause, stages the decision, queues the work, and returns <code>202 queued</code>. Refine is the agent's own loop. The tool returns the feedback as a <code>ToolMessage</code>, and the agent edits its todos and calls <code>submit_plan</code> again. Progress streams to the browser over SSE. Required writes start before the terminal frame, and the research stream ends when run-state says the run is finished, not when a sentinel event arrives.</p>
+<p><strong>Never Block on the Human.</strong> The human supervises asynchronously. Proceed on reversible work, present the result, and let the human course-correct, saving confirmation for actions that cannot be undone. This agent applies it at two levels. At the system level, it stops only where the requirement demands, before research that spends real money, and even there no process waits:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>POST /chat/stream?mode=deep   -&gt; plan streamed, interrupt() persisted, request ends
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>   ... minutes or days pass; no process is running ...
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>POST /deep/{thread_id}/approve/async -&gt; validate, stage decision, queue, 202 queued
+</code></pre></div>
+<p>At the agent level, it proceeds under a stated assumption instead of opening a separate question round:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>Clarification:
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>  "SOURCE_A and SOURCE_B use different market definitions. I will align on
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>   retail market unless you refine the plan."
+</code></pre></div>
+<p>The reactive path has a matching rule. <code>ClarificationGuardMiddleware</code> sees that the previous turn already asked a question, and injects a default-and-declare instruction so the agent never asks twice in a row. The agent asks a terminal question only when a required entity or metric has no safe default.</p>
+<p><strong>Experience First.</strong> When implementation convenience conflicts with the user's experience, choose the experience. The user includes whoever maintains the code next. The plan card shows "query SOURCE_A for BRAND_A sales by market", not "do research", because a human who cannot evaluate a plan approves it blindly. When one source returns data and another asks back, the message names both facts:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>"I have the promotion lift figures. For regional sales, the source asks:
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>in-store or online?"
+</code></pre></div>
+<p>The stream ends on durable run-state, so after a worker crash the browser gets a terminal frame with a reason and never spins forever.</p>
+<p><strong>Where you build it.</strong> <a href="../step-3-planning-and-human-approval/">Step 3</a> builds the gate and the <code>202</code> path. <a href="../step-5-streaming-and-background-work/">Step 5</a> builds streaming that the work outlives. <a href="../step-8b-clarifications/">Step 8b</a> builds the four clarification shapes.</p>
+<h2 id="crash-halfway">What happens when it crashes halfway?<a class="headerlink" href="#crash-halfway" title="Permanent link">&para;</a></h2>
+<p>The approved run now executes on a background worker for tens of minutes. Assume the worker dies at the worst possible line.</p>
+<p><strong>The tempting answer.</strong> Catch the exception and retry the run from the start. Delete the queue message as soon as it arrives so nobody else picks it up. Deduplicate feed lines by their sequence number.</p>
+<p><strong>What goes wrong.</strong> SQS delivers at least once, and LangGraph re-runs an interrupted node from its beginning. A Slack notification placed before <code>interrupt()</code> fires once on the proposal and once more on every resume. A replayed node re-emits its feed lines with new <code>seq</code> values, so a <code>seq</code>-based reader shows them twice. A message deleted on receive is gone when the worker dies, and the approved run never happens.</p>
+<p><strong>The decision.</strong> Every step reads durable state and applies only the difference. The approve path writes in a fixed order. Workers delete the queue message last. Every identity that has to be recognized after a crash is derived from position, not from a counter or the clock.</p>
+<p><strong>Make Operations Idempotent.</strong> Design each operation to converge on the same end state no matter how many times it runs or where the previous run stopped. Ask "what if this runs twice?" and "what if the last run crashed at every possible point?" The approve path answers both through its write order:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>checkpoint resume decision -&gt; run-state queued -&gt; queue message
+</code></pre></div>
+<p>A lost message can be re-sent. A lost approval cannot be rebuilt. The feed answers the same questions with two values that behave in opposite ways on replay:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>Attempt 1   seq 3  taskB#0  Querying ONLINE...
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>            seq 4  taskB#1  ONLINE 88 rows        &lt;- crash before commit
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>Attempt 2   seq 5  taskB#0  Querying ONLINE...    &lt;- new seq, same idem_key: skipped
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>            seq 6  taskB#1  ONLINE 88 rows        &lt;- new seq, same idem_key: skipped
+<a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>            seq 7  taskC#0  Report ready          &lt;- shown
+</code></pre></div>
+<p>The report gets the same treatment. <code>cycle_stamp = {plan_id, sorted provenance_ids}</code> is stored as <code>reported_cycle</code>, so a redelivery that reaches the exit path with the same evidence set writes nothing. The principle also says anything a run leaves behind must be recognizable as stale by the next run. A lock left by a crashed worker carries <code>expires_at</code>, and the acquire condition compares it against the current time. DynamoDB's <code>ttl</code> sweeper can run hours late, so no lock logic depends on it.</p>
+<p><strong>Where you build it.</strong> <a href="../step-7-queue-and-worker-execution/">Step 7</a> builds the worker ritual and the write order. <a href="../step-7a-event-feed-and-idempotency/">Step 7a</a> builds the replay-stable feed. <a href="../step-4-identifiers/">Step 4</a> explains which ids must stay stable on replay.</p>
+<h2 id="two-at-once">What happens when two things happen at once?<a class="headerlink" href="#two-at-once" title="Permanent link">&para;</a></h2>
+<p>Crashes are one source of repeated work. Concurrency is the other. A user double-clicks Approve, and two API replicas receive the clicks fifty milliseconds apart.</p>
+<p><strong>The tempting answer.</strong> Add a <code>threading.Lock</code> around the resume. Or, to be safe, one global lock around all runs. Store everything in one table so it is all in one place.</p>
+<p><strong>What goes wrong.</strong> A <code>threading.Lock</code> lives in one replica's memory, and the other replica cannot see it. Both resumes run, the plan executes twice, and the checkpoint keeps whichever finished last. A global lock serializes threads that never touch each other. One table for checkpoints and feed lines means a feed write failure can take down a real run.</p>
+<p><strong>The decision.</strong> First remove the sharing. Different threads share nothing, so they run fully in parallel. Truth and narration go in separate tables. Each thread's lock lives under its own partition key. Then, where one writer really is required, serialize structurally. LangGraph does not support two runs on one thread, so that invariant gets a FIFO message group, a conditional-write claim with a tenure token, and a write fence on the data itself.</p>
+<p><strong>Separate Before Serializing Shared State.</strong> When concurrent actors might write the same object, first ask whether they need the same object, and give each its own if not. Serialize structurally only when one shared writer is a real invariant. The separation shows up in the table layout:</p>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Item</th>
+<th>PK</th>
+<th>Owner</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{env}-agent-checkpoints</code></td>
+<td>checkpoint</td>
+<td>LangGraph's own scheme</td>
+<td>the saver</td>
+</tr>
+<tr>
+<td><code>{env}-agent-checkpoints</code></td>
+<td>resume claim</td>
+<td><code>CLAIM#{thread_id}</code></td>
+<td>the API, one approve at a time</td>
+</tr>
+<tr>
+<td><code>{env}-agent-events</code></td>
+<td>feed line</td>
+<td><code>{thread_id}</code>, SK <code>seq</code></td>
+<td>the worker's emitter</td>
+</tr>
+<tr>
+<td><code>{env}-agent-events</code></td>
+<td>run lock</td>
+<td><code>lock#{thread_id}</code></td>
+<td>the worker, one per thread</td>
+</tr>
+</tbody>
+</table>
+<p>Every lock has its own partition, so there is no hot lock row. An outage of the events table quiets the feed while the run keeps executing. The reader's dedup set lives per connection in API memory, so the durable log never has to track what each user has seen. Where serialization is real, it lives in the transport and the data, not in a convention:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="n">sqs</span><span class="o">.</span><span class="n">send_message</span><span class="p">(</span><span class="n">QueueUrl</span><span class="o">=</span><span class="n">queue_url</span><span class="p">,</span> <span class="n">MessageBody</span><span class="o">=</span><span class="n">body</span><span class="p">,</span> <span class="n">MessageGroupId</span><span class="o">=</span><span class="n">thread_id</span><span class="p">)</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="n">table</span><span class="o">.</span><span class="n">put_item</span><span class="p">(</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>    <span class="n">Item</span><span class="o">=</span><span class="p">{</span><span class="s2">"PK"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"CLAIM#</span><span class="si">{</span><span class="n">thread_id</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"SK"</span><span class="p">:</span> <span class="s2">"RESUME"</span><span class="p">,</span> <span class="s2">"claim_token"</span><span class="p">:</span> <span class="n">token</span><span class="p">,</span> <span class="s2">"expires_at"</span><span class="p">:</span> <span class="n">now</span> <span class="o">+</span> <span class="mi">1800</span><span class="p">},</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>    <span class="n">ConditionExpression</span><span class="o">=</span><span class="s2">"attribute_not_exists(PK) OR expires_at &lt; :now"</span><span class="p">,</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a>    <span class="n">ExpressionAttributeValues</span><span class="o">=</span><span class="p">{</span><span class="s2">":now"</span><span class="p">:</span> <span class="n">now</span><span class="p">},</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="p">)</span>
+</code></pre></div>
+<p>The second click's write fails with <code>ConditionalCheckFailedException</code>, and the API returns <code>409</code>. Every renew and release is conditional on <code>claim_token</code>, so a frozen worker that wakes up after losing its lease cannot delete the new holder's claim. Capstone 1's Bug 8 was the version that released unconditionally.</p>
+<p><strong>Where you build it.</strong> The <a href="../bridge-dynamodb-and-sqs/">DynamoDB and SQS bridge</a> teaches the two primitives. <a href="../step-6-distributed-locks/">Step 6</a> builds the claim, the lease and the fence. <a href="../step-7-queue-and-worker-execution/">Step 7</a> builds the two tables and the per-thread group.</p>
+<h2 id="how-much-the-model-sees">How much should the model see?<a class="headerlink" href="#how-much-the-model-sees" title="Permanent link">&para;</a></h2>
+<p>The run is durable and serialized. Now look at it from the model's side. A user asks "and how does that compare to last quarter?", and the sales it needs were pulled two turns ago.</p>
+<p><strong>The tempting answer.</strong> Paste the prior results back into the context so the model can reuse them. Or give it a <code>search_held_data</code> tool to look them up.</p>
+<p><strong>What goes wrong.</strong> One retrieval can be thousands of rows, and a long thread holds megabytes. Pasting them back buries the conversation, uses up the token budget, and drowns the one line that matters. The lookup tool fails without any signal. When the model does not think to call it, it re-queries, and nothing records the missed reuse. Reuse can also turn into invention, when the model derives new figures from a fading memory of old ones.</p>
+<p><strong>The decision.</strong> Show the model an index, never a copy. <code>DataManifestMiddleware</code> rebuilds a <code>[held data]</code> block on every model call. Each result gets one line of about 100 bytes, showing the newest 30, newest first, with one rollup line for the rest. Reuse is a plan step the human can see, and it may reuse prose but never numbers.</p>
+<p><strong>Guard the Context Window.</strong> A full context window degrades reasoning, so keep summaries in the working context and route bulk payloads somewhere else. Here the bulk payloads stay in <code>state["source_results"]</code>, and the model sees this:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>[held data] - results already retrieved this thread. Prefer reusing a held result
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>over re-querying; check `retrieved` for staleness. Reference results by provenance id.
+<a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>- REGIONAL:plan-chat-1-1:step-1:a3f9c2d1 | ok=True | rows=412 | retrieved 2026-09-10 | NZ sales by region, 2024
+<a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>...plus 3 older result(s) held in state - ask the user before assuming their content.
+<a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>[/held data]
+</code></pre></div>
+<p><code>rows=412</code> tells the model that data exists to fetch by name. It does not put the rows in the window. The cap is 30 lines because attention is the limit, not tokens. The same principle sets the loop bound. <code>RetrievalBudgetMiddleware</code> caps a plan cycle at six retrieval rounds, and a turn that queries three sources in parallel spends one round.</p>
+<p><strong>Where you build it.</strong> <a href="../step-8d-carryover-and-data-manifest/">Step 8d</a> builds the manifest and the reuse rules.</p>
+<h2 id="finding-your-way">How will the next engineer find their way around the code?<a class="headerlink" href="#finding-your-way" title="Permanent link">&para;</a></h2>
+<p>The design now has gates, middlewares, workers, locks and a feed. Picture the engineer who opens it six months from now because a report came back about the wrong country.</p>
+<p><strong>The tempting answer.</strong> Put it all in one <code>agent.py</code>. Or split it by phase into load, plan, execute and save.</p>
+<p><strong>What goes wrong.</strong> Capstone 1's Bug 5 was an invariant spread across three files with no owner. Starting a turn meant writing three <code>LastValue</code> channels together. The hand-built dict lived in one file, the channel declarations in another, and the readers in a third. A caller that wrote only <code>messages</code> silently kept the previous turn's context. Phase-named modules make this worse, because the same domain rule gets repeated at every phase.</p>
+<p><strong>The decision.</strong> Group modules by the boundary they own, so every silent failure has one obvious first file. Declare each state channel next to its only writer. Keep shared names in one contract module.</p>
+<p><strong>Minimize Reader Load.</strong> Count the layers between a reader's question and its answer and the hidden state they must hold in their head, then cut both. The test is whether a new reader can answer "where does X come from?" in under thirty seconds. For <code>raw_question</code>, the answer is one file:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="c1"># proposal_context.py</span>
+<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a><span class="k">class</span><span class="w"> </span><span class="nc">_UserContextState</span><span class="p">(</span><span class="n">AgentState</span><span class="p">):</span>
+<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>    <span class="n">raw_question</span><span class="p">:</span> <span class="n">NotRequired</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+<a id="__codelineno-18-4" name="__codelineno-18-4" href="#__codelineno-18-4"></a>    <span class="n">user_context</span><span class="p">:</span> <span class="n">NotRequired</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+<a id="__codelineno-18-5" name="__codelineno-18-5" href="#__codelineno-18-5"></a>
+<a id="__codelineno-18-6" name="__codelineno-18-6" href="#__codelineno-18-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">build_proposal_graph_input</span><span class="p">(</span><span class="n">question</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">user_context</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span> <span class="o">...</span>
+</code></pre></div>
+<p>The channel declaration, the one writer, and the middleware that reads it sit together. LangGraph merges this schema with <code>DeepState</code> in <code>gate.py</code> at compile time, so co-location costs nothing at runtime. The package map then works as a review index:</p>
+<table>
+<thead>
+<tr>
+<th>If the bug is about...</th>
+<th>Look first in...</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A plan approved, refined or locked incorrectly</td>
+<td><code>gate.py</code>, <code>plan.py</code></td>
+</tr>
+<tr>
+<td>A stale default changed model behavior</td>
+<td><code>proposal_context.py</code>, <code>manifest.py</code></td>
+</tr>
+<tr>
+<td>A run executed twice or did not resume</td>
+<td><code>resume_claim.py</code>, <code>resume_decision.py</code>, <code>run_queue.py</code>, <code>worker_lock.py</code></td>
+</tr>
+<tr>
+<td>Progress duplicated or disappeared</td>
+<td><code>curator.py</code>, <code>event_log.py</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Where you build it.</strong> <a href="../step-8e-code-components-and-organization/">Step 8e</a> maps every module group.</p>
+<h2 id="build-order">In what order do I build it so each piece proves itself?<a class="headerlink" href="#build-order" title="Permanent link">&para;</a></h2>
+<p>You know what to build. The last design question before you start is the order.</p>
+<p><strong>The tempting answer.</strong> Build the whole graph, wire in the queue and the worker, then test end to end once everything exists.</p>
+<p><strong>What goes wrong.</strong> Step 3 names its hardest unit, adding <code>plan_id</code> and <code>interrupt_id</code> validation, because that is where idempotency and stale-state bugs both surface. If the queue, the worker and the lock are already stacked on top when that first goes red, you cannot tell which layer broke.</p>
+<p><strong>The decision.</strong> Build in units that each end in a check you can run. Write the check as a script or test that anyone can rerun, not as a one-time manual try.</p>
+<p><strong>Sequence work into verifiable units.</strong> Break the work into small units that each end in a state you can check, and do not start the next one until the current one is green. Step 3 lays out its own build this way:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>1. Plan generation only. No interrupt. Validate content.
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>2. Add interrupt(). Resume from a test with Command(resume={"type": "approve"}).
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>3. Add the approve endpoint. Two real requests.
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a>4. Add the refine path. Feedback returns as a ToolMessage.
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>5. Add plan_id and interrupt_id validation. Test the stale-tab case.
+<a id="__codelineno-19-6" name="__codelineno-19-6" href="#__codelineno-19-6"></a>6. Add the async approve path. Stage, write queued, enqueue, return 202.
+<a id="__codelineno-19-7" name="__codelineno-19-7" href="#__codelineno-19-7"></a>7. Add the claim. Two simultaneous approves give one run and one conflict.
+</code></pre></div>
+<p>The series runs in the same order. State comes before context, and context before approval. Identifiers come after you have seen a plan pause and resume. Locks come after the browser can double-click Approve. Prompt design comes after code already owns the boundaries.</p>
+<p><strong>Build the Lever.</strong> For any non-trivial work, build the tool that does or proves it, such as a script or a rerunnable check, so a reviewer can rerun it instead of trusting you. Each unit here has a lever. Step 5's lever is a forced-disconnect test that closes the client right after the first terminal frame and asserts that the save still completes. Step 6's is a takeover scenario. A acquires, A's lease expires, B acquires, A tries to release, and B's claim must remain. For the model's behavior, the lever is the evaluation loop, with a versioned dataset, a code grader where the check can be stated exactly, and per-case verdicts:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">grade_sources</span><span class="p">(</span><span class="n">case</span><span class="p">,</span> <span class="n">run</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>    <span class="k">return</span> <span class="s2">"correct"</span> <span class="k">if</span> <span class="n">run</span><span class="o">.</span><span class="n">sources_called</span> <span class="o">==</span> <span class="n">case</span><span class="p">[</span><span class="s2">"expected_sources"</span><span class="p">]</span> <span class="k">else</span> <span class="s2">"incorrect"</span>
+</code></pre></div>
+<p>Its sixth rule turns every production failure into a case before the fix lands, so the dataset grows wherever the agent has actually failed.</p>
+<p><strong>Where you build it.</strong> <a href="../step-3-planning-and-human-approval/#an-implementation-path">Step 3</a> gives the unit sequence for the gate. The <a href="../bridge-evaluation/#the-minimum-evaluation-loop">evaluation bridge</a> gives the evaluation loop.</p>
+<h2 id="fixing-it-for-real">When it breaks, how do I fix it for real?<a class="headerlink" href="#fixing-it-for-real" title="Permanent link">&para;</a></h2>
+<p>It will break anyway. Before one release, code review found nine bugs in this agent, and none of them crashed.</p>
+<p><strong>The tempting answer.</strong> Patch the line where the symptom showed up. If a scan finds the wrong record, make the scan smarter. If the model uses a stale default, stop injecting the default in that phase.</p>
+<p><strong>What goes wrong.</strong> Capstone 1's Bug 1 is the clearest case. During execution, middleware injected "default country: Australia" on every model call, including calls after the human had approved a plan for Germany. The fresh default sat near the top of the prompt, the approval sat lower in history, and the report came back about Australia. The obvious fix was to gate injection on <code>plan["status"] == "locked"</code>. That fix broke multi-turn sessions.</p>
+<p><strong>The decision.</strong> Trace each symptom to the first wrong decision. When a fix fails, write down what it assumed before trying another.</p>
+<p><strong>Fix Root Causes.</strong> Trace each symptom back to the first place the system did something wrong and fix it there. A guard counts as a fix only when the state it handles is legitimate. Bug 9 shows the trace. Its symptom was a follow-up planned against an older topic's entities. The cause went three levels deep:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>entity_groups = values.get("entity_groups") or None   # [] reset becomes None
+<a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>if md.entity_groups: item["entity_groups"] = ...       # None is not written
+<a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>for msg in reversed(memory): if groups: return groups  # scan lands on an older turn
+</code></pre></div>
+<p>Patching the scan would hide the bug. The first wrong decision was storing session state inside message records, so the fix moved it to a purpose-built store with direct overwrite, where <code>[]</code> means reset and <code>None</code> means never set. Bug 3 shows the guard rule from the other side. A multimodal message with list content is a legitimate state, so the code that broke on it, a backward scan that silently retargeted an older message, was the root cause. The fix stops and logs at that point. The principle also says to check for the pattern, not just the instance. In Bug 7, quick mode had already handled a missing <code>chat_id</code> correctly by skipping the write.</p>
+<p><strong>Attack the Premise.</strong> When fixes that share one premise keep failing the same check, write the premise down and test it directly before writing another fix that assumes it. The plan-status gate rested on one sentence:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>Premise: the plan channel tells a model call which phase it belongs to.
+<a id="__codelineno-22-2" name="__codelineno-22-2" href="#__codelineno-22-2"></a>Test:    turn 2 asks a new question on the same thread.
+<a id="__codelineno-22-3" name="__codelineno-22-3" href="#__codelineno-22-3"></a>         The plan channel still holds turn 1's LOCKED plan.
+<a id="__codelineno-22-4" name="__codelineno-22-4" href="#__codelineno-22-4"></a>         Turn 2 is planning, but the gate reads "locked" and drops the defaults it needs.
+<a id="__codelineno-22-5" name="__codelineno-22-5" href="#__codelineno-22-5"></a>Result:  premise false. plan is a sticky LastValue channel, and phase is not stored in it.
+</code></pre></div>
+<p>The series records one failed fix here, and the principle's trigger is two. Writing the premise down after the first failure was cheaper than a second fix built on the same belief. With the premise gone, code had no reliable phase signal. The rule moved into the context block, which the model reads alongside the conversation that shows the approval:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="s2">"[User context - entities named explicitly in the question always win over these defaults, "</span>
+<a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a><span class="s2">"and once a research plan is approved and locked, the locked plan's entities "</span>
+<a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a><span class="s2">"win over these defaults]</span><span class="se">\n</span><span class="s2">"</span>
+</code></pre></div>
+<p><strong>Where you build it.</strong> <a href="../capstone-1-nine-silent-failures/">Capstone 1</a> walks through all nine bugs. <a href="../step-8-orchestrator-prompt/#the-case-that-has-to-be-both">Step 8</a> steps through Bug 1.</p>
+<h2 id="when-requirements-change">When the requirements change, what do I do with the design I already have?<a class="headerlink" href="#when-requirements-change" title="Permanent link">&para;</a></h2>
+<p>The last question is about time. Requirements arrive after code exists. In this agent the biggest one was human approval before anything expensive runs.</p>
+<p><strong>The tempting answer.</strong> Bolt it on. Chapter 1's exercise puts it in a colleague's words: "Easy, just interrupt the function, wait for the approval callback, then resume." Later, once approval works, keep the approve request streaming execution back to the browser, because that is convenient for local testing.</p>
+<p><strong>What goes wrong.</strong> The bolted-on version holds a connection open for days. The streaming approve request ties a forty-minute run to one HTTP response and one API process, so a closed laptop or a deploy kills research the human already approved.</p>
+<p><strong>The decision.</strong> Treat approval as a requirement that was there from the start, which changes the topology. Then converge on the target, an approve that returns <code>202 queued</code> and a worker that resumes with <code>None</code>, rather than maintaining both paths. Before committing to an unfamiliar design, compare real alternatives.</p>
+<p><strong>Redesign From First Principles.</strong> When a new requirement arrives, do not bolt it on. Ask what you would build if it had been a foundational assumption, and carry the change through every reference. With approval assumed from day one, a turn spans several HTTP requests. That needs durable checkpointed state that any replica can load, a pause that serializes to storage instead of blocking a thread (<code>interrupt()</code>), and a separate endpoint that delivers the decision. It also changed the payload, which now carries <code>plan_id</code>, <code>interrupt_id</code> and <code>owner_id</code> so the second request can prove it is approving the pause the human saw.</p>
+<p><strong>Outcome-Oriented Execution.</strong> In a planned rewrite, converge on the verified end state instead of keeping intermediate states smooth with throwaway compatibility code. The synchronous approve stream helped with local testing, but it was never the production target. The series teaches only the target path, and the learning record states the rule directly:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>approval writes the resume decision into the checkpoint, writes run-state as queued,
+<a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>enqueues SQS FIFO, and returns 202 queued; a worker later resumes with None.
+<a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>The older synchronous approval stream is only a legacy/interim path.
+</code></pre></div>
+<p><strong>Migrate Callers Then Delete Legacy APIs.</strong> When a new internal API replaces an old one, migrate every caller and delete the old API in the same wave, and update the tests to assert the new contract. The factory from Bug 5 is the small example. Once <code>build_proposal_graph_input</code> existed, every route that started the graph moved onto it, and the hand-built dicts went away, so a forgotten key could no longer happen. For the synchronous approve stream, the series records that it is legacy but not when it was deleted. The principle says when. Delete it in the same change that moves its last caller and its tests onto the <code>202</code> path, so nobody new copies the old shape.</p>
+<p><strong>Exhaust the Design Space.</strong> For a decision with no precedent, build two or three competing designs and compare them side by side before you commit. Context injection was that kind of decision, and four designs were compared:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>system prompt injection     rejected: the orchestrator prompt is request-invariant and cached
+<a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>checkpointed message        rejected: the block would pile up in history across turns
+<a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>tool call                   rejected: an extra round trip, and the model can skip it
+<a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>middleware before the call  chosen:   injected after the checkpoint is read, never stored
+</code></pre></div>
+<p>The data manifest went through the same comparison, an ambient index against a <code>search_held_data</code> tool, and the tool lost because it fails without a signal. Bug 1's fix was a third comparison, a code gate against a prompt rule, and the prompt rule won only after the code gate's premise failed.</p>
+<p><strong>Where you build it.</strong> <a href="../step-3-planning-and-human-approval/">Step 3</a> builds the gate that approval requires. <a href="../ch3-architecture-and-flow/">Chapter 3</a> shows the async approve path end to end. <a href="../capstone-1-nine-silent-failures/#why-middleware-for-context-injection">Capstone 1</a> records the four injection designs.</p>
+<h2 id="the-design-on-one-page">The design on one page<a class="headerlink" href="#the-design-on-one-page" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Decision</th>
+<th>Principles</th>
+<th>Built in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#what-done-means">What does "done" mean?</a></td>
+<td>Separate transport, semantic and task success; pair eval cases and keep per-case verdicts</td>
+<td>Explain the Number, Test Behavior, Not Implementation, Prove It Works</td>
+<td><a href="../capstone-2-when-the-score-passes/">Capstone 2</a>, <a href="../bridge-evaluation/">evaluation bridge</a></td>
+</tr>
+<tr>
+<td><a href="#do-you-need-a-deep-agent">Do I need a deep agent at all?</a></td>
+<td>Reactive mode for one-pass answers; open the plan gate only for a new question</td>
+<td>Laziness Protocol, Subtract Before You Add</td>
+<td><a href="../step-8a-reactive-mode-prompt/">Step 8a</a>, <a href="../step-8c-plan-lifecycle/">Step 8c</a></td>
+</tr>
+<tr>
+<td><a href="#nouns-and-states">What are the nouns and states?</a></td>
+<td>One id per concept with a stated replay behavior; a merge rule per state key; the plan state machine in code</td>
+<td>Foundational Thinking, Model the Domain, Type System Discipline</td>
+<td><a href="../step-1-state-and-checkpoints/">Step 1</a>, <a href="../step-4-identifiers/">Step 4</a>, <a href="../step-3-planning-and-human-approval/">Step 3</a></td>
+</tr>
+<tr>
+<td><a href="#boundaries">Where are the boundaries?</a></td>
+<td>Inject context in middleware, escaped and never checkpointed; code enforces tools and the gate, prompts shape judgment</td>
+<td>Boundary Discipline, Encode Lessons in Structure</td>
+<td><a href="../step-2-context-injection/">Step 2</a>, <a href="../step-8-orchestrator-prompt/">Step 8</a></td>
+</tr>
+<tr>
+<td><a href="#where-the-human-comes-in">Where does the human come in?</a></td>
+<td><code>interrupt()</code> persists the pause; approve returns <code>202 queued</code>; proceed under declared assumptions; work outlives the browser</td>
+<td>Never Block on the Human, Experience First</td>
+<td><a href="../step-3-planning-and-human-approval/">Step 3</a>, <a href="../step-5-streaming-and-background-work/">Step 5</a>, <a href="../step-8b-clarifications/">Step 8b</a></td>
+</tr>
+<tr>
+<td><a href="#crash-halfway">What happens when it crashes halfway?</a></td>
+<td>Fixed write order; delete the message last; identity from execution position</td>
+<td>Make Operations Idempotent</td>
+<td><a href="../step-7-queue-and-worker-execution/">Step 7</a>, <a href="../step-7a-event-feed-and-idempotency/">Step 7a</a></td>
+</tr>
+<tr>
+<td><a href="#two-at-once">What happens when two things happen at once?</a></td>
+<td>Separate tables and per-thread partitions; FIFO group, token-fenced claim and write fence where one writer is required</td>
+<td>Separate Before Serializing Shared State</td>
+<td><a href="../step-6-distributed-locks/">Step 6</a>, <a href="../bridge-dynamodb-and-sqs/">DynamoDB and SQS bridge</a></td>
+</tr>
+<tr>
+<td><a href="#how-much-the-model-sees">How much should the model see?</a></td>
+<td>An ambient index of held results, capped at 30 lines; reuse prose, re-fetch numbers</td>
+<td>Guard the Context Window</td>
+<td><a href="../step-8d-carryover-and-data-manifest/">Step 8d</a></td>
+</tr>
+<tr>
+<td><a href="#finding-your-way">How will the next engineer find their way?</a></td>
+<td>Modules grouped by boundary; each channel declared beside its only writer</td>
+<td>Minimize Reader Load</td>
+<td><a href="../step-8e-code-components-and-organization/">Step 8e</a></td>
+</tr>
+<tr>
+<td><a href="#build-order">In what order do I build it?</a></td>
+<td>Units that each end in a rerunnable check; the eval loop as the check for behavior</td>
+<td>Sequence work into verifiable units, Build the Lever</td>
+<td><a href="../step-3-planning-and-human-approval/#an-implementation-path">Step 3</a>, <a href="../bridge-evaluation/#the-minimum-evaluation-loop">evaluation bridge</a></td>
+</tr>
+<tr>
+<td><a href="#fixing-it-for-real">How do I fix it for real?</a></td>
+<td>Fix at the first wrong decision; write down and test the premise of a failed fix</td>
+<td>Fix Root Causes, Attack the Premise</td>
+<td><a href="../capstone-1-nine-silent-failures/">Capstone 1</a></td>
+</tr>
+<tr>
+<td><a href="#when-requirements-change">When the requirements change?</a></td>
+<td>Redesign around approval; converge on the async path; migrate callers and delete the old path; compare designs first</td>
+<td>Redesign From First Principles, Outcome-Oriented Execution, Migrate Callers Then Delete Legacy APIs, Exhaust the Design Space</td>
+<td><a href="../step-3-planning-and-human-approval/">Step 3</a>, <a href="../ch3-architecture-and-flow/">Chapter 3</a>, <a href="../capstone-1-nine-silent-failures/#why-middleware-for-context-injection">Capstone 1</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="from-answers-to-architecture">From answers to architecture<a class="headerlink" href="#from-answers-to-architecture" title="Permanent link">&para;</a></h2>
+<p>Put the twelve answers next to each other and the system takes shape. Durable state and explicit identities give you a checkpoint that any process can reload. The human's pause is a record in that checkpoint, so approval becomes a second request that stages a decision and queues a pointer. A per-thread queue group and a fenced claim give each thread one writer. Truth and narration need separate homes, so the worker writes curated events to their own table and the browser tails them. Chapter 3 draws that system end to end, with the four durable records, the order approval writes them, and the worker that resumes with no input. Read it as the architecture these answers produce.</p>
+<hr />
+<div class="admonition check">
+<p class="admonition-title">You should now understand</p>
+<ul>
+<li>The twelve design questions, and why they come in this order</li>
+<li>The tempting first answer to each, and the real bug it caused in this agent</li>
+<li>Which principle settles each question, and the code or state trace that shows it</li>
+<li>Which Step builds each answer</li>
+</ul>
+</div>
+<details class="question">
+<summary>Try this</summary>
+<p><strong>A teammate proposes adding a line to the orchestrator prompt: "Never call query_market_data before the plan is approved." Which design question does this belong to, and what do you tell them?</strong></p>
+<details class="success">
+<summary>Answer</summary>
+<p>It belongs to the boundaries question. Code can enforce this rule deterministically, so it belongs in structure, not in the prompt. The gate's <code>interrupt()</code> already stops execution until the human resumes, and <code>AllowedToolsMiddleware</code> controls which tools the model can see. A prompt sentence would compete with the model's other instincts and sometimes lose. Encode Lessons in Structure also says that once the structural fix exists, you do not repeat it as text.</p>
+</details>
+</details>
+<p><em>Next: <a href="../ch3-architecture-and-flow/">Chapter 3 · End-to-end architecture and orchestrator flow</a>. The architecture these answers produce, traced from the first question to the worker's last write.</em></p>
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../ch1-problem-and-plan/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Chapter 1 · Problem, design, and implementation plan">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Chapter 1 · Problem, design, and implementation plan
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../ch3-architecture-and-flow/" class="md-footer__link md-footer__link--next" aria-label="Next: Chapter 3 · End-to-end architecture and orchestrator flow">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Chapter 3 · End-to-end architecture and orchestrator flow
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/neeleshsethi/agentic-engineering-patterns" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.sections", "navigation.top", "navigation.footer", "toc.follow", "search.suggest", "search.highlight", "content.code.copy", "content.action.edit"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../assets/scrubber.js"></script>
+      
+    
+  </body>
+</html>

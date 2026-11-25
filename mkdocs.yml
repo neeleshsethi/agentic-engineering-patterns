@@ -43,32 +43,37 @@ theme:
 
 nav:
   - Home: index.md
-  - "Chapter 1 · Problem, design, and implementation plan": 01-problem-design-implementation-plan.md
-  - "Chapter 2 · End-to-end architecture and orchestrator flow": 02-end-to-end-architecture-and-orchestrator-flow.md
-  - "Step 1 · State and checkpoints": 02-state-and-checkpoints.md
-  - "Step 2 · Context injection": 03-context-injection.md
-  - "Step 3 · Planning and human approval": 04-planning-and-human-approval.md
-  - "Step 4 · Identifiers that hold a run together": 05-identifiers.md
-  - "Step 5 · Streaming and background work": 06-streaming-and-background-work.md
-  - "Step 6 · Distributed locks": 07-distributed-locks.md
-  - "Step 7 · Queue and worker execution": 08-queue-and-worker-execution.md
-  - "Step 8 · Orchestrator prompt": 09-orchestrator-prompt.md
-  - "Deep dive · Clarifications": 09a-clarifications.md
-  - "Deep dive · Code components and organization": 09b-code-components-and-organization.md
-  - "Deep dive · Plan lifecycle": 09c-plan-lifecycle.md
-  - "Deep dive · Reactive mode prompt": 09d-reactive-mode-prompt.md
-  - "Deep dive · The event feed and idempotency": 09e-event-feed-and-idempotency.md
-  - "Deep dive · Carryover and the data manifest": 09f-carryover-and-the-data-manifest.md
-  - "Interactive lessons": lessons/index.html
-  - "Capstone · Nine silent failures in one agent": 10-nine-silent-failures.md
-  - "Capstone 2 · When the score passes and the work fails": 11-when-the-score-passes.md
-  - Reference:
-      - Glossary: 00-glossary.md
-      - "Source Notes (advanced)":
-          - Overview: source-notes/README.md
-          - Before Resume: source-notes/before-resume.md
-          - The Orchestrator: source-notes/orchestrator-prompt-annotated.md
-          - Life of a Deep Run: source-notes/life-of-a-deep-run.md
+  - Start here:
+      - ch1-problem-and-plan.md
+      - ch2-designing-a-deep-agent.md
+      - ch3-architecture-and-flow.md
+  - Build it step by step:
+      - step-1-state-and-checkpoints.md
+      - step-2-context-injection.md
+      - step-3-planning-and-human-approval.md
+      - step-4-identifiers.md
+      - step-5-streaming-and-background-work.md
+      - bridge-dynamodb-and-sqs.md
+      - step-6-distributed-locks.md
+      - step-7-queue-and-worker-execution.md
+      - step-7a-event-feed-and-idempotency.md
+      - step-8-orchestrator-prompt.md
+      - step-8a-reactive-mode-prompt.md
+      - step-8b-clarifications.md
+      - step-8c-plan-lifecycle.md
+      - step-8d-carryover-and-data-manifest.md
+      - step-8e-code-components-and-organization.md
+  - Capstones:
+      - capstone-1-nine-silent-failures.md
+      - bridge-evaluation.md
+      - capstone-2-when-the-score-passes.md
+  - Appendix (optional):
+      - glossary.md
+      - "Interactive lessons": lessons/index.html
+      - source-notes/README.md
+      - source-notes/before-resume.md
+      - source-notes/orchestrator-prompt-annotated.md
+      - source-notes/life-of-a-deep-run.md
 
 markdown_extensions:
   - admonition
@@ -93,6 +98,28 @@ markdown_extensions:
 
 plugins:
   - search
+  - redirects:
+      redirect_maps:
+        01-problem-design-implementation-plan.md: ch1-problem-and-plan.md
+        02-end-to-end-architecture-and-orchestrator-flow.md: ch3-architecture-and-flow.md
+        ch2-architecture-and-flow.md: ch3-architecture-and-flow.md
+        02-state-and-checkpoints.md: step-1-state-and-checkpoints.md
+        03-context-injection.md: step-2-context-injection.md
+        04-planning-and-human-approval.md: step-3-planning-and-human-approval.md
+        05-identifiers.md: step-4-identifiers.md
+        06-streaming-and-background-work.md: step-5-streaming-and-background-work.md
+        07-distributed-locks.md: step-6-distributed-locks.md
+        08-queue-and-worker-execution.md: step-7-queue-and-worker-execution.md
+        09e-event-feed-and-idempotency.md: step-7a-event-feed-and-idempotency.md
+        09-orchestrator-prompt.md: step-8-orchestrator-prompt.md
+        09d-reactive-mode-prompt.md: step-8a-reactive-mode-prompt.md
+        09a-clarifications.md: step-8b-clarifications.md
+        09c-plan-lifecycle.md: step-8c-plan-lifecycle.md
+        09f-carryover-and-the-data-manifest.md: step-8d-carryover-and-data-manifest.md
+        09b-code-components-and-organization.md: step-8e-code-components-and-organization.md
+        10-nine-silent-failures.md: capstone-1-nine-silent-failures.md
+        11-when-the-score-passes.md: capstone-2-when-the-score-passes.md
+        00-glossary.md: glossary.md
 
 # Single-source the interactive lessons: publish repo-root lessons/ directly,
 # instead of keeping a hand-synced copy under articles/lessons/.

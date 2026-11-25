@@ -1,4 +1,7 @@
-# The Orchestrator: Prompt, Gate, and How to Build One
+# Source note 2 · The orchestrator: prompt, gate, and how to build one
+
+!!! note "Optional"
+    This is full-depth reference for after the main path, not part of it. The same ground is taught in [Step 3](../step-3-planning-and-human-approval.md) and [Step 8](../step-8-orchestrator-prompt.md). Codes used here: **Bug 1** is the entity-override bug, the first bug in [Capstone 1](../capstone-1-nine-silent-failures.md). **S2** is the interim build stage whose approve request streamed execution synchronously. "Step 1" to "Step 5" in Part 1 are the prompt's own phases (PLAN, SUBMIT, REFINE, EXECUTE, FOLLOW-UP), and the numbered steps in Parts 2 and 3 are stages inside the gate and the build guide, not course steps.
 
 > Reconstructed from source notes. Genericized: product → "the platform"; brand → `BRAND_A`;
 > data sources → `SOURCE_A`/`SOURCE_B`/`SOURCE_C`/`SOURCE_D`; the retrieval tool → `query_source`.
