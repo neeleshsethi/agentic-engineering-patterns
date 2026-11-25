@@ -1,5 +1,8 @@
 # Source note 3 · Life of a deep run
 
+!!! note "Optional"
+    This is full-depth reference for after the main path, not part of it. The same ground is taught in [Step 6](../step-6-distributed-locks.md), [Step 7](../step-7-queue-and-worker-execution.md) and [Step 7a](../step-7a-event-feed-and-idempotency.md). Codes used here: **E1** to **E16** number the edge cases in Part 5, the catalog of what can go wrong after approval. "Step 0" to "Step 4" are the stages of one run from approve to SSE tail, not course steps. "Branch 3" is the third case of the write fence's collision branch.
+
 > Reconstructed from source notes. Genericized: product → "the platform"; brand → `BRAND_A`;
 > data sources → `SOURCE_A`/`SOURCE_B`/…; tables → `{env}-agent-*`; the retrieval tool →
 > `query_source`. Framework names (LangGraph, deepagents, DynamoDB, SQS) are real.

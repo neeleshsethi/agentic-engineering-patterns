@@ -4,6 +4,13 @@ summary: "Make exactly one process own a run, even under double clicks, crashes,
 
 # Step 6 · Distributed locks
 
+!!! note "Before you read"
+    This page builds on three ideas. Skim the linked section first if any is hazy.
+
+    - **Conditional writes.** A write that succeeds only if a condition holds at that instant, and a rejected write as the normal "someone else got there first" signal. Taught in the [DynamoDB and SQS bridge](bridge-dynamodb-and-sqs.md).
+    - **The double-approve race.** Two requests trying to resume the same paused thread. Introduced in [Step 3](step-3-planning-and-human-approval.md).
+    - **Idempotency key versus `seq`.** A key that comes out the same when a step is replayed, and a counter that does not. Introduced in [Step 4](step-4-identifiers.md#identity-for-safe-replay-idempotency-key-versus-seq). The write fence below depends on it.
+
 ## The problem: two clicks, one plan, two runs
 
 A user opens an approved research plan in two browser tabs and clicks **Approve** in both. Or clicks once, the page is slow, and they click again. Two requests now arrive to run the same plan.
@@ -153,7 +160,7 @@ except ClientError:
 Three ideas make this hold:
 
 - **The corruption attempt is the detection.** The zombie is never told it lost. The very write that would have corrupted the log is the atomic operation that reveals it lost. The storage layer is the final arbiter of who is alive.
-- **"Mine" is decided by content, not identity.** Branch 1 compares an [idempotency key](glossary.md#idempotency-key) (a value derived from *execution position*, identical on replay), not a worker id. Equal key means the logical write already exists; who physically wrote it is irrelevant. (This is why the key must not be built from the sequence number, which changes on replay; see [Step 7 · Queue and worker execution](step-7-queue-and-worker-execution.md#sequence-number-versus-idempotency-key).)
+- **"Mine" is decided by content, not identity.** Branch 1 compares an [idempotency key](glossary.md#idempotency-key) (a value derived from *execution position*, identical on replay), not a worker id. Equal key means the logical write already exists; who physically wrote it is irrelevant. (This is why the key must not be built from the sequence number, which changes on replay; see [Step 7a · The event feed and idempotency](step-7a-event-feed-and-idempotency.md).)
 - **The lock read is lazy.** Healthy workers never poll the claim. It is read only on the rare collision path, so the common case pays nothing.
 
 ## Release must prove ownership

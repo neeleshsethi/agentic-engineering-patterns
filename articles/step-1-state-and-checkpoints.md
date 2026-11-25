@@ -58,6 +58,8 @@ flowchart LR
 
 The fix fits in one sentence. If a key must describe *this* turn, the caller must write it *every* turn. Everything below is how to make that discipline hard to get wrong.
 
+Two later wrong-country bugs look the same from outside but have different causes. In [Step 2](step-2-context-injection.md), nothing is stale: a current account default outranks the country the user just typed. In [Step 8](step-8-orchestrator-prompt.md#the-case-that-has-to-be-both), the model resolves the right country at plan time, and a default injected again after approval pulls execution back to the wrong one.
+
 ## State versus checkpoint
 
 Two words that sound the same and are not:

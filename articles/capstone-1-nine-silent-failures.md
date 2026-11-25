@@ -6,7 +6,7 @@ summary: "Nine real bugs that returned 200 OK. Each should now feel recognizable
 
 Use this as the final review exercise: a deep agent can look healthy, return `200 OK`, and still be wrong.
 
-> **Capstone.** This is where the series lands: the nine bugs below are the failure modes from the build path (state, context, planning, identifiers, streaming, locking, durability, and prompt boundaries) seen together in one real system. It also stands on its own, so a few ideas from earlier articles are re-introduced briefly here.
+> **Capstone.** This is where the series lands: the nine bugs below are the failure modes from the build path (state, context, planning, identifiers, streaming, locking, durability, and prompt boundaries) seen together in one real system. Each bug recalls its mechanism in a few lines and links back to the step that teaches it.
 
 This article is written for the engineer who has built normal Python APIs and is now trying to understand production agents. If that is you, the hardest adjustment is this: with agent systems, "the request succeeded" is not the same as "the work was correct."
 
@@ -47,34 +47,7 @@ The hard part is that these steps do not happen inside one neat function call. A
 
 None of the bugs below are "the model hallucinated" stories. They are ordinary engineering bugs at the boundaries around the model.
 
-## Vocabulary for a new engineer
-
-You only need a handful of terms before the failure list. Each one is also in the [Glossary](glossary.md), defined once for the whole series.
-
-`thread_id` is the durable identity of one conversation or run. LangGraph uses it to find the right checkpoint. Same `thread_id`, same logical graph thread.
-
-`state` is the dictionary the graph reads and writes. It contains channels such as `messages`, `plan`, `raw_question`, and `user_context`.
-
-`checkpoint` is the persisted copy of that state plus LangGraph bookkeeping. In this system it lives in DynamoDB, so a later HTTP request on another API replica can resume the same graph.
-
-`interrupt()` pauses the graph and stores a pending resume point in the checkpoint. The HTTP request can end while the graph waits for a human decision.
-
-`Command(resume=...)` is the input used by a later HTTP request to continue from that pending interrupt.
-
-`plan_id` is an application-level identifier inside the proposed plan. LangGraph does not invent it. We store it inside the plan object that is included in the interrupt payload and checkpointed state.
-
-`claim_token` is a random ownership token for the distributed resume lock. It proves that the caller releasing a lock is the same caller that acquired it.
-
-```text
-User turn
-  thread_id: "t-123"
-  checkpoint:
-    state.plan.plan_id = "p-456"
-    pending interrupt payload.plan.plan_id = "p-456"
-  claim:
-    PK = "CLAIM#t-123"
-    claim_token = "random-uuid"
-```
+The bugs use the series' terms as they were taught: `thread_id`, state, checkpoint, `interrupt()`, `Command(resume=...)`, `plan_id` and `claim_token`. Each is defined once in the [Glossary](glossary.md).
 
 ## The architecture: one user turn, several HTTP requests
 
@@ -167,28 +140,7 @@ DynamoDB table: agent-checkpoints
                      Fields: claim_token, expires_at, ttl
 ```
 
-Both live in the same table because the claim needs the same durability and region as the checkpoint. If the checkpoint is in DynamoDB, an in-process claim would be invisible to other API replicas. The conditional write is atomic at the DynamoDB level:
-
-```python
-_dynamodb_client().put_item(
-    TableName=checkpoints_table_name(),
-    Item={
-        "PK": f"CLAIM#{thread_id}",
-        "SK": "RESUME",
-        "claim_token": token,
-        "expires_at": now + 1800,
-        "ttl": now + 3600,
-    },
-    ConditionExpression="attribute_not_exists(PK) OR expires_at < :now",
-    ExpressionAttributeValues={":now": str(now)},
-)
-```
-
-`attribute_not_exists(PK)` is DynamoDB's "only if no current item exists" condition. For this claim item, it means "acquire the resume lock only if another request has not already created one."
-
-`OR expires_at < :now` lets the system recover if a worker crashes while holding the claim. A new request can acquire the claim after the lease expires.
-
-Release is token-guarded: the caller holds a UUID token from acquire, and the delete only succeeds if the stored token still matches. A stream that outlives its 30-minute lease can be re-claimed by a new request. When the original stream eventually finishes and tries to release, it gets `ConditionalCheckFailedException`, logs it at info, and leaves the new holder's lease intact.
+Both live in the same table because the claim needs the same durability and region as the checkpoint, and an in-process claim would be invisible to other API replicas. It is the acquire-with-expiry, token-guarded-release claim from [Step 6](step-6-distributed-locks.md). Bug 8 below is what happened before release checked the token.
 
 ### One Langfuse trace across all three requests
 
@@ -226,9 +178,7 @@ Without the seeded trace ID, those three HTTP requests look like unrelated trace
 
 ### What a LangGraph channel is
 
-LangGraph state is a typed dict where each key has explicitly declared update semantics. The default is `LastValue`: each write replaces the previous value, and a key not written on a given invoke inherits whatever the checkpoint held. There are also reducer channels. `messages` uses one that appends new messages rather than replacing the list, reducing checkpoint growth from quadratic to linear.
-
-The channel model matters because "I did not write this key" has a defined, non-obvious meaning: the previous value survives. In a multi-phase pipeline, resume paths only write the channels relevant to their phase. The rest carry over from checkpoint. That is correct behavior for most channels and a footgun for channels that need to be explicitly reset on a new turn.
+Each state key is a channel with its own update rule. The default, `LastValue`, keeps the old value when a turn does not write the key, and [Step 1](step-1-state-and-checkpoints.md) explains why that is a footgun for channels that must reset on a new turn. `messages` uses an appending reducer instead.
 
 Persisted channels in our agent included:
 
@@ -299,140 +249,13 @@ The tradeoff is that the injection is invisible in the checkpointed transcript a
 
 ## 1. Injected context kept overriding a decision the user already made
 
-Before every LLM call, middleware injected a context block with the user's default entities and prior conversation history. That is useful for vague questions like "give me my sales."
-
-Two names matter here:
-
-- **Raw question** means the exact text the user typed, before the system adds anything.
-- **Model input** means what the LLM receives: system prompt, injected user context, conversation history, tool messages, and the raw question.
-
-So if the user types `"Give me my sales for GERMANY"`, the raw question contains `GERMANY`. Middleware then wraps extra context around it before the model sees it.
-
-**Germany comes from the user's question and then from the human-approved plan.** Australia is only the user's default.
-
-<div class="scrubber" data-scrubber markdown="0">
-  <div class="scrubber-stage">
-    <div class="scrubber-step">
-      <span class="scrubber-time">1 · Middleware adds defaults</span>
-      <div class="scrubber-caption">Before the model sees the question, the API adds account context. The default country is Australia. This is helpful only when the user did not name a country.</div>
-      <pre class="scrubber-item">[User context]
-default country = AUSTRALIA
-[/User context]</pre>
-    </div>
-    <div class="scrubber-step">
-      <span class="scrubber-time">2 · User names Germany</span>
-      <div class="scrubber-caption">The actual question explicitly says Germany. During planning, the model should prefer the user's words over the default.</div>
-      <pre class="scrubber-item">[User context] default country = AUSTRALIA [/User context]
-
-"Give me my sales for GERMANY"
-
-resolved country = GERMANY   <span class="ok">correct</span></pre>
-    </div>
-    <div class="scrubber-step">
-      <span class="scrubber-time">3 · Human approves Germany</span>
-      <div class="scrubber-caption">The plan is now locked with Germany as the entity. From this point on, execution should use the locked plan, not re-read defaults.</div>
-      <pre class="scrubber-item">approved plan:
-  step 1: query sales
-  entities.country = GERMANY   <span class="ok">locked</span></pre>
-    </div>
-    <div class="scrubber-step">
-      <span class="scrubber-time">4 · The bug: defaults return</span>
-      <div class="scrubber-caption">Middleware injects the Australia default again during execution. Without a prompt rule saying locked plan entities are final, the model may re-resolve and drift back to Australia.</div>
-      <pre class="scrubber-item">top of model input:
-  [User context] default country = AUSTRALIA [/User context]   <span class="warn">high salience</span>
-
-later in history:
-  [tool] Plan approved: GERMANY   <span class="ok">buried</span>
-
-model picks AUSTRALIA   <span class="bad">wrong country, 200 OK</span></pre>
-    </div>
-    <div class="scrubber-step">
-      <span class="scrubber-time">5 · The fix</span>
-      <div class="scrubber-caption">The context block and execute-phase prompt both state the priority rule: explicit question entities beat defaults, and locked plan entities beat the context block during execution.</div>
-      <pre class="scrubber-item">priority:
-  question entities > user defaults
-  locked plan entities > user defaults during execution
-
-execution country = GERMANY   <span class="ok">correct</span></pre>
-    </div>
-  </div>
-</div>
-
-The bug was that we injected context on every model call, including execution calls after the user had already approved a plan with specific entities. The approved `GERMANY` decision lived in plan state and a tool message, while the Australia default kept being reattached near the top of each fresh model input.
-
-That is why the report could be about the wrong country without any crash: the model did not fail to read Germany during planning. It forgot that Germany was already final during execution.
-
-The obvious fix was wrong. Gating injection on `plan["status"] == "locked"` would break multi-turn sessions because the previous question's locked plan still sits in the `plan` channel while a new question is entering the planning phase.
-
-The actual fix was to write the rule into the prompt itself:
-
-```python
-"[User context - entities named explicitly in the question always win over these defaults, "
-"and once a research plan is approved and locked, the locked plan's entities "
-"win over these defaults]\n"
-```
-
-We also added one sentence in the orchestrator's execute step: "The [User context] block is for plan-time entity resolution only. Once the plan is locked, never re-resolve entities from it."
+Middleware injected the user's default entities, country Australia, on every model call, including execution calls after a human had approved a plan for Germany. The model resolved Germany correctly at plan time, so this is neither Step 1's stale state nor Step 2's plan-time precedence bug. During execution the freshly injected default sat near the top of the prompt while the approval sat lower in history, and the report came back about Australia. Gating injection on plan status would have broken multi-turn sessions, so the fix was a precedence rule written into the context block and the execute step. [Step 8](step-8-orchestrator-prompt.md#the-case-that-has-to-be-both) steps through the bug and shows the shipped prompt text.
 
 Lesson: when context should only apply at one phase of a multi-phase pipeline, encode that constraint in the context itself. A prompt rule beats a code gate when the code gate has to reason about shared state across turns.
 
 ## 2. A framework dependency swapped in a synthetic HumanMessage under our feet
 
-The injection code was the context middleware's model-call wrapper, the `UserContextMiddleware._inject(...)` method shown earlier in this article. It runs immediately before each LLM call and rewrites the model request, not the checkpointed state.
-
-The risky part was this pattern: scan the message list in reverse, find the latest `HumanMessage`, and attach the context block to it.
-
-```python
-def _inject(request: ModelRequest) -> ModelRequest:
-    messages = list(request.messages)
-    context = request.state.get("user_context")
-
-    for i in range(len(messages) - 1, -1, -1):
-        if isinstance(messages[i], HumanMessage):
-            messages[i] = HumanMessage(
-                content=compose_with_context(messages[i].content, context),
-                additional_kwargs=messages[i].additional_kwargs,
-            )
-            break
-
-    return request.override(messages=messages)
-```
-
-The bug was that `deepagents` unconditionally installs a summarization middleware that fires near the context window limit. When triggered, it rewrites the message list and inserts a synthetic `HumanMessage` containing the summary:
-
-```python
-messages = [
-    HumanMessage(
-        "Here is a summary of the conversation to date: ...",
-        additional_kwargs={"lc_source": "summarization"},
-    ),
-    AIMessage("<most recent>"),
-]
-```
-
-The original user message may already be evicted. Our reverse scan found the synthetic summary as the latest human message and attached the context block to it. The delimiter told the model "everything after `[/User context]` is the user's own words," so we accidentally labeled summarizer prose as user-authored content.
-
-The fix was to skip framework-tagged synthetic messages:
-
-```python
-if msg.additional_kwargs.get("lc_source") == "summarization":
-    continue
-```
-
-The injection code needs the latest real user-authored message, not any human-shaped message.
-
-The synthetic summary is human-shaped because it is represented as a `HumanMessage`, but it is framework-authored. The `lc_source` tag is the only reliable clue in that list that the message came from summarization middleware.
-
-```text
-Before fix
-  reverse scan finds synthetic HumanMessage
-  context attaches to summary
-  model treats summary prose as user words
-
-After fix
-  reverse scan skips lc_source=summarization
-  context attaches to real user message, or injection stops
-```
+The context middleware attached its block to the latest `HumanMessage` in the request. `deepagents` installs a summarization middleware unconditionally, and near the context limit it replaces old history with a synthetic `HumanMessage` tagged `lc_source: "summarization"`. The original user message may already be gone. Our reverse scan found the summary, attached the context to it, and so labeled summarizer prose as the user's own words. The fix skips messages with that tag. [Step 2](step-2-context-injection.md#two-ways-it-goes-wrong) shows the corrected scan.
 
 Lesson: when your code finds "the latest item of type X in a list," enumerate every party that can insert an X. Framework middleware can insert objects that pass `isinstance(msg, HumanMessage)` without being genuine user input.
 
@@ -484,101 +307,19 @@ Lesson: in a backward search, failing the capability check should not silently r
 
 ## 4. User-influenced text inside a trusted block could forge its own closing delimiter
 
-The context block uses a closing delimiter that tells the model where injected context ends and the user's own words begin. Part of that block comes from session summaries derived from prior conversation text that we do not fully control.
-
-If session memory ever contained the literal string `[/User context]`, the composed message would have two closing markers and user-influenced text could escape the trusted block.
-
-The fix was one line before embedding user-influenced content:
-
-```python
-def compose_with_context(content: str, context: str) -> str:
-    if not context:
-        return content
-    context = _PARAGRAPH_BREAK.sub("\n", context)
-    context = context.replace("[/User context]", "[/user context]")
-    return f"{context}\n[/User context]\n\n{content}"
-```
+The context block closes with `[/User context]`, and part of the block comes from session summaries we do not fully control. If that text ever contained the literal delimiter, it would close the block early and the rest would pose as the user's words. The fix lowercases the delimiter inside injected text before embedding it. [Step 2](step-2-context-injection.md#two-ways-it-goes-wrong) shows what the model sees with and without the escape.
 
 Lesson: this is prompt injection. Any time you embed external text inside a structured format that uses delimiters, escape your delimiter before embedding.
 
 ## 5. A three-file invariant had no structural owner and no error on violation
 
-Our agent state uses `LastValue` channels, so any key not written on a given invoke inherits the previous checkpoint value. Starting a new conversation turn required writing three channels together: the message, the raw question, and the context block. Even when the context block is empty, it still must be written explicitly to reset the previous turn's value.
-
-The bug was that this invariant was a hand-assembled dict in one file, the channels were declared in another, and the code that depended on them lived in a third. Nothing enforced the rule structurally.
-
-That meant a future caller could innocently write:
-
-```python
-graph_input = {
-    "messages": [{"role": "user", "content": question}],
-}
-```
-
-and the previous turn's `raw_question` and `user_context` would silently persist into the new turn.
-
-The fix was a factory function co-located with the channel declarations:
-
-```python
-def build_proposal_graph_input(
-    question: str,
-    user_info: dict | None,
-    memory: list | None,
-) -> dict:
-    return {
-        "messages": [{"role": "user", "content": question}],
-        "raw_question": question,
-        "user_context": build_proposal_user_context(user_info, memory),
-    }
-```
+Starting a new turn required writing three `LastValue` channels together: the message, the raw question, and the context block, even when the context is empty. The rule lived in a hand-built dict in one file, the channel declarations in another, and the readers in a third. A caller that wrote only `messages` would silently keep the previous turn's `raw_question` and `user_context`. The fix was a factory function, `build_proposal_graph_input`, placed beside the channel declarations. This is the France/Germany bug from [Step 1](step-1-state-and-checkpoints.md#turn-the-convention-into-an-api).
 
 Lesson: there is a hierarchy of invariant enforcement: type signature, factory function, documented convention, and tribal knowledge. Critical invariants should sit as high in that hierarchy as practical.
 
 ## 6. The post-stream database write got cancelled when the client hung up
 
-A deep run finishes, we stream an `end` event, then save the turn to the database.
-
-The bug was that the frontend correctly closes the SSE connection as soon as it receives the `end` event. In Python and Starlette, a client disconnect raises `CancelledError` at the generator's next `await`.
-
-```text
-BEFORE — the save is after the terminal event:
-
-  server                           browser
-    │  yield end_event  ──────────▶  │
-    │                                │  receives "end"
-    │                                │  closes connection immediately ✓
-    │  await save_to_database()      │
-    │       ↑                        │
-    │  CANCELLED — the browser       │
-    │  already left; this await      │
-    │  never resolves                │
-    │  no log, no error, turn lost   │
-```
-
-```text
-AFTER — the save is owned before yielding the terminal event:
-
-  server                           browser
-    │  task = create_task(save)      │
-    │  (save running in background)  │
-    │  yield end_event  ──────────▶  │
-    │                                │  receives "end"
-    │                                │  closes connection ✓
-    │  (background task still runs)  │
-    │  save completes ✓              │
-```
-
-`CancelledError` is a `BaseException` in Python 3.11+, not an `Exception`, so ordinary `except Exception` blocks never saw it.
-
-The fix was to spawn a detached background task before yielding the terminal event:
-
-```python
-if event.type == "end":
-    task = asyncio.create_task(save_to_database(...))
-    _ACTIVE_TASKS.add(task)
-    task.add_done_callback(_ACTIVE_TASKS.discard)
-yield end_event
-```
+A deep run streamed its `end` event and then awaited the database save. The frontend correctly closes the SSE connection as soon as it sees `end`, and in Starlette a client disconnect raises `CancelledError` at the generator's next `await`. The save never ran. Because `CancelledError` is a `BaseException` in Python 3.11+, no `except Exception` block logged it. The fix starts the save as a background task before yielding `end`. [Step 5](step-5-streaming-and-background-work.md) shows the before and after.
 
 Lesson: any `await` inside an SSE generator that runs after a terminal event is a race against client disconnect. Create the task before yielding the terminal event and hold a strong reference to it.
 
@@ -612,35 +353,7 @@ Lesson: if a field is optional, some callers will omit it. Writer and reader mus
 
 ## 8. The lock release did not prove it still owned the lock
 
-To prevent double execution on rapid approve clicks, we write a resume claim to DynamoDB when a run starts. Claims expire after 30 minutes. When the run finishes, we delete the claim.
-
-The bug was that the delete was unconditional:
-
-```python
-table.delete_item(Key={"thread_id": thread_id})
-```
-
-If a long research run outlived the lease, a second request could acquire a new claim. When the first run eventually finished, its unconditional delete would remove the second run's claim and reopen the race window.
-
-The fix was to store a per-claim UUID on acquire and require that token on release:
-
-```python
-token = str(uuid.uuid4())
-table.put_item(Item={
-    "thread_id": thread_id,
-    "claim_token": token,
-    "expires_at": now + 1800,
-})
-
-try:
-    table.delete_item(
-        Key={"thread_id": thread_id},
-        ConditionExpression="claim_token = :token",
-        ExpressionAttributeValues={":token": token},
-    )
-except ConditionalCheckFailedException:
-    logger.info("claim release skipped: thread re-claimed after lease expiry")
-```
+The resume claim expires after 30 minutes, and the run deleted it on completion with an unconditional `delete_item`. A run that outlived its lease could therefore delete a second request's newer claim and reopen the double-run window. The fix stores a per-claim token on acquire, makes release conditional on it, and logs a skipped release at info level. That is the token-guarded delete in [Step 6](step-6-distributed-locks.md#release-must-prove-ownership).
 
 Lesson: "release a lock" and "release your lock" are different operations. Always prove ownership on release.
 
@@ -789,4 +502,4 @@ The lesson: a sticky `LastValue` channel written only at plan time, combined wit
 
 ---
 
-**Next:** [Capstone 2 · When the score passes and the work fails](capstone-2-when-the-score-passes.md) moves up one layer, to tool results that aren't task results and evaluations that hide a tradeoff.
+**Next:** [Bridge · Evaluating an agent](bridge-evaluation.md) covers the evaluation basics Capstone 2 assumes. Capstone 2 then moves up one layer, to tool results that aren't task results and evaluations that hide a tradeoff.

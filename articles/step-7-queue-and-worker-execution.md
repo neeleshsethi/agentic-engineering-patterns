@@ -4,6 +4,13 @@ summary: "Move approved work out of the API process and make replay safe."
 
 # Step 7 · Queue and worker execution
 
+!!! note "Before you read"
+    This page assembles pieces taught earlier. Skim the linked section first if any is hazy.
+
+    - **The staged resume decision.** Approval is written into the checkpoint before anything is queued, so a worker can resume with no input. Shown end to end in [Chapter 2](ch2-architecture-and-flow.md), built in [Step 3](step-3-planning-and-human-approval.md).
+    - **SQS FIFO behavior.** Message groups, the visibility timeout, and redelivery after silence. Taught in the [DynamoDB and SQS bridge](bridge-dynamodb-and-sqs.md).
+    - **The lease and the zombie.** A lock that expires unless renewed, and a frozen worker that wakes after losing it. Taught in [Step 6](step-6-distributed-locks.md).
+
 A long agent run should survive a worker crash, a deploy, and a client that closes its laptop. That means the run cannot live in one process's memory. It has to live in durable storage, and every process (the API, the worker, a failure detector) has to be able to reconstruct it from there.
 
 This article covers what happens *after* a plan is approved: the run is handed to a background worker, executes for tens of minutes, streams progress to the browser, and can be resumed by a different worker if the first one dies. It assumes the vocabulary from the [Glossary](glossary.md) ([checkpoint](glossary.md#checkpoint), [replica](glossary.md#replica), [lease](glossary.md#lease), [idempotency](glossary.md#idempotency)) and builds directly on [Step 6 · Distributed locks](step-6-distributed-locks.md).
@@ -142,81 +149,13 @@ The size rule that falls out: the visibility timeout must exceed the longest *si
 
 ## Sequence Number Versus Idempotency Key
 
-The feed needs a total order and a dedup identity. Use two different values, because they have opposite requirements under replay.
-
-- **Sequence** is a plain in-process counter, seeded once per pickup from the current max and incremented per emitted feed line. It gives ordering and becomes the reader's cursor. Gaps are allowed; ordering is guaranteed. On replay it takes new values.
-- **[Idempotency key](glossary.md#idempotency-key)** identifies the *logical* event regardless of which attempt wrote it. It must be identical when a node is replayed, so it is derived from execution position, never from the sequence number and never at random.
-
-Step through a crash-and-replay to see why the two values need opposite behavior:
-
-<div class="scrubber" data-scrubber markdown="0">
-  <div class="scrubber-stage">
-    <div class="scrubber-step">
-      <span class="scrubber-time">Worker A · emits</span>
-      <div class="scrubber-caption">A runs the "tools" node from checkpoint 31 and emits two feed lines. seq counts up; idem_key is derived from execution position.</div>
-      <pre class="scrubber-item">seq 9   idem "ckpt31#tools#0"
-seq 10  idem "ckpt31#tools#1"   <span class="ok">← user sees both</span></pre>
-    </div>
-    <div class="scrubber-step">
-      <span class="scrubber-time">Worker A · dies</span>
-      <div class="scrubber-caption">A crashes before the post-node checkpoint. The queue will redeliver the message to another worker.</div>
-      <pre class="scrubber-item">seq 9   idem "ckpt31#tools#0"
-seq 10  idem "ckpt31#tools#1"   <span class="warn">← A gone, node not committed</span></pre>
-    </div>
-    <div class="scrubber-step">
-      <span class="scrubber-time">Worker B · resumes</span>
-      <div class="scrubber-caption">B reloads checkpoint 31 and re-runs the same node. seq continues from the table max (new numbers), but idem_key repeats, because execution position is identical.</div>
-      <pre class="scrubber-item">seq 11  idem "ckpt31#tools#0"   <span class="warn">← same key, new seq</span>
-seq 12  idem "ckpt31#tools#1"   <span class="warn">← same key, new seq</span></pre>
-    </div>
-    <div class="scrubber-step">
-      <span class="scrubber-time">Reader · dedups</span>
-      <div class="scrubber-caption">The reader has already shown idem "ckpt31#tools#0" and "#1". It drops the repeats. The user sees each line exactly once.</div>
-      <pre class="scrubber-item">shown: {ckpt31#tools#0, ckpt31#tools#1}
-seq 11, 12 → <span class="bad">duplicate idem_key, skipped</span>   <span class="ok">✓ exactly-once</span></pre>
-    </div>
-  </div>
-</div>
-
-Exactly one of the two must change on replay (the [sequence](glossary.md#sequence-number-seq)) and exactly one must not (the key). Many frameworks already compute a deterministic per-execution task id; if so, use it and let the framework own the hard part. Here the key is `"{task_id}#{n}"`, where `task_id` is parsed out of each streamed event's checkpoint namespace (LangGraph shapes it as `"{node}:{task_id}"`) and `n` is a per-`task_id` counter of the events that task has emitted. The key stays stable across a crash-replay because `task_id` is derived from the checkpoint the node *started from*, not the one it writes: a replay resumes from the same input checkpoint (same id), while a genuine loop iteration starts from a newer one (new id). That difference is what tells "re-run of the interrupted attempt" apart from "the loop legitimately ran this node again."
-
-### One stream must not poison another's keys
-
-If a single node emits **two interleaved kinds of frame with different reproducibility guarantees**, they must count under **separate** `n` namespaces. In this system one node calls a downstream model (Cortex) and streams both live "thinking" deltas (whose *count* is non-reproducible, since a replay re-calls the model and gets a different number of tokens plus wall-clock coalescing variance) and a handful of deterministic frames (a terminal status, a plan-tick checkmark) that *must* reproduce so the reader can dedup them.
-
-Put both on one counter and the noisy stream shifts the quiet one's indices: a status that was `#5` after five deltas on the first attempt becomes `#3` after three deltas on the replay. That is a different key, so the reader re-renders the checkmark. The fix is to quarantine the non-reproducible frames under their own suffix (here `"{task_id}~cs"`) so the deterministic frames keep counting from `#0` regardless of how many live deltas flew by. The live deltas may re-show after a replay, but they carry replace-semantics (each frame holds the full accumulated text), so the panel re-fills harmlessly. The rule generalizes: **a counter-derived idempotency key may only count events whose count is itself replay-stable.**
+Every feed line carries two values with opposite behavior under replay. `seq` is a counter, seeded once per pickup from the table's current max, that orders the feed and serves as the reader's cursor. A replay gives it new values. The [idempotency key](glossary.md#idempotency-key) names the logical event and comes out identical on replay, so the reader can drop the repeat. [Step 7a · The event feed and idempotency](step-7a-event-feed-and-idempotency.md) is the full treatment: how the key is derived from LangGraph's `task_id`, why one stream's noisy frames must not shift another's keys, and how the writer and reader use both values.
 
 ## Replay And Live Tail Are The Same Query
 
-The reader is deliberately dumb. It knows nothing about queues, locks, or workers. It reads one table.
+The reader is deliberately dumb. It knows nothing about queues, locks, or workers. It queries one table for rows whose `seq` is above the browser's `Last-Event-ID`, so a reconnect and a live tail are the same query, and it skips any idempotency key it has already sent on this connection. [Step 7a](step-7a-event-feed-and-idempotency.md#the-reader-dumb-on-purpose) walks through the code.
 
-```python
-cursor = int(request.headers.get("Last-Event-ID", 0))
-seen: set[str] = set()          # per-connection, in API RAM — not in the table
-while True:
-    items = events.query(PK=tid, seq_gt=cursor, consistent=first_pass)
-    for item in items:
-        cursor = item["seq"]                 # advance even on a skipped row
-        if item["idem_key"] in seen:
-            continue                         # a replay duplicate landing ahead of the cursor
-        seen.add(item["idem_key"])
-        yield sse(id=item["seq"], data=item["event"])
-
-    run = get_run_state(tid)
-    if run.status in ("failed", "completed"):
-        yield terminal_frame(run.status, run.reason)
-        return
-    await asyncio.sleep(0.25)
-```
-
-Two mechanisms work together here, and they do different jobs:
-
-- **The cursor** (persisted in the browser as `Last-Event-ID`) skips already-seen rows *across reconnects*. A fresh connection resumes from the last `seq` the browser saw, so it never re-reads history. Replay and live tail are one query; there is no separate history endpoint.
-- **The `seen` set** (a `set[str]` of idempotency keys on the per-connection tail state, in API RAM) skips crash-replay duplicates that land *ahead* of the cursor *within one live connection*. The re-emitted lines get **new** `seq` numbers, so the cursor alone cannot catch them; only the repeated idempotency key does. The cursor advances even on a skipped row, so a mid-stream reconnect pages *past* the duplicates rather than re-examining them.
-
-The durable table deliberately keeps the duplicate rows; deduplication is a presentation concern done live at read time, in the API process, and it is thrown away when the connection closes.
-
-Two more properties round it out:
+Two properties matter for the worker:
 
 - **Termination is on status, not a sentinel.** A crashed worker never writes a "done" event. If the only exit were a sentinel event, the user would watch a spinner forever. The run-state record can be flipped to `failed` by a detector that is not the worker.
 - **Dedup makes at-least-once look exactly-once.** Every duplicated feed line from a redelivery collapses on the idempotency key at read time.
@@ -271,4 +210,4 @@ Everything else in this design recovers on its own. The dead-letter queue is the
     ??? success "Answer"
         The user should see each logical progress line once. The replayed events get new `seq` values because they are new stream records, but the same idempotency keys because they represent the same logical writes. The reader deduplicates by idempotency key and keeps `seq` only for ordering and cursor movement.
 
-*Next: [Step 8 · Orchestrator prompt](step-8-orchestrator-prompt.md) — with the runtime shape built, decide which rules the prompt should shape and which rules code must enforce.*
+*Next: [Step 7a · The event feed and idempotency](step-7a-event-feed-and-idempotency.md) — the run now survives a crash; make sure its progress frames still appear exactly once.*

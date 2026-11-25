@@ -120,6 +120,12 @@ The result of a tool call, fed back to the model as its next input. This series 
 
 ## Agent-design terms
 
+### Deep agent
+An agent that drafts a multi-step plan, pauses for a human to approve it, then executes it over many tool calls, possibly for tens of minutes. Its state lives in a checkpoint store rather than in one process, so a different request or worker can pick the run up. Contrast reactive mode, which answers in one pass. See [Chapter 1 · Problem, design, and implementation plan](ch1-problem-and-plan.md) and [Step 8a · Reactive mode and its prompt](step-8a-reactive-mode-prompt.md).
+
+### Worker
+A background process that receives an approved run from the queue and executes it. It is separate from the API process that took the user's request, so it can run on another machine, survive a deploy, or be replaced by a second worker after a crash. See [Step 7 · Queue and worker execution](step-7-queue-and-worker-execution.md).
+
 ### Gate
 The approval checkpoint in the workflow, implemented as the `submit_plan` tool. It projects the plan, calls `interrupt()` once, and returns an instruction. See [Step 3 · Planning and human approval](step-3-planning-and-human-approval.md).
 
@@ -139,7 +145,7 @@ The curated event shape the frontend receives. Raw LangGraph or DeepAgents event
 The property that doing something twice has the same effect as doing it once. Critical wherever work can be retried or replayed after a crash.
 
 ### Idempotency key
-A value that identifies a *logical* event regardless of which attempt produced it. Because it is derived from execution position (not from a counter or a random id), a replayed event carries the same key and the reader can dedupe it. See [Step 7 · Queue and worker execution](step-7-queue-and-worker-execution.md#sequence-number-versus-idempotency-key).
+A value that identifies a *logical* event regardless of which attempt produced it. Because it is derived from execution position (not from a counter or a random id), a replayed event carries the same key and the reader can dedupe it. See [Step 7a · The event feed and idempotency](step-7a-event-feed-and-idempotency.md).
 
 ### Sequence number (seq)
 A plain counter that gives the event feed a total order and doubles as the reader's cursor. Unlike the idempotency key, it takes *new* values on replay, which is why the two are kept separate.
@@ -149,6 +155,12 @@ A periodic "I am still alive" signal. Here it is tied to progress (each checkpoi
 
 ### Grounding
 The rule that the final answer may only use facts from tool results, never the model's own memory. In a regulated domain a fabricated figure that looks real is a compliance problem, so grounding is enforced by the prompt (code cannot tell where a number came from). See [Step 8 · Orchestrator prompt](step-8-orchestrator-prompt.md#grounding-the-purely-prompt-invariant).
+
+### Carryover
+Reusing on a follow-up turn something an earlier turn already produced: its resolved entities, or its retrieval results in `source_results`. The safe form gives the model a pointer it can choose to reuse, never a pasted copy, and reuse appears as a visible plan step. See [Step 8d · Carryover and the data manifest](step-8d-carryover-and-data-manifest.md).
+
+### Data manifest
+The `[Held data]` block that middleware adds to each model call: one short line per result already held in state (provenance id, success, row count, retrieval date, the question it answered). It is an index, not the data, so the model can decide to reuse a result without the rows filling its context window. See [Step 8d · Carryover and the data manifest](step-8d-carryover-and-data-manifest.md).
 
 ### Entity resolution
 Working out what a vague question refers to (turning "give me my sales" into a specific country, brand, and time period) before deciding anything else.

@@ -195,6 +195,8 @@ No code sits between "the model reads the question" and "the model picks a sourc
 
 > Entities named explicitly in the question always win over the defaults in the context block.
 
+This is the plan-time bug from [Step 2](step-2-context-injection.md): a correct default outranks the user's explicit entity because of where it sits in the prompt.
+
 ```text
 What the model actually sees (one flat prompt):
 
@@ -274,30 +276,25 @@ report country = GERMANY   <span class="ok">correct</span></pre>
 
 Germany did not appear randomly. It entered the run when the user explicitly asked for Germany, then became durable when the human approved a plan whose entities said Germany. The bug is that Australia kept re-entering later as injected default context.
 
+This differs from the priority-stack bug above. The model read Germany correctly at plan time. It forgot during execution that Germany was already final.
+
+The obvious fix was wrong. Gating injection on `plan["status"] == "locked"` breaks multi-turn sessions, because the previous question's locked plan still sits in the `plan` channel while a new question is entering planning. The fix that shipped writes the rule into the context block itself:
+
+```python
+"[User context - entities named explicitly in the question always win over these defaults, "
+"and once a research plan is approved and locked, the locked plan's entities "
+"win over these defaults]\n"
+```
+
+and adds one sentence to the execute step: "The [User context] block is for plan-time entity resolution only. Once the plan is locked, never re-resolve entities from it."
+
 There is no code that can detect "the model re-resolved an entity mid-execution." The prompt is the only thing holding this invariant. When this line was missing, the model produced a confident, well-formatted report for the wrong country.
 
 **Know which invariants have no structural enforcement, and treat those prompt lines as load-bearing.**
 
 ## Clarification Is A Control-Flow Event
 
-A clarification is any turn where the system asks the user something instead of answering. The prompt shapes the wording, but the source of the pause decides the machinery:
-
-| Type | When | Detector | User sees |
-|---|---|---|---|
-| Plan-gate clarification | At plan time | `submit_plan(clarification=...)` on the gate interrupt | Plan card plus one question or assumption |
-| Terminal clarification | Before planning | The turn is classified as non-reportable | One question, no plan |
-| Source elicitation | Mid-retrieval | A source result is marked `is_elicitation` | The source's question relayed to the user |
-| Zero-retrieval guard | At exit | No current-cycle results, or the evidence set was already reported | No report over nothing |
-
-The confusing case is source elicitation. Suppose one source returns promotion lift data while another asks, "in-store or online?" Deep does not ship a partial report. `pending_elicitation` is a whole-cycle gate: if any open step is waiting on the user, the report writer skips report generation. The completed source result stays in `source_results`, and the next user reply re-queries only the asking step.
-
-That reply is **not** `Command(resume=...)`. Only the plan approval gate leaves a pending `interrupt()`. A source elicitation turn completes normally after relaying the question. The user's answer enters as a fresh graph invocation on the same `thread_id`, under the same locked `plan_id`; the carried result is reused, the clarified step gets a new `provenance_id`, and the changed evidence set can now report.
-
-This is the boundary between prompt and code again:
-
-- The prompt tells the model to relay the source's question and mention what data is already held.
-- The exit middleware enforces "elicitation present means no report" even if the model tries to synthesize.
-- The locked plan prevents a second approval loop and keeps carried evidence attached to the same cycle.
+A clarification is any turn where the system asks the user something instead of answering. The prompt shapes the wording, but which kind of pause it is decides the machinery. Only the plan gate leaves a pending `interrupt()`. A source asking back mid-retrieval completes the run normally, and the user's answer arrives as a fresh invocation on the same `thread_id`, not as `Command(resume=...)`. [Step 8b · Clarifications](step-8b-clarifications.md) covers all four kinds and who enforces each.
 
 ## Budgets Meter Depth, Not Breadth
 
@@ -440,4 +437,4 @@ Ship the prompt with a version string (`PROMPT_VERSION = "2.2"`) carried as trac
     ??? success "Answer"
         Code. The approval gate should structurally pause execution, and middleware should remove tools that are not allowed in the current phase. The prompt can explain the workflow, but it should not be the only thing preventing an expensive or unauthorized tool call.
 
-*Next: [Capstone 1 · Nine silent failures in one agent](capstone-1-nine-silent-failures.md) — now use the real case study as a review exam for the whole system.*
+*Next: [Step 8a · Reactive mode and its prompt](step-8a-reactive-mode-prompt.md) — the one-pass contrast case, before the deep dives that build on this prompt.*

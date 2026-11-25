@@ -354,24 +354,7 @@ Tab B clicks approve (50ms later):
   → Tab B gets 409 Conflict ✓
 ```
 
-In code, the conditional write looks like this:
-
-```python
-table.put_item(
-    Item={
-        "PK": f"CLAIM#{thread_id}",   # one record per thread
-        "claim_token": token,          # a unique ID so only the holder can release it
-        "expires_at": now + 1800,      # auto-expire after 30 min in case of crash
-    },
-    # only succeed if the record does not exist yet, or if it expired
-    ConditionExpression="attribute_not_exists(PK) OR expires_at < :now",
-    ExpressionAttributeValues={":now": now},
-)
-```
-
-The `expires_at` is the crash-recovery handle: if the first request crashes mid-run, its claim expires after 30 minutes and a retry can acquire it again. The `claim_token` UUID prevents a slow stream that outlived its lease from deleting a newer holder's claim when it eventually finishes.
-
-This is the same pattern at a smaller scale as the worker lock in [Step 6 · Distributed locks](./step-6-distributed-locks.md).
+The claim needs two more parts to be safe: an expiry, so a crashed request cannot hold it forever, and a per-claim token, so a slow request cannot delete a newer holder's claim. [Step 6 · Distributed locks](step-6-distributed-locks.md) builds the claim with both.
 
 ## An Implementation Path
 
