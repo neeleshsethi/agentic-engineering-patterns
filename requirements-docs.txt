@@ -3,3 +3,4 @@
 # Preview locally with:
 #   mkdocs serve
 mkdocs-material>=9.5
+mkdocs-redirects>=1.2

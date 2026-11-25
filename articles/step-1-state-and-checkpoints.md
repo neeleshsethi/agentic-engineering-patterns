@@ -1,18 +1,22 @@
-# Step 1 · State and Checkpoints
+---
+summary: "Give the agent memory that survives one request."
+---
+
+# Step 1 · State and checkpoints
 
 A user asks, "What were sales in France?" The agent answers with a confident, well-formatted report — about **Germany**. The request returned `200 OK`. No error, no retry, no log line out of place. The previous question in that conversation had been about Germany, and somehow it leaked into this turn.
 
-This is the most common silent failure in a LangGraph agent. The node logic is fine; the bug is in how [state](00-glossary.md#state) carries over between turns. To see why, you have to know the one rule that governs every value your graph stores.
+This is the most common silent failure in a LangGraph agent. The node logic is fine; the bug is in how [state](glossary.md#state) carries over between turns. To see why, you have to know the one rule that governs every value your graph stores.
 
-> Key terms ([state](00-glossary.md#state), [channel](00-glossary.md#channel), [LastValue](00-glossary.md#lastvalue-the-footgun), [checkpoint](00-glossary.md#checkpoint)) are defined once in the [glossary](00-glossary.md).
+> Key terms ([state](glossary.md#state), [channel](glossary.md#channel), [LastValue](glossary.md#lastvalue-the-footgun), [checkpoint](glossary.md#checkpoint)) are defined once in the [Glossary](glossary.md).
 
 ## The mental model: state is a dictionary with a rule per key
 
-LangGraph state is a dictionary. What makes it different from a plain dict is that **each key has a rule attached**, called a [channel](00-glossary.md#channel), that decides what happens when a node writes to it.
+LangGraph state is a dictionary. What makes it different from a plain dict is that **each key has a rule attached**, called a [channel](glossary.md#channel), that decides what happens when a node writes to it.
 
-The default rule is [`LastValue`](00-glossary.md#lastvalue-the-footgun): the latest write replaces the previous value. That sounds harmless until you notice its other half:
+The default rule is [`LastValue`](glossary.md#lastvalue-the-footgun): the latest write replaces the previous value. That sounds harmless until you notice its other half:
 
-> If a new run does **not** write a key, `LastValue` keeps whatever the [checkpoint](00-glossary.md#checkpoint) already had.
+> If a new run does **not** write a key, `LastValue` keeps whatever the [checkpoint](glossary.md#checkpoint) already had.
 
 **"I did not write this key" does not mean "clear this key." It means "keep the old value."** In an ordinary request handler, a variable you don't set is empty. In a checkpointed graph, a key you don't write is *stale*.
 
@@ -59,7 +63,7 @@ The fix fits in one sentence. If a key must describe *this* turn, the caller mus
 Two words that sound the same and are not:
 
 - **State** is the logical data your graph reads and writes during a run.
-- **[Checkpoint](00-glossary.md#checkpoint)** is the durable stored copy that lets LangGraph resume the run later, possibly in a different process after a deploy.
+- **[Checkpoint](glossary.md#checkpoint)** is the durable stored copy that lets LangGraph resume the run later, possibly in a different process after a deploy.
 
 ```text
 node returns {"plan": plan_dict}
@@ -69,7 +73,7 @@ node returns {"plan": plan_dict}
         → LangGraph reloads state from the checkpoint
 ```
 
-A checkpoint holds more than the final visible state. During an [`interrupt()`](00-glossary.md#interrupt) it also records pending writes and the interrupt payload needed to resume. That is why the stale-value problem survives across pauses, not just across turns.
+A checkpoint holds more than the final visible state. During an [`interrupt()`](glossary.md#interrupt) it also records pending writes and the interrupt payload needed to resume. That is why the stale-value problem survives across pauses, not just across turns.
 
 There is one exception to the channel model: a human resume decision is staged as checkpoint plumbing, not as normal state. In the production approval path, the API writes `(RESUME, {"type": "approve"})` into LangGraph's pending-writes area with `saver.put_writes()`. That value is neither `LastValue` nor a reducer; it is a one-shot resume value drained when the worker re-enters the paused `interrupt()`.
 
@@ -171,7 +175,7 @@ The problem is rarely that state is *absent*. Far more often, state exists but h
 
 ---
 
-The next step, [Context Injection](03-context-injection.md), is about a specific, high-stakes case of getting values into that state: attaching the *right* context to the model at the *right* boundary, and how the wrong context, like a stale `user_context` above, produces an answer that looks fine and is wrong.
+The next step, [Step 2 · Context injection](step-2-context-injection.md), is about a specific, high-stakes case of getting values into that state: attaching the *right* context to the model at the *right* boundary, and how the wrong context, like a stale `user_context` above, produces an answer that looks fine and is wrong.
 
 ---
 

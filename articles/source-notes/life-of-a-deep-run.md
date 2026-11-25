@@ -1,4 +1,4 @@
-# Life of a Deep Run
+# Source note 3 · Life of a deep run
 
 > Reconstructed from source notes. Genericized: product → "the platform"; brand → `BRAND_A`;
 > data sources → `SOURCE_A`/`SOURCE_B`/…; tables → `{env}-agent-*`; the retrieval tool →

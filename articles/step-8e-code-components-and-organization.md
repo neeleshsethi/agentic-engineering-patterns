@@ -1,4 +1,8 @@
-# Deep Dive · Code Components and Organization
+---
+summary: "Split the code by ownership so every bug has an obvious home."
+---
+
+# Step 8e · Code components and organization
 
 A production deep agent should not live in one `agent.py` file. The code layout is part of the safety model: each module group should own one boundary in the state machine.
 

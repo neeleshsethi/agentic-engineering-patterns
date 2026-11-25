@@ -1,4 +1,8 @@
-# Capstone · Nine Silent Failures In One LangGraph Research Agent
+---
+summary: "Nine real bugs that returned 200 OK. Each should now feel recognizable."
+---
+
+# Capstone 1 · Nine silent failures in one agent
 
 Use this as the final review exercise: a deep agent can look healthy, return `200 OK`, and still be wrong.
 
@@ -45,7 +49,7 @@ None of the bugs below are "the model hallucinated" stories. They are ordinary e
 
 ## Vocabulary for a new engineer
 
-You only need a handful of terms before the failure list. Each one is also in the [glossary](00-glossary.md), defined once for the whole series.
+You only need a handful of terms before the failure list. Each one is also in the [Glossary](glossary.md), defined once for the whole series.
 
 `thread_id` is the durable identity of one conversation or run. LangGraph uses it to find the right checkpoint. Same `thread_id`, same logical graph thread.
 
@@ -745,7 +749,7 @@ return {"status": "queued", "run_id": run_id}
     **Pick any one bug in the table above. Name the chapter that should have taught you to catch it, the invariant that failed, and the smallest test or review question that would expose it.**
 
     ??? success "Example answer"
-        For "unconditional lock release," the chapter is [Step 6 · Distributed Locks](07-distributed-locks.md). The failed invariant is: a process may only release the claim it still owns. The review question is: "Does release prove ownership with the current claim token, or does it delete by thread id alone?" The test is a takeover scenario: A acquires, A's lease expires, B acquires, A attempts release, and B's claim must remain.
+        For "unconditional lock release," the chapter is [Step 6 · Distributed locks](step-6-distributed-locks.md). The failed invariant is: a process may only release the claim it still owns. The review question is: "Does release prove ownership with the current claim token, or does it delete by thread id alone?" The test is a takeover scenario: A acquires, A's lease expires, B acquires, A attempts release, and B's claim must remain.
 
 ## Four more from production (post-release)
 
@@ -785,4 +789,4 @@ The lesson: a sticky `LastValue` channel written only at plan time, combined wit
 
 ---
 
-**Next:** [Capstone 2 · When the score passes and the work fails](11-when-the-score-passes.md) moves up one layer, to tool results that aren't task results and evaluations that hide a tradeoff.
+**Next:** [Capstone 2 · When the score passes and the work fails](capstone-2-when-the-score-passes.md) moves up one layer, to tool results that aren't task results and evaluations that hide a tradeoff.

@@ -1,4 +1,8 @@
-# Step 6 · Distributed Locks
+---
+summary: "Make exactly one process own a run, even under double clicks, crashes, and retries."
+---
+
+# Step 6 · Distributed locks
 
 ## The problem: two clicks, one plan, two runs
 
@@ -8,11 +12,11 @@ Nothing in the plain design stops them. Both requests start the graph, the plan 
 
 We need one rule: **only one request may run a given conversation at a time.** Everyone else must be turned away. That rule is a *lock*.
 
-> **[Lock](00-glossary.md#lock)** — a rule enforced through data: "only one process may act on X at a time." **[Claim](00-glossary.md#claim)** — this series' word for a lock that guards a resumable run: a small marker a request writes before running that says *"I'm running this thread. Hands off."*
+> **[Lock](glossary.md#lock)** — a rule enforced through data: "only one process may act on X at a time." **[Claim](glossary.md#claim)** — this series' word for a lock that guards a resumable run: a small marker a request writes before running that says *"I'm running this thread. Hands off."*
 
 ## Why an in-process lock is not enough
 
-Your API does not run as one process. It runs as several identical copies ([replicas](00-glossary.md#replica)) behind a load balancer. The two approve clicks can land on two different replicas.
+Your API does not run as one process. It runs as several identical copies ([replicas](glossary.md#replica)) behind a load balancer. The two approve clicks can land on two different replicas.
 
 ```text
 Browser tab A  ->  API replica 1  ┐
@@ -24,7 +28,7 @@ A Python `threading.Lock` lives inside one replica's memory and is invisible to 
 
 ## `attribute_not_exists` in plain English
 
-The whole lock rests on one database feature: the [**conditional write**](00-glossary.md#conditional-write): a write that only succeeds if a condition is true *at the moment of writing*, with no gap for a second writer to slip in.
+The whole lock rests on one database feature: the [**conditional write**](glossary.md#conditional-write): a write that only succeeds if a condition is true *at the moment of writing*, with no gap for a second writer to slip in.
 
 `attribute_not_exists(PK)` is the condition **"only if there is no item with this key yet."** In plain words, *"only if this slot is empty."* For a lock, that means *"acquire only if nobody holds it."*
 
@@ -50,9 +54,9 @@ Why is there an `expires_at` at all? Because of a dilemma:
 - **If the claim never expires**, a request that crashes while holding it wedges the conversation *forever*. Every later request finds a live claim and backs off, until a human manually deletes a database row.
 - **If the claim expires quickly**, a healthy request whose real work runs longer than the expiry loses the claim mid-run.
 
-The way out is renewal. Keep the expiry short (minutes) and have the *living* holder keep pushing it forward while it works. This sliding expiry is the claim's [**lease**](00-glossary.md#lease).
+The way out is renewal. Keep the expiry short (minutes) and have the *living* holder keep pushing it forward while it works. This sliding expiry is the claim's [**lease**](glossary.md#lease).
 
-The natural place to renew is wherever the work already proves it is both alive and making progress. In a checkpointing graph, that is each [checkpoint](00-glossary.md#checkpoint) write, not a wall-clock timer. (A timer keeps renewing a process that is alive but stuck; a progress-tied renewal only extends a run that is advancing.)
+The natural place to renew is wherever the work already proves it is both alive and making progress. In a checkpointing graph, that is each [checkpoint](glossary.md#checkpoint) write, not a wall-clock timer. (A timer keeps renewing a process that is alive but stuck; a progress-tied renewal only extends a run that is advancing.)
 
 ```python
 # renew, piggybacked on each checkpoint write
@@ -68,7 +72,7 @@ table.update_item(
 
 ## Tenure token, not worker identity
 
-Look at that `claim_token = :token` condition. Every write to the claim (acquire, renew, release) is guarded by *"only if the stored token still equals mine."* The [**token**](00-glossary.md#token) is a fresh random string minted each time the claim is acquired. It identifies **this specific tenure**, not the worker.
+Look at that `claim_token = :token` condition. Every write to the claim (acquire, renew, release) is guarded by *"only if the stored token still equals mine."* The [**token**](glossary.md#token) is a fresh random string minted each time the claim is acquired. It identifies **this specific tenure**, not the worker.
 
 The mental model is a hotel key card. At check-in the desk programs a *new* card for the room; your name is not on it. When the next guest checks in, the door is reprogrammed for their card, and your old card stops working. Nobody has to find you and take your card away; it no longer matches the door.
 
@@ -111,13 +115,13 @@ Watch one full takeover play out. Each state is one real DynamoDB item; step thr
   </div>
 </div>
 
-The last frame is the danger the token defends against: a frozen holder has no idea it was replaced, because expiry is silent. A process in that state is a [**zombie**](00-glossary.md#zombie).
+The last frame is the danger the token defends against: a frozen holder has no idea it was replaced, because expiry is silent. A process in that state is a [**zombie**](glossary.md#zombie).
 
 ## The write fence: when even the lock check races
 
 A lock check at the top of a critical section is a *check-then-act* gap: a holder can lose the claim in the window between checking it and writing. So the last line of defense is the **data write itself**, not the lock.
 
-Make every real write conditional on a slot only the rightful owner can fill. If each event carries a unique, ever-increasing number, write it with *"this slot must be empty."* A zombie whose counter has fallen behind the new holder collides on its very next write. This is a [**write fence**](00-glossary.md#fencing).
+Make every real write conditional on a slot only the rightful owner can fill. If each event carries a unique, ever-increasing number, write it with *"this slot must be empty."* A zombie whose counter has fallen behind the new holder collides on its very next write. This is a [**write fence**](glossary.md#fencing).
 
 ```python
 try:
@@ -149,7 +153,7 @@ except ClientError:
 Three ideas make this hold:
 
 - **The corruption attempt is the detection.** The zombie is never told it lost. The very write that would have corrupted the log is the atomic operation that reveals it lost. The storage layer is the final arbiter of who is alive.
-- **"Mine" is decided by content, not identity.** Branch 1 compares an [idempotency key](00-glossary.md#idempotency-key) (a value derived from *execution position*, identical on replay), not a worker id. Equal key means the logical write already exists; who physically wrote it is irrelevant. (This is why the key must not be built from the sequence number, which changes on replay; see [Queue and worker execution](08-queue-and-worker-execution.md#sequence-number-versus-idempotency-key).)
+- **"Mine" is decided by content, not identity.** Branch 1 compares an [idempotency key](glossary.md#idempotency-key) (a value derived from *execution position*, identical on replay), not a worker id. Equal key means the logical write already exists; who physically wrote it is irrelevant. (This is why the key must not be built from the sequence number, which changes on replay; see [Step 7 · Queue and worker execution](step-7-queue-and-worker-execution.md#sequence-number-versus-idempotency-key).)
 - **The lock read is lazy.** Healthy workers never poll the claim. It is read only on the rare collision path, so the common case pays nothing.
 
 ## Release must prove ownership
@@ -235,7 +239,7 @@ Both are acquired, renewed and released the same way: conditional put, token-gua
 
 ### One table, three kinds of item
 
-The run lock is one item in the table that already holds the run's events and run-state, kept apart by a [`PK`](00-glossary.md#pk-sk) prefix:
+The run lock is one item in the table that already holds the run's events and run-state, kept apart by a [`PK`](glossary.md#pk-sk) prefix:
 
 | Item kind | PK | SK | Fields |
 |-----------|----|----|--------|
@@ -253,7 +257,7 @@ A lock item carries a partition key, a sort key, an owner token, and two timesta
 lock#3f9c…  (PK, ~41 B)   0 (SK)   owner "…uuid4…" (~36 B)   expires_at (N)   ttl (N)
 ```
 
-Counting attribute names and values, a lock item is well under **200 bytes**, comfortably inside DynamoDB's 1 KB write unit and 4 KB read unit. Storage is negligible: even 100,000 simultaneously-locked threads is roughly **20 MB**. Locks are also transient: the [`ttl`](00-glossary.md#ttl-time-to-live) sweeps abandoned rows, so the steady-state count tracks *concurrent active runs*, not total runs ever started.
+Counting attribute names and values, a lock item is well under **200 bytes**, comfortably inside DynamoDB's 1 KB write unit and 4 KB read unit. Storage is negligible: even 100,000 simultaneously-locked threads is roughly **20 MB**. Locks are also transient: the [`ttl`](glossary.md#ttl-time-to-live) sweeps abandoned rows, so the steady-state count tracks *concurrent active runs*, not total runs ever started.
 
 ### What it costs to run
 
@@ -306,4 +310,4 @@ The word "expiry" hides two unrelated fields on the lock item. Confusing them is
     ??? success "Answer"
         A's release must fail because the stored token is now `bbb`, not `aaa`. Release is `delete only if claim_token == my token`. Without that atomic ownership check, A would delete B's live claim and reopen the double-run race.
 
-*Next: [Step 7 · Queue and Worker Execution](08-queue-and-worker-execution.md) — the full run that survives crashes, deploys, and reconnects, with the lock as one part of the worker ritual.*
+*Next: [Step 7 · Queue and worker execution](step-7-queue-and-worker-execution.md) — the full run that survives crashes, deploys, and reconnects, with the lock as one part of the worker ritual.*

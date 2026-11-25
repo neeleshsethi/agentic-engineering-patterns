@@ -1,4 +1,8 @@
-# Deep Dive · Reactive Mode And Its Prompt
+---
+summary: "The one-pass contrast case: no plan, no approval, one prompt."
+---
+
+# Step 8a · Reactive mode and its prompt
 
 Reactive mode is the contrast case to deep mode: a one-pass router with no plan-gate loop, no approval pause, and no long research steps.
 

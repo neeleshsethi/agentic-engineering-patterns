@@ -1,10 +1,14 @@
-# Step 2 · Context Injection
+---
+summary: "Put the right user and business context at the right model boundary."
+---
+
+# Step 2 · Context injection
 
 A user types: "Actually, give me sales for **France**." The agent replies about Australia, because somewhere before the model call your code helpfully attached "user's default country is Australia," and that injected line sat closer to the model's attention than the correction the user just typed.
 
 The prompt looked complete. Every field was populated. The request returned `200 OK`. And the answer was wrong, because the *right* context was attached at the *wrong* boundary. Context injection is one of the easiest ways to build a system that looks stable and answers incorrectly.
 
-> New to [middleware](00-glossary.md#middleware), [checkpoint](00-glossary.md#checkpoint), or [state](00-glossary.md#state)? Each term is defined once in the [glossary](00-glossary.md).
+> New to [middleware](glossary.md#middleware), [checkpoint](glossary.md#checkpoint), or [state](glossary.md#state)? Each term is defined once in the [Glossary](glossary.md).
 
 ## What context injection is
 
@@ -27,7 +31,7 @@ Injected model input (what the model sees)
      Give me my sales
 ```
 
-This is *useful*: "my sales" is meaningless without the account context. It is *dangerous* because stale or over-salient context can quietly override a later user correction, as in the France/Australia bug above. This connects back to [LangGraph State](02-state-and-checkpoints.md): a stale `user_context` value gets **composed into the prompt** and steers the answer.
+This is *useful*: "my sales" is meaningless without the account context. It is *dangerous* because stale or over-salient context can quietly override a later user correction, as in the France/Australia bug above. This connects back to [Step 1 · State and checkpoints](step-1-state-and-checkpoints.md): a stale `user_context` value gets **composed into the prompt** and steers the answer.
 
 ## What we assemble into each model call
 
@@ -60,12 +64,12 @@ Each component has a different source, lifetime, and failure mode, which is why 
 
 | Component | Injected by | Lifetime | If it goes wrong |
 |---|---|---|---|
-| System / orchestrator prompt | base prompt (`orchestrator_prompts.py`) | static | The rules the model plans and reuses under; see [Orchestrator Prompt](09-orchestrator-prompt.md). |
-| Source cards / catalog | **within the system prompt** — what each source answers: questions, KPIs, domains, out-of-scope, inter-source relationships | static | The model routes a step to the wrong source, attempts an out-of-scope question, or fans out redundantly; see [Clarifications](09a-clarifications.md). |
+| System / orchestrator prompt | base prompt (`orchestrator_prompts.py`) | static | The rules the model plans and reuses under; see [Step 8 · Orchestrator prompt](step-8-orchestrator-prompt.md). |
+| Source cards / catalog | **within the system prompt** — what each source answers: questions, KPIs, domains, out-of-scope, inter-source relationships | static | The model routes a step to the wrong source, attempts an out-of-scope question, or fans out redundantly; see [Step 8b · Clarifications](step-8b-clarifications.md). |
 | `[User context]` | `UserContextMiddleware` | transient, rebuilt per call | A stale value overrides a live correction (the France/Australia bug). |
-| `[Held data]` manifest | `DataManifestMiddleware` | transient, rebuilt per call | Inject the rows instead of the pointers and you poison the window; see [Carryover and the Data Manifest](09f-carryover-and-the-data-manifest.md). |
+| `[Held data]` manifest | `DataManifestMiddleware` | transient, rebuilt per call | Inject the rows instead of the pointers and you poison the window; see [Step 8d · Carryover and the data manifest](step-8d-carryover-and-data-manifest.md). |
 | Conversation messages | graph state (`messages`) | durable, delta-checkpointed | Attach context to a synthetic summary message instead of the user's; see below. |
-| Tool set | `AllowedToolsMiddleware` | per call | The model reaches for a tool that isn't structurally reachable; see [Middleware](09b-code-components-and-organization.md). |
+| Tool set | `AllowedToolsMiddleware` | per call | The model reaches for a tool that isn't structurally reachable; see [Middleware](step-8e-code-components-and-organization.md). |
 | User question | framed onto the latest `HumanMessage` | this turn | Framed onto the wrong (synthetic) message, or the injected text forges the closing delimiter; both are covered next. |
 
 The two transient blocks (`[User context]` and `[Held data]`) are the riskiest, because they are user-influenced and re-composed every turn. Both are wrapped in delimited blocks, and both must escape their own closing tag so held text cannot forge the boundary. The rest of this chapter covers that discipline.
@@ -152,13 +156,13 @@ flowchart TD
     style D fill:#f0faf0,stroke:#388e3c
 ```
 
-The safest place for **request-only** context is usually just before the model call, via [middleware](00-glossary.md#middleware). That keeps the [checkpoint](00-glossary.md#checkpoint) clean, because you are not persisting per-request text into durable state where it can go stale and leak into a later turn. The tradeoff is that the injected text is *invisible* when you inspect saved graph state, so you must be able to reconstruct it for debugging.
+The safest place for **request-only** context is usually just before the model call, via [middleware](glossary.md#middleware). That keeps the [checkpoint](glossary.md#checkpoint) clean, because you are not persisting per-request text into durable state where it can go stale and leak into a later turn. The tradeoff is that the injected text is *invisible* when you inspect saved graph state, so you must be able to reconstruct it for debugging.
 
 Because prompt assembly can differ across code paths, these bugs usually surface as **inconsistent** answers rather than hard failures. The same request works in one route and fails in another because the two routes compose the prompt differently.
 
 ## Guardrails
 
-- **Centralize prompt construction.** One place assembles the final input, so there is one place to review. This is the same lesson as the input factory in [LangGraph State](02-state-and-checkpoints.md).
+- **Centralize prompt construction.** One place assembles the final input, so there is one place to review. This is the same lesson as the input factory in [Step 1 · State and checkpoints](step-1-state-and-checkpoints.md).
 - Make context **sources** explicit in typed state, so a reviewer can see what came from where.
 - In debug environments, **snapshot the final prompt** sent to the model.
 - **Test prompt assembly independently** from model calls. It is pure string composition and deserves its own tests.
@@ -178,4 +182,4 @@ Because prompt assembly can differ across code paths, these bugs usually surface
     ??? success "Answer"
         The system should guarantee that explicit entities in the user's current message beat defaults from injected context. Some of that can be helped by prompt wording, because the model is the component resolving the ambiguous text. But the engineering guardrail is broader: label the injected block clearly, keep request-only context out of durable state, test the final composed prompt, and avoid reinjecting stale context in phases where a locked plan should already own the entities.
 
-*Next: [Step 3 · Planning and Human Approval](04-planning-and-human-approval.md) — the agent now has state and context, so the next job is to produce an inspectable plan and pause before expensive work begins.*
+*Next: [Step 3 · Planning and human approval](step-3-planning-and-human-approval.md) — the agent now has state and context, so the next job is to produce an inspectable plan and pause before expensive work begins.*

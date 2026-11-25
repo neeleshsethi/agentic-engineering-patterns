@@ -1,8 +1,12 @@
-# Capstone 2 · When The Score Passes And The Work Fails
+---
+summary: "Tool success that is not task success, and evaluations that hide a tradeoff."
+---
+
+# Capstone 2 · When the score passes and the work fails
 
 The first capstone was about code that returned `200 OK` while corrupting the meaning of a run. This one is about the same failure one layer up: **an evaluation that passes while the agent's work is wrong**, and **a tool call that succeeds while the user's task does not**.
 
-> **Capstone.** Read [Nine Silent Failures](10-nine-silent-failures.md) first. That article is about infrastructure: state, locks, keys and persistence. This one is about the contract between the model, its tools and the evaluations we use to judge it. The system is the same commercial-strategy agent; every name below is generic.
+> **Capstone.** Read [Capstone 1 · Nine silent failures in one agent](capstone-1-nine-silent-failures.md) first. That article is about infrastructure: state, locks, keys and persistence. This one is about the contract between the model, its tools and the evaluations we use to judge it. The system is the same commercial-strategy agent; every name below is generic.
 
 The lesson from the first capstone was:
 
