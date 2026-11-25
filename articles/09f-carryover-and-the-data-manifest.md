@@ -25,16 +25,16 @@ An index reconciles them. Here is the whole item that lives in state versus the 
 {
   "provenance_id": "REGIONAL:plan-chat-1-1:step-1:a3f9c2d1",
   "source": "market_data",
-  "sub_question": "NZ regional sales by region, 2024",
+  "sub_question": "NZ sales by region, 2024",
   "success": true,
   "retrieved_at": "2026-09-10",
-  "answer": "NZ regional sales were led by Auckland (32%), then …",
+  "answer": "NZ sales were led by Auckland (32%), then …",
   "data": [ { "region": "Auckland", "value": 41280 }, "… 412 rows …" ]
 }
 ```
 
 ```text
-- REGIONAL:plan-chat-1-1:step-1:a3f9c2d1 | ok=True | rows=412 | retrieved 2026-09-10 | NZ regional sales by region, 2024
+- REGIONAL:plan-chat-1-1:step-1:a3f9c2d1 | ok=True | rows=412 | retrieved 2026-09-10 | NZ sales by region, 2024
 ```
 
 The megabyte object collapses to ~100 bytes. The row *count* rides the wire; the rows themselves never do.
@@ -42,7 +42,7 @@ The megabyte object collapses to ~100 bytes. The row *count* rides the wire; the
 ## One Line Per Result
 
 ```python
-# manifest.py:50-60
+# manifest.py
 def _line(result: dict[str, Any]) -> str:
     question = str(result.get("sub_question") or "")[:_QUESTION_PREVIEW]  # 80 chars
     question = question.replace(MANIFEST_END, "[/held data]")  # can't forge the boundary
@@ -69,7 +69,7 @@ The 80-char preview is user-influenced text, so it is neutralized (`MANIFEST_END
 ## Capped By Attention, Not By Tokens
 
 ```python
-# manifest.py:63-87
+# manifest.py
 def build_data_manifest(source_results):
     results = [r for r in source_results if isinstance(r, dict)]
     if not results:
@@ -92,8 +92,8 @@ Assembled, the block the model sees looks like this:
 ```text
 [held data] - results already retrieved this thread. Prefer reusing a held result
 over re-querying; check `retrieved` for staleness. Reference results by provenance id.
-- REGIONAL:plan-chat-1-1:step-1:a3f9c2d1 | ok=True | rows=412 | retrieved 2026-09-10 | NZ regional sales by region, 2024
-- ONLINE:plan-chat-1-1:step-2:b7e0aa14        | ok=True | rows=88  | retrieved 2026-09-10 | ONLINE channel share, NZ, 2024
+- REGIONAL:plan-chat-1-1:step-1:a3f9c2d1 | ok=True | rows=412 | retrieved 2026-09-10 | NZ sales by region, 2024
+- ONLINE:plan-chat-1-1:step-2:b7e0aa14        | ok=True | rows=88  | retrieved 2026-09-10 | online channel share, NZ, 2024
 ...plus 3 older result(s) held in state - ask the user before assuming their content.
 [/held data]
 ```
@@ -103,7 +103,7 @@ over re-querying; check `retrieved` for staleness. Reference results by provenan
 The manifest is rebuilt from state and framed onto the latest genuine human message on **every** model call, through `wrap_model_call`. Like `UserContextMiddleware`, it is transient, never checkpointed, and never accumulates.
 
 ```python
-# manifest.py:99-128 (abridged)
+# manifest.py (abridged)
 def _inject(self, request: ModelRequest) -> ModelRequest:
     manifest = build_data_manifest(...state source_results...)
     # framed onto the latest genuine HumanMessage; returns request unchanged if empty
@@ -119,7 +119,7 @@ The manifest is ambient instead of a `search_held_data` tool because *the model 
 Reuse is a **plan step the human can see and approve**, not a hidden runtime optimization. At plan time the orchestrator writes a step with *no* `[source:]` tag that names the held result by its provenance id:
 
 ```text
-# orchestrator_prompts.py:173-191 (the reuse rule)
+# orchestrator_prompts.py (the reuse rule)
 Reuse before you re-query ... When a held result covers a step's information need
 and the user is not asking for fresh numbers, do NOT create a retrieval step for it —
 write the step WITHOUT a [source:] tag and name the held result's provenance id in the

@@ -1,16 +1,15 @@
 # Source Notes: A Deep Agent, End to End
 
-These three notes describe the design of a production
-**deep agent** — a human-in-the-loop research orchestrator that plans, gets a human to approve the
-plan, then executes it durably on a worker fleet. They are the *source material* the published
-[Agentic Engineering Patterns](../01-problem-design-implementation-plan.md) series draws from, at full
-depth.
+These three notes walk through the design of one **deep agent** at full depth: a
+human-in-the-loop research orchestrator that plans, gets a human to approve the plan, then
+executes it durably on a worker fleet. The published
+[Agentic Engineering Patterns](../01-problem-design-implementation-plan.md) chapters teach the same
+system one mechanism at a time; these notes keep the detail the chapters leave out.
 
-Names are genericized (product → "the platform", brand → `BRAND_A`, sources → `SOURCE_A..D`,
-tables → `{env}-agent-*`, retrieval tools sometimes collapsed to `query_source`). Framework
-names (LangGraph, deepagents, DynamoDB, SQS) are real. Raw OCR of the originals is kept in the
-repo's local `data/extracted/` directory (gitignored — not published). The production orchestrator
-uses a seven-tool allow-list; `query_source` is a teaching simplification where noted.
+All product, data-source and infrastructure names are illustrative (the platform, `BRAND_A`,
+`SOURCE_A..D`, tables `{env}-agent-*`, retrieval tools sometimes collapsed to `query_source`).
+Framework names (LangGraph, deepagents, DynamoDB, SQS) are real. The full orchestrator uses a
+seven-tool allow-list; `query_source` is a teaching simplification where noted.
 
 ## The three notes
 
@@ -35,28 +34,23 @@ If you only want one idea from the whole set, it's this:
 
 ## How these map to the published series
 
-The published [`articles/01–10`](../01-problem-design-implementation-plan.md) are the teaching version —
-genericized to "a research agent", no product context. These notes are where each of those
-failures actually came from:
+The published chapters are the teaching version. These notes go deeper on each mechanism:
 
-| Published article | Grounded by these notes |
+| Published chapter | Covered in depth by |
 |---|---|
-| [02 – End-to-end architecture](../02-end-to-end-architecture-and-orchestrator-flow.md) | OCR correction pass: async approval, pending resume writes, SQS FIFO, worker resume with `None`, stream curation, seven-tool allow-list |
-| [03 – State and checkpoints](../02-state-and-checkpoints.md) | `before-resume` Part 1 (state channels, `LastValue` footguns) · OCR Q3b (reducer vs last-value vs pending resume writes) |
-| [04 – Context injection](../03-context-injection.md) | `before-resume` Step 3 (transient injection, the `[/User context]` boundary) · `orchestrator-prompt-annotated` Step 4 EXECUTE / Bug 1 (the entity-override the injection causes) |
-| [05 – Human-in-the-loop plan approval](../04-planning-and-human-approval.md) | `orchestrator-prompt-annotated` Part 3 (build-it-yourself) + Part 2/4 (gate internals, read-only Plan projection) · OCR Q1 (async approve path) |
-| [06 – Identifiers](../05-identifiers.md) | OCR approval facts: `interrupt_id` rejects stale approvals; `plan_id` alone is not enough |
-| [07 – SSE cancellation](../06-streaming-and-background-work.md) | `life-of-a-deep-run` Step 4 (SSE tail, `Last-Event-ID` replay=live) · termination-on-status (E-cases) |
-| [08 – Distributed locks](../07-distributed-locks.md) | `life-of-a-deep-run` Part 3 (the keycard lock) & Part 4 (zombie fencing) · worker lock under `lock#{thread_id}` |
-| [09 – Durable async agent runs](../08-queue-and-worker-execution.md) | The whole of `life-of-a-deep-run`, genericized: two-table split, one-worker-per-thread FIFO, heartbeat-on-progress, `seq`/`idem_key`, replay==tail, crash recovery, dead-letter paging |
-| [10 – Designing the orchestrator prompt](../09-orchestrator-prompt.md) | `orchestrator-prompt-annotated` Parts 1, 5, 6 (annotated prompt, allow-list middleware, ToolMessage continuation, grounding) · OCR Q2 (seven allowed tools) |
-| [11 – Clarifications](../09a-clarifications.md) | OCR Q6 (clarification families, deterministic source elicitation, partial clarification, fresh invocation vs resume) |
-| [12 – Code components and organization](../09b-code-components-and-organization.md) | OCR Q0 (deep module map), Q4-Q5 (middleware order and loop budgets), Q7 (provenance/citation/chart ownership) |
-| [13 – Plan lifecycle](../09c-plan-lifecycle.md) | OCR Q3d (when the plan workflow runs, extension turns, elicitation replies, presentation changes) |
-| [14 – Reactive mode prompt](../09d-reactive-mode-prompt.md) | OCR appendix (reactive one-pass system prompt structure, prompt layers, clarification guard, elicitation relay) |
-| [15 – Nine silent failures](../10-nine-silent-failures.md) | The edge-case catalogs in all three notes; Bug 1 in `orchestrator-prompt-annotated` is the canonical entity-override failure |
-
-The published series now covers all three source notes: **05 + 07** carry `life-of-a-deep-run`;
-**08 + 09** carry `orchestrator-prompt-annotated`; and `before-resume` is folded across **08**
-(refine/approve/claim) and **03** (state channels). The source notes remain the full-fidelity
-reference behind the genericized articles.
+| [Chapter 2 · End-to-end architecture and orchestrator flow](../02-end-to-end-architecture-and-orchestrator-flow.md) | All three notes: async approval, pending resume writes, SQS FIFO, worker resume with `None`, stream curation, seven-tool allow-list |
+| [Step 1 · State and checkpoints](../02-state-and-checkpoints.md) | `before-resume` Part 1 (state channels, `LastValue` footguns, reducer vs last-value vs pending resume writes) |
+| [Step 2 · Context injection](../03-context-injection.md) | `before-resume` Step 3 (transient injection, the `[/User context]` boundary) · `orchestrator-prompt-annotated` Step 4 EXECUTE / Bug 1 (the entity override the injection causes) |
+| [Step 3 · Planning and human approval](../04-planning-and-human-approval.md) | `orchestrator-prompt-annotated` Part 3 (build-it-yourself) + Parts 2/4 (gate internals, read-only Plan projection) · `before-resume` (async approve path) |
+| [Step 4 · Identifiers that hold a run together](../05-identifiers.md) | `before-resume` identity table: `interrupt_id` rejects stale approvals; `plan_id` alone is not enough |
+| [Step 5 · Streaming and background work](../06-streaming-and-background-work.md) | `life-of-a-deep-run` Step 4 (SSE tail, `Last-Event-ID` replay = live) · termination-on-status (E-cases) |
+| [Step 6 · Distributed locks](../07-distributed-locks.md) | `before-resume` (the API's resume claim, `CLAIM#{thread_id}` / `RESUME`) · `life-of-a-deep-run` Parts 3–4 (the worker's run lock, `lock#{thread_id}` / `0`, and zombie fencing) |
+| [Step 7 · Queue and worker execution](../08-queue-and-worker-execution.md) | The whole of `life-of-a-deep-run`: two-table split, one-worker-per-thread FIFO, heartbeat-on-progress, `seq`/`idem_key`, replay == tail, crash recovery, dead-letter paging |
+| [Step 8 · Orchestrator prompt](../09-orchestrator-prompt.md) | `orchestrator-prompt-annotated` Parts 1, 5, 6 (annotated prompt, allow-list middleware, ToolMessage continuation, grounding) |
+| [Deep dive · Clarifications](../09a-clarifications.md) | `orchestrator-prompt-annotated` (clarification families, deterministic source elicitation, fresh invocation vs resume) |
+| [Deep dive · Code components and organization](../09b-code-components-and-organization.md) | All three notes (module map, middleware order and loop budgets, provenance/citation ownership) |
+| [Deep dive · Plan lifecycle](../09c-plan-lifecycle.md) | `orchestrator-prompt-annotated` Part 3 and `before-resume` (when the plan workflow runs, extension turns, elicitation replies) |
+| [Deep dive · Reactive mode prompt](../09d-reactive-mode-prompt.md) | `orchestrator-prompt-annotated` (prompt layers, clarification guard, elicitation relay) |
+| [Deep dive · The event feed and idempotency](../09e-event-feed-and-idempotency.md) | `life-of-a-deep-run` (`seq` vs `idem_key`, the three-way collision branch) |
+| [Deep dive · Carryover and the data manifest](../09f-carryover-and-the-data-manifest.md) | `before-resume` (`prepare_memory`, the carryover row) |
+| [Capstone · Nine silent failures in one agent](../10-nine-silent-failures.md) | The edge-case catalogs in all three notes; Bug 1 in `orchestrator-prompt-annotated` is the canonical entity-override failure |

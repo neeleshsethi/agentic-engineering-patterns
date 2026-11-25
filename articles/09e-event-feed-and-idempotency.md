@@ -17,7 +17,7 @@ A naive feed that appends a row per event double-counts under both. The fix give
 
 ## Two Values, Opposite Jobs
 
-The `deep-events` table is the one place a sequence number is a real, writer-allocated counter (DynamoDB has no auto-increment). Every row carries both a `seq` and an `idem_key`:
+The `agent-events` table is the one place a sequence number is a real, writer-allocated counter (DynamoDB has no auto-increment). Every row carries both a `seq` and an `idem_key`:
 
 | Value | Question it answers | Behavior on replay | Derivation |
 |---|---|---|---|
@@ -167,7 +167,7 @@ There are eight wire types: `status`, `content`, `artifact`, `warning`, `error`,
 # Attempt 1 — one Cortex call (taskB) streams 3 live deltas, then 2 deterministic frames
 id: 43
 data: {"type":"artifact","data":{"artifact":"cortex_thinking","operation":"replace",
-       "value":["...final: retail, non-retail, and ONLINE channels."]}}   ← taskB~cs#2 (live, terminal)
+       "value":["...final: in-store, online, and wholesale channels."]}}   ← taskB~cs#2 (live, terminal)
 id: 44
 data: {"type":"status","data":{"message":"REGIONAL returned 412 rows","state":"completed"}}  ← taskB#0
 id: 45

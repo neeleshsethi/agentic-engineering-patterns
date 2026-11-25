@@ -157,7 +157,7 @@ Later, the worker receives the queue message and calls `agent.astream_events(Non
 LangGraph does not support concurrent runs on a single thread. Two approve clicks racing, or two browser tabs both hitting approve, would execute the research plan twice and leave the final checkpoint to whichever process finished last. To prevent this, we write a claim item to DynamoDB before every resume:
 
 ```text
-DynamoDB table: deep-checkpoints
+DynamoDB table: agent-checkpoints
 |- Checkpoint items  (LangGraph's own PK/SK scheme per thread + step)
 \- Claim items       PK = "CLAIM#{thread_id}", SK = "RESUME"
                      Fields: claim_token, expires_at, ttl
@@ -167,7 +167,7 @@ Both live in the same table because the claim needs the same durability and regi
 
 ```python
 _dynamodb_client().put_item(
-    TableName=deep_checkpoints_table_name(),
+    TableName=checkpoints_table_name(),
     Item={
         "PK": f"CLAIM#{thread_id}",
         "SK": "RESUME",

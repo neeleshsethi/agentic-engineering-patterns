@@ -878,6 +878,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../11-when-the-score-passes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone 2 · When the score passes and the work fails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -892,10 +919,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21" >
         
           
-          <label class="md-nav__link" for="__nav_20" id="__nav_20_label" tabindex="">
+          <label class="md-nav__link" for="__nav_21" id="__nav_21_label" tabindex="">
             
   
   
@@ -913,8 +940,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_20_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_21_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -969,10 +996,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21_2" >
         
           
-          <label class="md-nav__link" for="__nav_20_2" id="__nav_20_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_21_2" id="__nav_21_2_label" tabindex="0">
             
   
   
@@ -990,8 +1017,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_21_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21_2">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1238,9 +1265,9 @@
 <p>Start with the problem, not the framework.</p>
 <p>A user asks a business question. The system should produce a sourced research report. Before it calls expensive tools, a human should see and approve the plan. The work may take forty minutes. The browser may disconnect. A worker may crash halfway through. A second worker should resume without duplicating the report.</p>
 <p>That is the system we are building in this series.</p>
-<p>It is not a chatbot, not a prompt wrapper, and not an API handler that calls a model and returns. It is a <strong>distributed system with an agent inside it</strong>.</p>
+<p>It is a <strong>distributed system with an agent inside it</strong>. A chatbot or an API handler that calls a model and returns never has to survive a crash halfway through a forty-minute job.</p>
 <h2 id="the-problem">The problem<a class="headerlink" href="#the-problem" title="Permanent link">&para;</a></h2>
-<p>The dangerous failure mode is not a crash. The dangerous failure mode is this:</p>
+<p>A crash is the easy failure, because you can see it. The dangerous one looks like this:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>HTTP request: 200 OK
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Logs:         normal
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>User sees:    plausible report
@@ -1277,7 +1304,7 @@
 <a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>9. Orchestrator prompt
 <a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>10. Capstone review
 </code></pre></div>
-<p>The order matters. Identifiers make more sense after you have seen a plan pause and resume. Locks make more sense after the browser can double-click approval. Prompt design makes more sense after code already owns the boundaries.</p>
+<p>Identifiers make more sense after you have seen a plan pause and resume. Locks make more sense after the browser can double-click approval. Prompt design makes more sense after code already owns the boundaries.</p>
 <h2 id="the-lifecycle-of-a-single-run">The lifecycle of a single run<a class="headerlink" href="#the-lifecycle-of-a-single-run" title="Permanent link">&para;</a></h2>
 <p>Here is the full system we are going to build:</p>
 <pre class="mermaid"><code>flowchart LR
@@ -1290,16 +1317,16 @@
     G --&gt; H[Checkpoint&lt;br/&gt;after each step]
     G --&gt; I[Streamed progress&lt;br/&gt;→ browser]
     H --&gt; J[Final report&lt;br/&gt;persisted]</code></pre>
-<p>Here is what happens at each stage — and what is at stake at each boundary.</p>
-<p><strong>Question.</strong> The user's intent arrives as text. It is not yet enough to act on — the agent needs to know who the user is, what they are permitted to see, what defaults apply to their account.</p>
-<p><strong>Context injection.</strong> Before any model call, the system attaches what the model cannot derive from the message alone: account context, user permissions, locale, relevant business rules. The seam between "what the user typed" and "what the system added" must be deliberately managed. <a href="../03-context-injection/">Step 2</a> covers this.</p>
-<p><strong>Orchestrator drafts a plan.</strong> The model reads the enriched question and produces a structured, inspectable sequence of steps — not "do research," but "query this source, verify that figure, draft this section" — in terms a human can read and evaluate. <a href="../04-planning-and-human-approval/">Step 3</a> covers this together with approval.</p>
+<p>Here is what happens at each stage and what can go wrong at each boundary.</p>
+<p><strong>Question.</strong> The user's intent arrives as text. It is not yet enough to act on. The agent also needs to know who the user is, what they are permitted to see, and what defaults apply to their account.</p>
+<p><strong>Context injection.</strong> Before any model call, the system attaches what the model cannot derive from the message alone: account context, user permissions, locale, relevant business rules. The system has to keep "what the user typed" and "what the system added" apart on purpose. <a href="../03-context-injection/">Step 2</a> covers this.</p>
+<p><strong>Orchestrator drafts a plan.</strong> The model reads the enriched question and produces a structured sequence of steps a human can read and evaluate: "query this source, verify that figure, draft this section" instead of "do research." <a href="../04-planning-and-human-approval/">Step 3</a> covers this together with approval.</p>
 <p><strong>Human approval.</strong> The plan pauses at a gate. A human reads it and approves or rejects it. Only after approval does any expensive execution begin. This single gate means the run spans two or more HTTP requests, not one. <a href="../04-planning-and-human-approval/">Step 3</a> covers this.</p>
 <p><strong>Queue.</strong> The approved plan is handed to a FIFO queue, keyed on the conversation thread. The API process returns immediately; the queue holds the intent durably until a worker is ready. <a href="../08-queue-and-worker-execution/">Step 7</a> covers this.</p>
-<p><strong>Worker.</strong> A background worker dequeues the job and begins executing the plan. The worker is independent of the API process — it may run on a different machine, across a deploy boundary, or restart after a crash without the user knowing anything changed. <a href="../08-queue-and-worker-execution/">Step 7</a> covers this.</p>
-<p><strong>Graph runs step by step.</strong> The worker runs the plan as a LangGraph graph — one node per step. Each node reads from state, does its work, and writes results back. <a href="../02-state-and-checkpoints/">Step 1</a> covers how that state works.</p>
-<p><strong>Checkpoint after each step.</strong> After every node, LangGraph persists a checkpoint: a complete snapshot of state at that point. If the worker crashes at step 4, a new worker reads the checkpoint and resumes from step 4 — not from the beginning. <a href="../02-state-and-checkpoints/">Step 1</a> covers checkpoints.</p>
-<p><strong>Streamed progress → browser.</strong> As the graph runs, it emits progress events over SSE (server-sent events). The browser shows the report being built section by section. But the SSE connection is ephemeral — closing the browser must not stop the work. <a href="../06-streaming-and-background-work/">Step 6</a> covers this.</p>
+<p><strong>Worker.</strong> A background worker dequeues the job and begins executing the plan. The worker is independent of the API process. It may run on a different machine, across a deploy boundary, or restart after a crash without the user knowing anything changed. <a href="../08-queue-and-worker-execution/">Step 7</a> covers this.</p>
+<p><strong>Graph runs step by step.</strong> The worker runs the plan as a LangGraph graph, one node per step. Each node reads from state, does its work, and writes results back. <a href="../02-state-and-checkpoints/">Step 1</a> covers how that state works.</p>
+<p><strong>Checkpoint after each step.</strong> After every node, LangGraph persists a checkpoint: a complete snapshot of state at that point. If the worker crashes at step 4, a new worker reads the checkpoint and resumes from step 4 instead of starting over. <a href="../02-state-and-checkpoints/">Step 1</a> covers checkpoints.</p>
+<p><strong>Streamed progress → browser.</strong> As the graph runs, it emits progress events over SSE (server-sent events). The browser shows the report being built section by section. The SSE connection is ephemeral, and closing the browser must not stop the work. <a href="../06-streaming-and-background-work/">Step 6</a> covers this.</p>
 <p><strong>Final report persisted.</strong> When the graph completes, the finished report is written to durable storage. The user can reload, share the link, or return a week later.</p>
 <h2 id="what-makes-this-a-distributed-system">What makes this a distributed system<a class="headerlink" href="#what-makes-this-a-distributed-system" title="Permanent link">&para;</a></h2>
 <p>Each stage of the lifecycle runs in a different context:</p>
@@ -1310,8 +1337,8 @@
 <li>The <strong>checkpoint store</strong> persists state across crashes and deploys.</li>
 <li>The <strong>SSE stream</strong> connects the browser to live progress without keeping the work alive.</li>
 </ul>
-<p>This is what the standard tutorial loop — call model, run tool, return answer — does not show. When work must outlive the request that started it, you are no longer writing a request handler. You are operating a small distributed system, and every boundary between those components is a place where state can be lost, duplicated, or corrupted while every individual component still reports success.</p>
-<p>That failure mode — <code>200 OK</code>, wrong answer — is what the rest of this series teaches you to prevent.</p>
+<p>The standard tutorial loop (call model, run tool, return answer) never shows this. When work must outlive the request that started it, you are no longer writing a request handler. You are operating a small distributed system, and every boundary between those components is a place where state can be lost, duplicated, or corrupted while every individual component still reports success.</p>
+<p>The rest of this series covers how to prevent the <code>200 OK</code>, wrong-answer failure at each of those boundaries.</p>
 <hr />
 <div class="admonition check">
 <p class="admonition-title">You should now understand</p>
@@ -1325,10 +1352,10 @@
 </div>
 <details class="question">
 <summary>Try this</summary>
-<p><strong>Your team builds a request handler that calls an LLM, lets it pick tools, and returns the result — all in one HTTP request. They want to add human approval before any expensive tool runs. A colleague says: "Easy, just interrupt the function, wait for the approval callback, then resume." What breaks with that design, and what has to change?</strong></p>
+<p><strong>Your team builds a request handler that calls an LLM, lets it pick tools, and returns the result, all in one HTTP request. They want to add human approval before any expensive tool runs. A colleague says: "Easy, just interrupt the function, wait for the approval callback, then resume." What breaks with that design, and what has to change?</strong></p>
 <details class="success">
 <summary>Answer</summary>
-<p>The approval can take minutes or days — a human reads and approves asynchronously. Holding an HTTP connection open that long is not possible in practice (timeouts, load balancers, client disconnects). Approval changes the system topology: the first request produces the plan and returns; the human approves out-of-band; a second request resumes the run. This requires (1) durable checkpointed state so any replica can pick up the run, (2) a pause mechanism (<code>interrupt()</code>) that serializes the graph to storage rather than blocking a thread, and (3) a separate resume endpoint that delivers the human's decision. The single-function model doesn't survive crossing an HTTP boundary.</p>
+<p>The approval can take minutes or days, because a human reads and approves asynchronously. Holding an HTTP connection open that long is not possible in practice (timeouts, load balancers, client disconnects). Approval changes the system topology: the first request produces the plan and returns; the human approves out-of-band; a second request resumes the run. This requires (1) durable checkpointed state so any replica can pick up the run, (2) a pause mechanism (<code>interrupt()</code>) that serializes the graph to storage rather than blocking a thread, and (3) a separate resume endpoint that delivers the human's decision. The single-function model doesn't survive crossing an HTTP boundary.</p>
 </details>
 </details>
 <p><em>Next: <a href="../02-end-to-end-architecture-and-orchestrator-flow/">Chapter 2 · End-to-End Architecture and Orchestrator Flow</a> — the whole production path before we zoom into each mechanism.</em></p>

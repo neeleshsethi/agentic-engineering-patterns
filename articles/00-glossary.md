@@ -12,7 +12,7 @@ The definitions are ordered roughly from "things a normal web engineer already k
 One of several identical copies of your API server running at once, behind a load balancer. Two requests from the same user can land on two different replicas. Anything one replica keeps in its own memory is invisible to the others. That is why shared state has to live in a database, not in a Python variable.
 
 ### SSE (Server-Sent Events)
-A long-lived HTTP response where the server keeps sending small text frames over time instead of one final body. It is how an agent streams progress ("planning…", "querying…") to a browser. The browser's built-in `EventSource` object consumes it. See [SSE Cancellation](06-streaming-and-background-work.md).
+A long-lived HTTP response where the server keeps sending small text frames over time instead of one final body. It is how an agent streams progress ("planning…", "querying…") to a browser. The browser's built-in `EventSource` object consumes it. See [Streaming and background work](06-streaming-and-background-work.md).
 
 ### Last-Event-ID
 A header the browser's `EventSource` automatically re-sends when it reconnects after a dropped connection. It contains the `id:` of the last frame the browser received. The server uses it as a cursor to resume the stream exactly where it left off.
@@ -95,7 +95,7 @@ The component that writes checkpoints. In this series it writes to DynamoDB. You
 One "tick" of the graph: the batch of nodes that run together before the next checkpoint is written. Checkpoints happen per super-step.
 
 ### `interrupt()`
-The one primitive for pausing a graph to wait for a human. It saves state to the checkpoint and raises a special exception; the HTTP response returns with whatever streamed so far, and the graph freezes in the database. See [Human-in-the-Loop Approval](04-planning-and-human-approval.md).
+The one primitive for pausing a graph to wait for a human. It saves state to the checkpoint and raises a special exception; the HTTP response returns with whatever streamed so far, and the graph freezes in the database. See [Planning and Human Approval](04-planning-and-human-approval.md).
 
 ### Resume / `Command(resume=…)`
 Continuing a paused graph. A later HTTP request sends `Command(resume=value)`; LangGraph reloads the checkpoint and delivers `value` as the return of the original `interrupt()` call. Resume re-runs the current node *from the top*, so everything before `interrupt()` runs again on every resume.
@@ -117,7 +117,7 @@ The result of a tool call, fed back to the model as its next input. This series 
 ## Agent-design terms
 
 ### Gate
-The approval checkpoint in the workflow, implemented as the `submit_plan` tool. It projects the plan, calls `interrupt()` once, and returns an instruction. See [Human-in-the-Loop Approval](04-planning-and-human-approval.md).
+The approval checkpoint in the workflow, implemented as the `submit_plan` tool. It projects the plan, calls `interrupt()` once, and returns an instruction. See [Planning and Human Approval](04-planning-and-human-approval.md).
 
 ### Plan / plan_id / interrupt_id
 The **plan** is the set of research steps the human approves. **plan_id** is stable across refinements (it identifies the plan, not the revision). **interrupt_id** is minted fresh on every pause, so it identifies the exact revision the user was looking at. That is what catches a stale browser tab approving an out-of-date plan.
@@ -135,16 +135,16 @@ The curated event shape the frontend receives. Raw LangGraph or DeepAgents event
 The property that doing something twice has the same effect as doing it once. Critical wherever work can be retried or replayed after a crash.
 
 ### Idempotency key
-A value that identifies a *logical* event regardless of which attempt produced it. Because it is derived from execution position (not from a counter or a random id), a replayed event carries the same key and the reader can dedupe it. See [Durable Async Runs](08-queue-and-worker-execution.md#sequence-number-versus-idempotency-key).
+A value that identifies a *logical* event regardless of which attempt produced it. Because it is derived from execution position (not from a counter or a random id), a replayed event carries the same key and the reader can dedupe it. See [Queue and worker execution](08-queue-and-worker-execution.md#sequence-number-versus-idempotency-key).
 
 ### Sequence number (seq)
 A plain counter that gives the event feed a total order and doubles as the reader's cursor. Unlike the idempotency key, it takes *new* values on replay, which is why the two are kept separate.
 
 ### Heartbeat
-A periodic "I am still alive" signal. Here it is tied to progress (each checkpoint write) rather than a wall-clock timer, so a process that is alive-but-stuck stops beating and gets reclaimed. See [Durable Async Runs](08-queue-and-worker-execution.md#heartbeat-on-progress-not-on-a-clock).
+A periodic "I am still alive" signal. Here it is tied to progress (each checkpoint write) rather than a wall-clock timer, so a process that is alive-but-stuck stops beating and gets reclaimed. See [Queue and worker execution](08-queue-and-worker-execution.md#heartbeat-on-progress-not-on-a-clock).
 
 ### Grounding
-The rule that the final answer may only use facts from tool results, never the model's own memory. In a regulated domain a fabricated figure that looks real is a compliance problem, so grounding is enforced by the prompt (code cannot tell where a number came from). See [Designing the Orchestrator Prompt](09-orchestrator-prompt.md#grounding-the-purely-prompt-invariant).
+The rule that the final answer may only use facts from tool results, never the model's own memory. In a regulated domain a fabricated figure that looks real is a compliance problem, so grounding is enforced by the prompt (code cannot tell where a number came from). See [Orchestrator prompt](09-orchestrator-prompt.md#grounding-the-purely-prompt-invariant).
 
 ### Entity resolution
 Working out what a vague question refers to (turning "give me my sales" into a specific country, brand, and time period) before deciding anything else.

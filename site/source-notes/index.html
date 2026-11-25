@@ -774,6 +774,33 @@
       
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../11-when-the-score-passes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone 2 · When the score passes and the work fails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -792,10 +819,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21" checked>
         
           
-          <label class="md-nav__link" for="__nav_20" id="__nav_20_label" tabindex="">
+          <label class="md-nav__link" for="__nav_21" id="__nav_21_label" tabindex="">
             
   
   
@@ -813,8 +840,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_20_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_20">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_21_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_21">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -871,10 +898,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_2" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21_2" checked>
         
           
-          <label class="md-nav__link" for="__nav_20_2" id="__nav_20_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_21_2" id="__nav_21_2_label" tabindex="0">
             
   
   
@@ -892,8 +919,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_2_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_20_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_21_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_21_2">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1195,16 +1222,15 @@
 
 
 <h1 id="source-notes-a-deep-agent-end-to-end">Source Notes: A Deep Agent, End to End<a class="headerlink" href="#source-notes-a-deep-agent-end-to-end" title="Permanent link">&para;</a></h1>
-<p>These three notes are a faithful reconstruction of the internal design docs behind a production
-<strong>deep agent</strong> — a human-in-the-loop research orchestrator that plans, gets a human to approve the
-plan, then executes it durably on a worker fleet. They are the <em>source material</em> the published
-<a href="../01-problem-design-implementation-plan/">Agentic Engineering Patterns</a> series draws from, at full
-depth.</p>
-<p>Names are genericized (product → "the platform", brand → <code>BRAND_A</code>, sources → <code>SOURCE_A..D</code>,
-tables → <code>{env}-agent-*</code>, retrieval tools sometimes collapsed to <code>query_source</code>). Framework
-names (LangGraph, deepagents, DynamoDB, SQS) are real. Raw OCR of the originals is kept in the
-repo's local <code>data/extracted/</code> directory (gitignored — not published). The production orchestrator
-uses a seven-tool allow-list; <code>query_source</code> is a teaching simplification where noted.</p>
+<p>These three notes walk through the design of one <strong>deep agent</strong> at full depth: a
+human-in-the-loop research orchestrator that plans, gets a human to approve the plan, then
+executes it durably on a worker fleet. The published
+<a href="../01-problem-design-implementation-plan/">Agentic Engineering Patterns</a> chapters teach the same
+system one mechanism at a time; these notes keep the detail the chapters leave out.</p>
+<p>All product, data-source and infrastructure names are illustrative (the platform, <code>BRAND_A</code>,
+<code>SOURCE_A..D</code>, tables <code>{env}-agent-*</code>, retrieval tools sometimes collapsed to <code>query_source</code>).
+Framework names (LangGraph, deepagents, DynamoDB, SQS) are real. The full orchestrator uses a
+seven-tool allow-list; <code>query_source</code> is a teaching simplification where noted.</p>
 <h2 id="the-three-notes">The three notes<a class="headerlink" href="#the-three-notes" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1244,79 +1270,81 @@ tokens. The prompt is reserved for <em>judgment</em> and for invariants the code
 enforce.</p>
 </blockquote>
 <h2 id="how-these-map-to-the-published-series">How these map to the published series<a class="headerlink" href="#how-these-map-to-the-published-series" title="Permanent link">&para;</a></h2>
-<p>The published <a href="../01-problem-design-implementation-plan/"><code>articles/01–10</code></a> are the teaching version —
-genericized to "a research agent", no product context. These notes are where each of those
-failures actually came from:</p>
+<p>The published chapters are the teaching version. These notes go deeper on each mechanism:</p>
 <table>
 <thead>
 <tr>
-<th>Published article</th>
-<th>Grounded by these notes</th>
+<th>Published chapter</th>
+<th>Covered in depth by</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><a href="../02-end-to-end-architecture-and-orchestrator-flow/">02 – End-to-end architecture</a></td>
-<td>OCR correction pass: async approval, pending resume writes, SQS FIFO, worker resume with <code>None</code>, stream curation, seven-tool allow-list</td>
+<td><a href="../02-end-to-end-architecture-and-orchestrator-flow/">Chapter 2 · End-to-end architecture and orchestrator flow</a></td>
+<td>All three notes: async approval, pending resume writes, SQS FIFO, worker resume with <code>None</code>, stream curation, seven-tool allow-list</td>
 </tr>
 <tr>
-<td><a href="../02-state-and-checkpoints/">03 – State and checkpoints</a></td>
-<td><code>before-resume</code> Part 1 (state channels, <code>LastValue</code> footguns) · OCR Q3b (reducer vs last-value vs pending resume writes)</td>
+<td><a href="../02-state-and-checkpoints/">Step 1 · State and checkpoints</a></td>
+<td><code>before-resume</code> Part 1 (state channels, <code>LastValue</code> footguns, reducer vs last-value vs pending resume writes)</td>
 </tr>
 <tr>
-<td><a href="../03-context-injection/">04 – Context injection</a></td>
-<td><code>before-resume</code> Step 3 (transient injection, the <code>[/User context]</code> boundary) · <code>orchestrator-prompt-annotated</code> Step 4 EXECUTE / Bug 1 (the entity-override the injection causes)</td>
+<td><a href="../03-context-injection/">Step 2 · Context injection</a></td>
+<td><code>before-resume</code> Step 3 (transient injection, the <code>[/User context]</code> boundary) · <code>orchestrator-prompt-annotated</code> Step 4 EXECUTE / Bug 1 (the entity override the injection causes)</td>
 </tr>
 <tr>
-<td><a href="../04-planning-and-human-approval/">05 – Human-in-the-loop plan approval</a></td>
-<td><code>orchestrator-prompt-annotated</code> Part 3 (build-it-yourself) + Part 2/4 (gate internals, read-only Plan projection) · OCR Q1 (async approve path)</td>
+<td><a href="../04-planning-and-human-approval/">Step 3 · Planning and human approval</a></td>
+<td><code>orchestrator-prompt-annotated</code> Part 3 (build-it-yourself) + Parts 2/4 (gate internals, read-only Plan projection) · <code>before-resume</code> (async approve path)</td>
 </tr>
 <tr>
-<td><a href="../05-identifiers/">06 – Identifiers</a></td>
-<td>OCR approval facts: <code>interrupt_id</code> rejects stale approvals; <code>plan_id</code> alone is not enough</td>
+<td><a href="../05-identifiers/">Step 4 · Identifiers that hold a run together</a></td>
+<td><code>before-resume</code> identity table: <code>interrupt_id</code> rejects stale approvals; <code>plan_id</code> alone is not enough</td>
 </tr>
 <tr>
-<td><a href="../06-streaming-and-background-work/">07 – SSE cancellation</a></td>
-<td><code>life-of-a-deep-run</code> Step 4 (SSE tail, <code>Last-Event-ID</code> replay=live) · termination-on-status (E-cases)</td>
+<td><a href="../06-streaming-and-background-work/">Step 5 · Streaming and background work</a></td>
+<td><code>life-of-a-deep-run</code> Step 4 (SSE tail, <code>Last-Event-ID</code> replay = live) · termination-on-status (E-cases)</td>
 </tr>
 <tr>
-<td><a href="../07-distributed-locks/">08 – Distributed locks</a></td>
-<td><code>life-of-a-deep-run</code> Part 3 (the keycard lock) &amp; Part 4 (zombie fencing) · worker lock under <code>lock#{thread_id}</code></td>
+<td><a href="../07-distributed-locks/">Step 6 · Distributed locks</a></td>
+<td><code>before-resume</code> (the API's resume claim, <code>CLAIM#{thread_id}</code> / <code>RESUME</code>) · <code>life-of-a-deep-run</code> Parts 3–4 (the worker's run lock, <code>lock#{thread_id}</code> / <code>0</code>, and zombie fencing)</td>
 </tr>
 <tr>
-<td><a href="../08-queue-and-worker-execution/">09 – Durable async agent runs</a></td>
-<td>The whole of <code>life-of-a-deep-run</code>, genericized: two-table split, one-worker-per-thread FIFO, heartbeat-on-progress, <code>seq</code>/<code>idem_key</code>, replay==tail, crash recovery, dead-letter paging</td>
+<td><a href="../08-queue-and-worker-execution/">Step 7 · Queue and worker execution</a></td>
+<td>The whole of <code>life-of-a-deep-run</code>: two-table split, one-worker-per-thread FIFO, heartbeat-on-progress, <code>seq</code>/<code>idem_key</code>, replay == tail, crash recovery, dead-letter paging</td>
 </tr>
 <tr>
-<td><a href="../09-orchestrator-prompt/">10 – Designing the orchestrator prompt</a></td>
-<td><code>orchestrator-prompt-annotated</code> Parts 1, 5, 6 (annotated prompt, allow-list middleware, ToolMessage continuation, grounding) · OCR Q2 (seven allowed tools)</td>
+<td><a href="../09-orchestrator-prompt/">Step 8 · Orchestrator prompt</a></td>
+<td><code>orchestrator-prompt-annotated</code> Parts 1, 5, 6 (annotated prompt, allow-list middleware, ToolMessage continuation, grounding)</td>
 </tr>
 <tr>
-<td><a href="../09a-clarifications/">11 – Clarifications</a></td>
-<td>OCR Q6 (clarification families, deterministic source elicitation, partial clarification, fresh invocation vs resume)</td>
+<td><a href="../09a-clarifications/">Deep dive · Clarifications</a></td>
+<td><code>orchestrator-prompt-annotated</code> (clarification families, deterministic source elicitation, fresh invocation vs resume)</td>
 </tr>
 <tr>
-<td><a href="../09b-code-components-and-organization/">12 – Code components and organization</a></td>
-<td>OCR Q0 (deep module map), Q4-Q5 (middleware order and loop budgets), Q7 (provenance/citation/chart ownership)</td>
+<td><a href="../09b-code-components-and-organization/">Deep dive · Code components and organization</a></td>
+<td>All three notes (module map, middleware order and loop budgets, provenance/citation ownership)</td>
 </tr>
 <tr>
-<td><a href="../09c-plan-lifecycle/">13 – Plan lifecycle</a></td>
-<td>OCR Q3d (when the plan workflow runs, extension turns, elicitation replies, presentation changes)</td>
+<td><a href="../09c-plan-lifecycle/">Deep dive · Plan lifecycle</a></td>
+<td><code>orchestrator-prompt-annotated</code> Part 3 and <code>before-resume</code> (when the plan workflow runs, extension turns, elicitation replies)</td>
 </tr>
 <tr>
-<td><a href="../09d-reactive-mode-prompt/">14 – Reactive mode prompt</a></td>
-<td>OCR appendix (reactive one-pass system prompt structure, prompt layers, clarification guard, elicitation relay)</td>
+<td><a href="../09d-reactive-mode-prompt/">Deep dive · Reactive mode prompt</a></td>
+<td><code>orchestrator-prompt-annotated</code> (prompt layers, clarification guard, elicitation relay)</td>
 </tr>
 <tr>
-<td><a href="../10-nine-silent-failures/">15 – Nine silent failures</a></td>
+<td><a href="../09e-event-feed-and-idempotency/">Deep dive · The event feed and idempotency</a></td>
+<td><code>life-of-a-deep-run</code> (<code>seq</code> vs <code>idem_key</code>, the three-way collision branch)</td>
+</tr>
+<tr>
+<td><a href="../09f-carryover-and-the-data-manifest/">Deep dive · Carryover and the data manifest</a></td>
+<td><code>before-resume</code> (<code>prepare_memory</code>, the carryover row)</td>
+</tr>
+<tr>
+<td><a href="../10-nine-silent-failures/">Capstone · Nine silent failures in one agent</a></td>
 <td>The edge-case catalogs in all three notes; Bug 1 in <code>orchestrator-prompt-annotated</code> is the canonical entity-override failure</td>
 </tr>
 </tbody>
 </table>
-<p>The published series now covers all three source notes: <strong>05 + 07</strong> carry <code>life-of-a-deep-run</code>;
-<strong>08 + 09</strong> carry <code>orchestrator-prompt-annotated</code>; and <code>before-resume</code> is folded across <strong>08</strong>
-(refine/approve/claim) and <strong>03</strong> (state channels). The source notes remain the full-fidelity
-reference behind the genericized articles.</p>
 
 
 

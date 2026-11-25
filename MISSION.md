@@ -11,7 +11,7 @@ Teach engineers and interns how to design deep agents that survive real producti
 
 ## Constraints
 - Lessons should stay intern-friendly and concrete.
-- Use extracted project evidence as the source of truth for production details.
+- Use the source notes in `articles/source-notes/` as the reference for design details.
 - Do not frame the series around a named external teacher or person-branded source.
 
 ## Out of scope

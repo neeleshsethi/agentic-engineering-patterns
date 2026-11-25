@@ -922,6 +922,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../11-when-the-score-passes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone 2 · When the score passes and the work fails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -936,10 +963,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21" >
         
           
-          <label class="md-nav__link" for="__nav_20" id="__nav_20_label" tabindex="">
+          <label class="md-nav__link" for="__nav_21" id="__nav_21_label" tabindex="">
             
   
   
@@ -957,8 +984,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_20_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_21_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1013,10 +1040,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21_2" >
         
           
-          <label class="md-nav__link" for="__nav_20_2" id="__nav_20_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_21_2" id="__nav_21_2_label" tabindex="0">
             
   
   
@@ -1034,8 +1061,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_21_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21_2">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1323,7 +1350,7 @@
 
 
 <h1 id="deep-dive-clarifications">Deep Dive · Clarifications<a class="headerlink" href="#deep-dive-clarifications" title="Permanent link">&para;</a></h1>
-<p>A clarification is any turn where the system asks the user something instead of writing the final answer. In a deep agent, that is not just UX copy. It changes which graph path runs, which state is carried, whether a report may be written, and whether the next user message resumes an interrupt or starts a fresh invocation.</p>
+<p>A clarification is any turn where the system asks the user something instead of writing the final answer. In a deep agent, a clarification changes which graph path runs, which state is carried, whether a report may be written, and whether the next user message resumes an interrupt or starts a fresh invocation.</p>
 <p>The safe mental model is:</p>
 <blockquote>
 <p>Clarification is control flow. The wording is prompt work; the pause semantics are code.</p>
@@ -1391,12 +1418,12 @@
 </ul>
 <h2 id="terminal-clarification">Terminal Clarification<a class="headerlink" href="#terminal-clarification" title="Permanent link">&para;</a></h2>
 <p>Terminal clarification happens before any plan exists. The system has no safe default for a required entity or metric, so it asks one question and stops.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>User: "Show me performance for the launch brand."
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>User: "Show me performance for the new product line."
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>Agent:
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  "Which launch brand should I use?"
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  "Which product line should I use?"
 </code></pre></div>
-<p>The important invariant is that terminal clarification happens before <code>write_todos</code>. A submitted plan should be fully determined. If the agent writes vague todos and hopes to clarify during execution, the plan approval loses meaning: the human approved a shape that still contains unknowns.</p>
+<p>Terminal clarification must happen before <code>write_todos</code>. A submitted plan should be fully determined. If the agent writes vague todos and hopes to clarify during execution, the plan approval loses meaning: the human approved a shape that still contains unknowns.</p>
 <p>Use this when:</p>
 <ul>
 <li>The missing value is required for routing or entity resolution.</li>
@@ -1406,7 +1433,7 @@
 <h2 id="source-elicitation">Source Elicitation<a class="headerlink" href="#source-elicitation" title="Permanent link">&para;</a></h2>
 <p>Source elicitation is the hard case. It happens after retrieval begins, when a downstream source asks back instead of returning final data.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>Step 1: query promotion lift      -&gt; returns data
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Step 2: query regional    -&gt; asks "retail or non-retail?"
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Step 2: query regional    -&gt; asks "in-store or online?"
 </code></pre></div>
 <p>The source's ask-back must be detected before the report writer runs. Do not rely on a second model to guess whether a source result is a clarification if the source protocol can say so.</p>
 <table>
@@ -1431,7 +1458,7 @@
 </tr>
 </tbody>
 </table>
-<p>The key distinction:</p>
+<p>Detection and action are split differently in each mode:</p>
 <blockquote>
 <p>Detection is deterministic before either mode sees the result. Acting on that detection is prompt-led in reactive, but code-enforced in deep.</p>
 </blockquote>
@@ -1459,8 +1486,8 @@
 </tr>
 </tbody>
 </table>
-<p>So yes: <strong>clarification handling is deterministic for deep at the report boundary.</strong> The model is still prompted to relay the question politely, but it is not trusted to decide whether a report may be written. If a current-cycle step's latest successful result is an elicitation, <code>pending_elicitation()</code> blocks the report.</p>
-<p>That "latest successful" qualifier matters. A failed retry should not accidentally clear an open source question, and an older elicitation should not block forever after the same step later returns real data. The predicate groups successful results by <code>step_id</code>, keeps the latest one per step, then asks whether any of those latest successes still carries <code>is_elicitation</code>.</p>
+<p><strong>Clarification handling is deterministic for deep at the report boundary.</strong> The model is still prompted to relay the question politely, but it is not trusted to decide whether a report may be written. If a current-cycle step's latest successful result is an elicitation, <code>pending_elicitation()</code> blocks the report.</p>
+<p>The "latest successful" qualifier covers two cases. A failed retry should not clear an open source question, and an older elicitation should not block forever after the same step later returns real data. The predicate groups successful results by <code>step_id</code>, keeps the latest one per step, then asks whether any of those latest successes still carries <code>is_elicitation</code>.</p>
 <p>The deterministic deep path has three owners:</p>
 <ol>
 <li><strong>Source adapter/client</strong> stamps <code>SourceResult.is_elicitation</code>.</li>
@@ -1474,11 +1501,11 @@
 <p><code>pending_elicitation</code> is a whole-cycle gate: if any current step is still waiting on the user, the entire report waits. That does not mean the successful result is discarded. It stays in the accumulating <code>source_results</code> channel.</p>
 <p>The user-facing question should mention both facts:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>"I have the promotion lift figures. For regional sales, the source asks:
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>retail or non-retail?"
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>in-store or online?"
 </code></pre></div>
 <p>When the user answers, the system re-queries only the asking step. The already completed result is reused from state.</p>
 <h2 id="elicitation-reply-is-not-resume">Elicitation Reply Is Not Resume<a class="headerlink" href="#elicitation-reply-is-not-resume" title="Permanent link">&para;</a></h2>
-<p>This distinction catches teams because the user experience looks like a pause. Internally, it is not the same pause as plan approval.</p>
+<p>To the user, an elicitation reply looks like answering a paused run. Internally, it works differently from plan approval.</p>
 <table>
 <thead>
 <tr>
@@ -1515,7 +1542,7 @@
 </tr>
 </tbody>
 </table>
-<p>Why this matters: re-planning would mint a new <code>plan_id</code>, which would orphan the carried result from the current cycle. Current-cycle evidence is filtered by plan identity, so keeping the locked plan is what lets the clarified turn reuse already-fetched data safely.</p>
+<p>Re-planning would mint a new <code>plan_id</code>, which would orphan the carried result from the current cycle. Current-cycle evidence is filtered by plan identity, so keeping the locked plan is what lets the clarified turn reuse already-fetched data safely.</p>
 <h2 id="zero-retrieval-guard">Zero-Retrieval Guard<a class="headerlink" href="#zero-retrieval-guard" title="Permanent link">&para;</a></h2>
 <p>The exit path should refuse to write a report when there is no current-cycle evidence. That can happen when:</p>
 <ul>

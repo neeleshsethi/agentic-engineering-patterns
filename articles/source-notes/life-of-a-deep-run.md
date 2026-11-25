@@ -18,7 +18,7 @@ approve click.
   Browser  ───────────────────────────────►  API (ECS)
   │EventSource│                                 │  approve:
   │           │                                 │   1. checkpoint approval (durable)
-  │  SSE      │                                 │   2. put_run_state(queued)   → deep-events
+  │  SSE      │                                 │   2. put_run_state(queued)   → agent-events
   │  frames   │◄──── id: seq  data: event       │   3. send_message           → SQS
   │  tail     │                                 │
   └───────────┘                                 ▼
@@ -28,13 +28,13 @@ approve click.
         │  every ~250 ms                         ▼
         │                          Worker (ECS, S3)
         └──────── reads only ──────  pickup ritual: stamp · lock · seed · wrap
-                  deep-events                     │
+                  agent-events                     │
                                                   │  LangGraph astream()
                                     ┌─────────────┴──────────────┐
                                     ▼                            ▼
                     emitter: PutItem seq++ (fenced)   LeaseExtendingSaver:
-                    → deep-events                     saver.put() → snapshot + heartbeat
-                    (events + run# + lock#)           → deep-checkpoints
+                    → agent-events                     saver.put() → snapshot + heartbeat
+                    (events + run# + lock#)           → agent-checkpoints
                                                       (LangGraph state = source of truth)
 
   3 strikes → SQS moves msg → {env}-agent-runs-dlq.fifo → CloudWatch depth alarm → SNS → ops
@@ -42,8 +42,8 @@ approve click.
 
 **Read it left to right:** the `approve` call persists intent (checkpoint + run-state) *before*
 enqueuing; the queue serializes per thread; the worker produces two independent write streams
-(snapshots to `deep-checkpoints`, feed events to `deep-events`); the API reads only
-`deep-events`; the DLQ is the only path that pages a human.
+(snapshots to `agent-checkpoints`, feed events to `agent-events`); the API reads only
+`agent-events`; the DLQ is the only path that pages a human.
 
 ---
 
@@ -55,8 +55,8 @@ enqueuing; the queue serializes per thread; the worker produces two independent 
 |---|---|---|---|
 | **Job queue + DLQ** | `{env}-agent-runs.fifo` / `{env}-agent-runs-dlq.fifo` (SQS) | One message per approved run; poison pills end up in the DLQ | API enqueues; worker receives/deletes; SQS moves to DLQ |
 | **Checkpoint table** | `{env}-agent-checkpoints` (DynamoDB) | LangGraph state snapshots — the source of truth for resume | LangGraph's saver (automatically) |
-| **Event table** | `{env}-agent-events` (DynamoDB) | The user-facing activity feed. `PK=thread_id`, `SK=seq`, TTL ~24h | The worker's event emitter (our app code) |
-| **Run-state + lock** | Same `deep-events` table, different PK prefix (`run#`, `lock#`) — **not** a separate table | `{status, reason, receive_count}` and `{owner, expires_at}` | Worker (+ failure detectors) |
+| **Event table** | `{env}-agent-events` (DynamoDB) | The user-facing activity feed. `PK=thread_id`, `SK=seq`, TTL 24h | The worker's event emitter (our app code) |
+| **Run-state + lock** | Same `agent-events` table, different PK prefix (`run#`, `lock#`) — **not** a separate table | `{status, reason, receive_count}` and `{owner, expires_at}` | Worker (+ failure detectors) |
 
 **Where the names come from:** the DynamoDB stack derives every table name as
 `{env}-{table-name}` and publishes it to SSM at
@@ -71,7 +71,7 @@ Two principles govern the checkpoint/event split:
    (`run#abc`, `lock#abc`) so the reader's `Query(thread_id = tid AND seq > cursor)` never needs
    a skip rule.
 
-### The full layout of `deep-events`
+### The full layout of `agent-events`
 
 One table, **three item kinds** (DynamoDB is schemaless beyond the key, so they coexist for free):
 
@@ -432,28 +432,32 @@ closes.
 ### Plain-words version — one continuous story
 
 The lock answers one question: *"which process is allowed to write for thread `abc` right now?"*
-It's a parking permit for a single spot — one item, at `PK="lock#abc"`, `SK=0`. The subtlety: it
+It's a parking permit for a single spot — one item, at `PK="lock#abc"`, `SK=0`. (This is the
+worker's run lock. The API's resume claim, `CLAIM#{thread_id}` / `RESUME` in the checkpoint table,
+is a separate item built the same way; see `before-resume.md`.) The subtlety: it
 identifies a specific **tenure**, not a specific worker. Every acquisition mints a brand-new
 random string (`uuid4()`). Think of a hotel key card: check in, the desk programs a new card for
 room 12; your name isn't on it. When the next guest checks in, the door is reprogrammed for
 their card and your old card simply stops opening the door. Nobody has to find you and take it
 away.
 
+All times below are in seconds; the lease is 600 s (10 minutes).
+
 **t=0 — Worker A acquires.** A mints token `"aaa-111"` and does a conditional put whose
 condition reads: *"write this only if no lock item exists at this slot, OR the one that exists
 has already expired."* DynamoDB checks and writes in one atomic step, so exactly one winner:
 
 ```
-PK="lock#abc"  SK=0  {owner: "aaa-111", expires_at: t+600}   ← A's tenure
+PK="lock#abc"  SK=0  {owner: "aaa-111", expires_at: 600}   ← A's tenure
 ```
 
 **Why the lock must expire at all — the entire reason Renew exists.** Imagine no expiry: A
-crashes at t=50 holding the lock forever. Every future worker finds a "live" lock and backs off
+crashes holding the lock and holds it forever. Every future worker finds a "live" lock and backs off
 — the thread is wedged permanently until a human deletes a DynamoDB item. So the lease is
 deliberately short (minutes) — but our runs take 45+ minutes, so a healthy holder must keep
 pushing the expiry forward. That's Renew.
 
-**t=0…40 — A renews on every checkpoint** (piggybacked on the `LeaseExtendingSaver.put()`
+**t=0…1200 — A renews on every checkpoint** (piggybacked on the `LeaseExtendingSaver.put()`
 heartbeat, because a checkpoint proves both life and progress):
 
 ```python
@@ -469,22 +473,22 @@ update_item(
 the lock still contains MY token." Not *"extend the lock for abc"* but *"extend it if it's still
 my card in the door."*
 
-**t=45 — A freezes** (GC pause, network partition — doesn't matter). No checkpoints → no renews.
-`expires_at` quietly passes at t=55. **Nothing happens in the table at expiry** — no deletion,
+**t=1200 — A freezes** right after a renew set `expires_at` to 1800 (GC pause, network partition —
+doesn't matter). No checkpoints → no renews. `expires_at` quietly passes at t=1800. **Nothing happens in the table at expiry** — no deletion,
 no notification. Expiry only means the next acquirer's `expires_at < now` will now evaluate true.
 
-**t=60 — Worker B takes over.** SQS redelivered (the visibility lease lapsed from the same
+**t=1850 — Worker B takes over.** SQS redelivered (the visibility lease lapsed from the same
 silence). B mints `"bbb-222"` and runs the same acquire put — the "already expired" half of the
 condition is now true, so the put succeeds and overwrites the whole item:
 
 ```
-PK="lock#abc"  SK=0  {owner: "bbb-222", expires_at: t+600}   ← B's tenure
+PK="lock#abc"  SK=0  {owner: "bbb-222", expires_at: 2450}   ← B's tenure
 ```
 
 That overwrite **is** the takeover. There is no separate "break A's lock" step, and A was not
 consulted. Token `"aaa-111"` was never revoked anywhere — it just no longer matches the door.
 
-**t=75 — the zombie wakes.** A unfreezes mid-run believing it still holds everything. The token
+**t=1900 — the zombie wakes.** A unfreezes mid-run believing it still holds everything. The token
 guard catches it at every possible move:
 
 1. Its next checkpoint fires the renew → condition `owner = "aaa-111"` vs item `"bbb-222"` →
@@ -569,9 +573,9 @@ except ClientError as e:   # ConditionalCheckFailed
 
     # Branch 1 — the occupant IS the event I'm writing right now.
     if existing["idem_key"] == this_write.idem_key:
-        return seq
         # my own earlier attempt landed (ACK lost, SDK retried) or an identical replay already
-        # wrote it. Either way the LOGICAL event exists; the write is satisfied. Continue.
+        # wrote it. Either way the LOGICAL event exists; the write is satisfied. Return success.
+        return seq
 
     # Foreign occupant → am I still allowed to write at all? Check the lock NOW (lazily — this
     # read is paid only on the rare collision path):
@@ -609,7 +613,7 @@ t=40.000  Dying worker Z fires PutItem(abc, 9); the request leaves its network s
 t=40.100  B seeds: ConsistentRead max — truthful AT THIS INSTANT.
 t=40.150  Z's straggler ARRIVES at DynamoDB. Slot (abc, 9) empty → lands.
 t=40.200  B writes seq 9 → collision. Foreign idem_key. Lock check: mine.
-t=40.250  B re-seeds → 9. Writes at 10. Z is dead; twitches are finite. Done.
+t=40.250  B re-seeds → 9. Writes at 10. Done: Z is dead, so it has no more writes in flight.
 ```
 
 Z's orphaned event at seq 9 stays in the log — harmless: when B's resumed run re-executes that
@@ -681,8 +685,8 @@ Each entry: what happens, how it's detected, how it's handled, which layer owns 
   The feed goes quiet; the run completes. An event-log outage never costs work.
 
 - **E11. TTL vs a late reconnect.** Risk: an in-progress run's early events expire before a
-  disconnected user reconnects and replays. Handled by sizing TTL ≫ max run + max reconnect gap
-  (~24h), and treating TTL as janitorial only (DynamoDB TTL deletion lags up to ~48h and is
+  disconnected user reconnects and replays. Handled by setting the TTL to 24h, well above max run +
+  max reconnect gap, and treating TTL as janitorial only (DynamoDB TTL deletion lags up to ~48h and is
   best-effort, so no correctness logic may depend on it). Same rule for the lock's `ttl`: the
   enforced expiry is `expires_at`; `ttl` merely garbage-collects abandoned rows.
 
@@ -812,11 +816,11 @@ missing thread in app code.
 **Checkpoints.** `DynamoDBSaver` from `langgraph-checkpoint-aws`. Table
 `{env}-agent-checkpoints`; `CHECKPOINTER_BACKEND=dynamodb`; thread id = `chat_id`;
 default TTL 30 days (`CHECKPOINT_TTL_SECONDS`); large payloads offload to
-`CHECKPOINT_OFFLOAD_BUCKET` under prefix `deep-checkpoints`. Misconfiguration *raises* for an
+`CHECKPOINT_OFFLOAD_BUCKET` under prefix `agent-checkpoints`. Misconfiguration *raises* for an
 unknown backend; warns if the offload bucket is missing.
 
-**Deep events and run state.** The `deep-events` table has two row families: event-feed rows
-(`PK=chat_id`, `SK=seq number`, replayable curated SSE frames, TTL ~24h) and the run-state
+**Deep events and run state.** The `agent-events` table has two row families: event-feed rows
+(`PK=chat_id`, `SK=seq number`, replayable curated SSE frames, TTL 24h) and the run-state
 singleton (`PK=run#{chat_id}`, `SK=seq`, latest async status `queued|running|retrying|failed|
 completed`, no TTL). The event feed is a projection, not the execution source of truth — if an
 append fails, the worker tries to write a warning frame and continues; the checkpoint owns graph

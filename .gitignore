@@ -14,6 +14,6 @@ build/
 .env
 .env.*
 
-# Raw source material — kept local. Contains un-genericized internal names and large binaries.
+# Local scratch material and large binaries — not published.
 data/
 docs:images/

@@ -66,9 +66,9 @@
       <p class="eyebrow">Partial clarification</p>
       <h2>One source asks back, the whole report waits</h2>
       <div class="timeline">
-        <div class="step"><span class="num">1</span><div><strong>Two sources run.</strong> market data returns data. Cortex asks for retail versus non-retail.</div></div>
+        <div class="step"><span class="num">1</span><div><strong>Two sources run.</strong> The market-data source returns data. Cortex asks for in-store versus online.</div></div>
         <div class="step"><span class="num">2</span><div><strong>The report is blocked.</strong> <code>pending_elicitation</code> checks each step's latest successful result, so deep does not ship a partial report.</div></div>
-        <div class="step"><span class="num">3</span><div><strong>Data is not lost.</strong> The market data result remains in accumulating <code>source_results</code>.</div></div>
+        <div class="step"><span class="num">3</span><div><strong>Data is not lost.</strong> The market-data result remains in accumulating <code>source_results</code>.</div></div>
         <div class="step"><span class="num">4</span><div><strong>The reply re-queries only Cortex.</strong> The user's answer is folded into the open step's sub-question.</div></div>
       </div>
     </section>

@@ -767,10 +767,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#one-line-per-result-the-schema" class="md-nav__link">
+  <a href="#one-line-per-result" class="md-nav__link">
     <span class="md-ellipsis">
       
-        One Line Per Result — The Schema
+        One Line Per Result
       
     </span>
   </a>
@@ -800,10 +800,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-reuse-actually-happens" class="md-nav__link">
+  <a href="#how-reuse-happens" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How Reuse Actually Happens
+        How Reuse Happens
       
     </span>
   </a>
@@ -815,17 +815,6 @@
     <span class="md-ellipsis">
       
         The Two Boundaries That Keep Reuse Honest
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-payoff-in-one-sentence" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The Payoff, In One Sentence
       
     </span>
   </a>
@@ -922,6 +911,33 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="../11-when-the-score-passes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Capstone 2 · When the score passes and the work fails
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
     
     
     
@@ -936,10 +952,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21" >
         
           
-          <label class="md-nav__link" for="__nav_20" id="__nav_20_label" tabindex="">
+          <label class="md-nav__link" for="__nav_21" id="__nav_21_label" tabindex="">
             
   
   
@@ -957,8 +973,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_20_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_21_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1013,10 +1029,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21_2" >
         
           
-          <label class="md-nav__link" for="__nav_20_2" id="__nav_20_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_21_2" id="__nav_21_2_label" tabindex="0">
             
   
   
@@ -1034,8 +1050,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_20_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_21_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21_2">
             <span class="md-nav__icon md-icon"></span>
             
   
@@ -1210,10 +1226,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#one-line-per-result-the-schema" class="md-nav__link">
+  <a href="#one-line-per-result" class="md-nav__link">
     <span class="md-ellipsis">
       
-        One Line Per Result — The Schema
+        One Line Per Result
       
     </span>
   </a>
@@ -1243,10 +1259,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-reuse-actually-happens" class="md-nav__link">
+  <a href="#how-reuse-happens" class="md-nav__link">
     <span class="md-ellipsis">
       
-        How Reuse Actually Happens
+        How Reuse Happens
       
     </span>
   </a>
@@ -1258,17 +1274,6 @@
     <span class="md-ellipsis">
       
         The Two Boundaries That Keep Reuse Honest
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#the-payoff-in-one-sentence" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        The Payoff, In One Sentence
       
     </span>
   </a>
@@ -1323,15 +1328,15 @@
 
 
 <h1 id="deep-dive-carryover-and-the-data-manifest">Deep Dive · Carryover and the Data Manifest<a class="headerlink" href="#deep-dive-carryover-and-the-data-manifest" title="Permanent link">&para;</a></h1>
-<p>A user asks a follow-up: <em>"and how does that compare to last quarter?"</em> The agent already pulled the underlying sales two turns ago — the answer is sitting in state. Re-querying the source would be slow, costly, and sometimes non-deterministic. But the retrieved data is <strong>megabytes</strong>, and pasting it back into the model's context every turn would bury the actual conversation, blow the token budget, and drown the one line that matters under a wall of stale rows. That second failure is <a href="../00-glossary/">context poisoning</a>: the window fills with low-value text and the model's attention degrades.</p>
+<p>A user asks a follow-up: <em>"and how does that compare to last quarter?"</em> The agent already pulled the underlying sales two turns ago, so the answer is sitting in state. Re-querying the source would be slow, costly, and sometimes non-deterministic. But the retrieved data is <strong>megabytes</strong>, and pasting it back into the model's context every turn would bury the actual conversation, blow the token budget, and drown the one line that matters under a wall of stale rows. That second failure is <a href="../00-glossary/">context poisoning</a>: the window fills with low-value text and the model's attention degrades.</p>
 <p>So there are two ways to lose. Re-query when you already hold the answer, and you are wasteful and non-deterministic. Paste the held data back to avoid re-querying, and you poison the window. The data manifest is how a deep agent avoids <strong>both</strong>.</p>
 <p>The safe mental model is:</p>
 <blockquote>
 <p>Give the model an <em>index</em> of what it holds, never a <em>copy</em>. It should see the shape and age of every prior result in ~100 bytes, decide reuse-versus-refetch itself, and pull the megabytes by name only when a step truly needs them.</p>
 </blockquote>
-<p>This is a <a href="../03-context-injection/">context-injection</a> mechanism — same middleware seam, same delimiter discipline — specialized for carrying prior <em>results</em> forward.</p>
+<p>This is a <a href="../03-context-injection/">context-injection</a> mechanism (same middleware seam, same delimiter discipline) specialized for carrying prior <em>results</em> forward.</p>
 <h2 id="what-accumulates-and-why-you-cannot-just-resend-it">What Accumulates, And Why You Cannot Just Resend It<a class="headerlink" href="#what-accumulates-and-why-you-cannot-just-resend-it" title="Permanent link">&para;</a></h2>
-<p><code>state["source_results"]</code> keeps every verbatim retrieval for the life of the thread. It is an <a href="../05-identifiers/"><code>operator.add</code></a> channel, so it only grows — by design, because assembly, citations, and follow-ups all need the raw evidence later. A single retrieval can be thousands of rows; a long thread can hold megabytes.</p>
+<p><code>state["source_results"]</code> keeps every verbatim retrieval for the life of the thread. It is an <a href="../05-identifiers/"><code>operator.add</code></a> channel, so it only grows. That is by design, because assembly, citations, and follow-ups all need the raw evidence later. A single retrieval can be thousands of rows; a long thread can hold megabytes.</p>
 <p>Two things must both be true:</p>
 <ul>
 <li>The model must be able to <strong>reuse</strong> a prior turn's answer instead of re-querying.</li>
@@ -1341,18 +1346,18 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">"provenance_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"REGIONAL:plan-chat-1-1:step-1:a3f9c2d1"</span><span class="p">,</span>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">"source"</span><span class="p">:</span><span class="w"> </span><span class="s2">"market_data"</span><span class="p">,</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">"sub_question"</span><span class="p">:</span><span class="w"> </span><span class="s2">"NZ regional sales by region, 2024"</span><span class="p">,</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">"sub_question"</span><span class="p">:</span><span class="w"> </span><span class="s2">"NZ sales by region, 2024"</span><span class="p">,</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="nt">"success"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="nt">"retrieved_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-09-10"</span><span class="p">,</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="nt">"answer"</span><span class="p">:</span><span class="w"> </span><span class="s2">"NZ regional sales were led by Auckland (32%), then …"</span><span class="p">,</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="nt">"answer"</span><span class="p">:</span><span class="w"> </span><span class="s2">"NZ sales were led by Auckland (32%), then …"</span><span class="p">,</span>
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="nt">"data"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">"region"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Auckland"</span><span class="p">,</span><span class="w"> </span><span class="nt">"value"</span><span class="p">:</span><span class="w"> </span><span class="mi">41280</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="s2">"… 412 rows …"</span><span class="w"> </span><span class="p">]</span>
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="p">}</span>
 </code></pre></div>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>- REGIONAL:plan-chat-1-1:step-1:a3f9c2d1 | ok=True | rows=412 | retrieved 2026-09-10 | NZ regional sales by region, 2024
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>- REGIONAL:plan-chat-1-1:step-1:a3f9c2d1 | ok=True | rows=412 | retrieved 2026-09-10 | NZ sales by region, 2024
 </code></pre></div>
 <p>The megabyte object collapses to ~100 bytes. The row <em>count</em> rides the wire; the rows themselves never do.</p>
-<h2 id="one-line-per-result-the-schema">One Line Per Result — The Schema<a class="headerlink" href="#one-line-per-result-the-schema" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># manifest.py:50-60</span>
+<h2 id="one-line-per-result">One Line Per Result<a class="headerlink" href="#one-line-per-result" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c1"># manifest.py</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">_line</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">question</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sub_question"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)[:</span><span class="n">_QUESTION_PREVIEW</span><span class="p">]</span>  <span class="c1"># 80 chars</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">question</span> <span class="o">=</span> <span class="n">question</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">MANIFEST_END</span><span class="p">,</span> <span class="s2">"[/held data]"</span><span class="p">)</span>  <span class="c1"># can't forge the boundary</span>
@@ -1378,7 +1383,7 @@
 </tr>
 <tr>
 <td><code>ok</code></td>
-<td>Whether the retrieval succeeded — a failed result is not reusable.</td>
+<td>Whether the retrieval succeeded; a failed result is not reusable.</td>
 </tr>
 <tr>
 <td><code>rows</code></td>
@@ -1394,9 +1399,9 @@
 </tr>
 </tbody>
 </table>
-<p>Note the delimiter escape: the 80-char preview is user-influenced text, so it is neutralized (<code>MANIFEST_END → [/held data]</code>) exactly as <a href="../03-context-injection/#two-subtle-ways-it-goes-wrong">Context Injection</a> escapes its own closing tag. Held content must never be able to forge the boundary of the trusted block.</p>
+<p>The 80-char preview is user-influenced text, so it is neutralized (<code>MANIFEST_END → [/held data]</code>) the same way <a href="../03-context-injection/#two-ways-it-goes-wrong">Context Injection</a> escapes its own closing tag. Held content must never be able to forge the boundary of the trusted block.</p>
 <h2 id="capped-by-attention-not-by-tokens">Capped By Attention, Not By Tokens<a class="headerlink" href="#capped-by-attention-not-by-tokens" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># manifest.py:63-87</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="c1"># manifest.py</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">build_data_manifest</span><span class="p">(</span><span class="n">source_results</span><span class="p">):</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">results</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">source_results</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)]</span>
 <a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">results</span><span class="p">:</span>
@@ -1411,18 +1416,18 @@
 <a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>            <span class="s2">"result over re-querying ... check `retrieved` for staleness. Reference results "</span>
 <a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>            <span class="s2">"by provenance id</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">))</span>
 </code></pre></div>
-<p>The cap is the newest 30, newest-first — not a token budget. The reasoning is about <em>attention</em>, not accounting: reusable candidates are overwhelmingly recent, and a wall of ancient lines would bury the ones the model actually wants. Older results are not dropped from state; they collapse into a single honest rollup line — <em>"…plus N older result(s) held in state — ask the user before assuming their content."</em> That line is also the designated seam where a real <code>search_held_data</code> tool would plug in if a thread ever outgrows the ambient index.</p>
+<p>The cap is the newest 30, newest-first, not a token budget. It protects the model's <em>attention</em>: reusable candidates are overwhelmingly recent, and a wall of ancient lines would bury the ones the model wants. Older results are not dropped from state; they collapse into a single honest rollup line: <em>"…plus N older result(s) held in state — ask the user before assuming their content."</em> That line is also the designated seam where a real <code>search_held_data</code> tool would plug in if a thread ever outgrows the ambient index.</p>
 <p>Assembled, the block the model sees looks like this:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>[held data] - results already retrieved this thread. Prefer reusing a held result
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>over re-querying; check `retrieved` for staleness. Reference results by provenance id.
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>- REGIONAL:plan-chat-1-1:step-1:a3f9c2d1 | ok=True | rows=412 | retrieved 2026-09-10 | NZ regional sales by region, 2024
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>- ONLINE:plan-chat-1-1:step-2:b7e0aa14        | ok=True | rows=88  | retrieved 2026-09-10 | ONLINE channel share, NZ, 2024
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>- REGIONAL:plan-chat-1-1:step-1:a3f9c2d1 | ok=True | rows=412 | retrieved 2026-09-10 | NZ sales by region, 2024
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>- ONLINE:plan-chat-1-1:step-2:b7e0aa14        | ok=True | rows=88  | retrieved 2026-09-10 | online channel share, NZ, 2024
 <a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>...plus 3 older result(s) held in state - ask the user before assuming their content.
 <a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>[/held data]
 </code></pre></div>
 <h2 id="ambient-not-a-tool">Ambient, Not A Tool<a class="headerlink" href="#ambient-not-a-tool" title="Permanent link">&para;</a></h2>
-<p>The manifest is rebuilt from state and framed onto the latest genuine human message on <strong>every</strong> model call, through <code>wrap_model_call</code> — transient, never checkpointed, never accumulating, the same contract as <code>UserContextMiddleware</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># manifest.py:99-128 (abridged)</span>
+<p>The manifest is rebuilt from state and framed onto the latest genuine human message on <strong>every</strong> model call, through <code>wrap_model_call</code>. Like <code>UserContextMiddleware</code>, it is transient, never checkpointed, and never accumulates.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># manifest.py (abridged)</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="k">def</span><span class="w"> </span><span class="nf">_inject</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">ModelRequest</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModelRequest</span><span class="p">:</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="n">manifest</span> <span class="o">=</span> <span class="n">build_data_manifest</span><span class="p">(</span><span class="o">...</span><span class="n">state</span> <span class="n">source_results</span><span class="o">...</span><span class="p">)</span>
 <a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="c1"># framed onto the latest genuine HumanMessage; returns request unchanged if empty</span>
@@ -1430,10 +1435,10 @@
 <a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">wrap_model_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>        <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_inject</span><span class="p">(</span><span class="n">request</span><span class="p">))</span>
 <a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">awrap_model_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span> <span class="k">return</span> <span class="k">await</span> <span class="n">handler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_inject</span><span class="p">(</span><span class="n">request</span><span class="p">))</span>
 </code></pre></div>
-<p>Why ambient and not a <code>search_held_data</code> tool the model calls when it wants? Because <em>the model can only reuse what it knows it holds — and it cannot ask about what it does not know exists.</em> A lookup tool costs extra model turns and, worse, fails <strong>silently</strong>: when the model does not think to call it, it simply re-queries, and nothing flags the missed reuse. Making the index ambient means the option to reuse is always in view. The cost is bounded precisely because the manifest is an index — 30 lines of ~100 bytes is cheap to carry every turn; 30 full results would not be.</p>
-<h2 id="how-reuse-actually-happens">How Reuse Actually Happens<a class="headerlink" href="#how-reuse-actually-happens" title="Permanent link">&para;</a></h2>
-<p>Reuse is not a hidden runtime optimization; it is a <strong>plan step the human can see and approve</strong>. At plan time the orchestrator writes a step with <em>no</em> <code>[source:]</code> tag that names the held result by its provenance id:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a># orchestrator_prompts.py:173-191 (the reuse rule)
+<p>The manifest is ambient instead of a <code>search_held_data</code> tool because <em>the model can only reuse what it knows it holds, and it cannot ask about what it does not know exists.</em> A lookup tool costs extra model turns and, worse, fails <strong>silently</strong>: when the model does not think to call it, it re-queries, and nothing flags the missed reuse. Making the index ambient means the option to reuse is always in view. The cost is bounded because the manifest is an index: 30 lines of ~100 bytes is cheap to carry every turn; 30 full results would not be.</p>
+<h2 id="how-reuse-happens">How Reuse Happens<a class="headerlink" href="#how-reuse-happens" title="Permanent link">&para;</a></h2>
+<p>Reuse is a <strong>plan step the human can see and approve</strong>, not a hidden runtime optimization. At plan time the orchestrator writes a step with <em>no</em> <code>[source:]</code> tag that names the held result by its provenance id:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a># orchestrator_prompts.py (the reuse rule)
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>Reuse before you re-query ... When a held result covers a step's information need
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>and the user is not asking for fresh numbers, do NOT create a retrieval step for it —
 <a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>write the step WITHOUT a [source:] tag and name the held result's provenance id in the
@@ -1442,24 +1447,22 @@
 </code></pre></div>
 <p>A retrieval step has a source tag and hits the source; a reuse step has none and points at evidence already in state. Because it is in the plan card, a reviewer sees "this turn reuses step-1's data" before approving.</p>
 <h2 id="the-two-boundaries-that-keep-reuse-honest">The Two Boundaries That Keep Reuse Honest<a class="headerlink" href="#the-two-boundaries-that-keep-reuse-honest" title="Permanent link">&para;</a></h2>
-<p>Reuse is only safe because of two hard rules. These are the anti-poisoning guarantees — they are what stop "reuse" from quietly becoming "hallucinate from a fading memory."</p>
+<p>Reuse is only safe because of two hard rules. These anti-poisoning rules stop "reuse" from quietly becoming "hallucinate from a fading memory."</p>
 <ul>
-<li><strong>Prose-only reuse.</strong> What the model holds from a past retrieval is <em>only the prose answer</em>, never the data rows — because the rows are not in context, only the pointer is. It may reuse a held answer's <strong>text</strong> when that text already states what the step needs. If the new question needs figures, rankings, or breakdowns the held prose does not literally contain, it must plan a fresh retrieval. It must <strong>never</strong> derive or estimate numbers from a held answer. The <code>rows=412</code> on the line tells the model data <em>exists</em> to be re-pulled by name; it does not put that data in the window.</li>
+<li><strong>Prose-only reuse.</strong> What the model holds from a past retrieval is <em>only the prose answer</em>, never the data rows, because the rows are not in context; only the pointer is. It may reuse a held answer's <strong>text</strong> when that text already states what the step needs. If the new question needs figures, rankings, or breakdowns the held prose does not literally contain, it must plan a fresh retrieval. It must <strong>never</strong> derive or estimate numbers from a held answer. The <code>rows=412</code> on the line tells the model data <em>exists</em> to be re-pulled by name; it does not put that data in the window.</li>
 <li><strong>Staleness check.</strong> Every line carries its <code>retrieved</code> date. The instruction is to prefer a fresh retrieval when the held data looks stale, and the rolled-up older results explicitly say <em>"ask the user before assuming their content."</em> Age is a first-class input to the reuse decision, not an afterthought.</li>
 </ul>
 <p>Together they draw the line: reuse the <em>conclusion</em> a prior turn already reached; re-fetch the <em>evidence</em> whenever the new answer would depend on numbers you are not currently holding.</p>
-<h2 id="the-payoff-in-one-sentence">The Payoff, In One Sentence<a class="headerlink" href="#the-payoff-in-one-sentence" title="Permanent link">&para;</a></h2>
-<p>The manifest is an index over state, not a copy of it: the model sees <em>what it holds</em> — provenance id, shape, and age, in ~100 bytes per line — and decides reuse-versus-refetch at plan time, while the megabyte payload stays parked in <code>source_results</code>, pulled by provenance id only when a step such as <code>run_analysis</code> actually needs it. Context stays small; reuse stays possible; nothing is estimated from memory.</p>
 <h2 id="the-reactive-sibling">The Reactive Sibling<a class="headerlink" href="#the-reactive-sibling" title="Permanent link">&para;</a></h2>
-<p>The reactive/quick path has the same idea under different names — a <code>[Carried data]</code> block, <code>carryover_reuse</code> rules, and an <code>answered_from_carried_data</code> flag — and the same two boundaries. One bug worth remembering: a turn framed <em>its own</em> same-turn fetch as <em>"[Carried data … earlier turns]"</em>, which is a subtle provenance lie. The manifest filters out the current turn's own results before labeling anything as previously retrieved, so "held earlier" always means <em>actually</em> earlier.</p>
+<p>The reactive/quick path has the same idea under different names (a <code>[Carried data]</code> block, <code>carryover_reuse</code> rules, and an <code>answered_from_carried_data</code> flag) and the same two boundaries. One bug worth remembering: a turn framed <em>its own</em> same-turn fetch as <em>"[Carried data … earlier turns]"</em>, which is a provenance lie. The manifest filters out the current turn's own results before labeling anything as previously retrieved, so "held earlier" always means <em>actually</em> earlier.</p>
 <h2 id="guardrails">Guardrails<a class="headerlink" href="#guardrails" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Index, never copy.</strong> Inject pointers plus shape and age. The moment the block contains data rows, you are back to poisoning the window.</li>
 <li><strong>Make the option ambient.</strong> A reuse path the model has to remember to look up is a reuse path it will silently skip. Keep the index in view every turn.</li>
-<li><strong>Cap by attention.</strong> Show the newest N, newest-first, and roll the rest into one honest line — do not let old entries bury fresh ones.</li>
+<li><strong>Cap by attention.</strong> Show the newest N, newest-first, and roll the rest into one honest line so old entries do not bury fresh ones.</li>
 <li><strong>Forbid estimation from memory.</strong> Prose answers may be reused; numbers must be re-fetched. Put the row count on the line so the model knows data exists to pull, not to invent.</li>
 <li><strong>Carry the age.</strong> Staleness is part of the reuse decision. Every line gets its <code>retrieved</code> date, and old rollups tell the model to ask before assuming.</li>
-<li><strong>Escape your delimiter.</strong> The user-influenced preview must never be able to forge the block boundary. See <a href="../03-context-injection/#two-subtle-ways-it-goes-wrong">Context Injection</a>.</li>
+<li><strong>Escape your delimiter.</strong> The user-influenced preview must never be able to forge the block boundary. See <a href="../03-context-injection/#two-ways-it-goes-wrong">Context Injection</a>.</li>
 </ul>
 
 
